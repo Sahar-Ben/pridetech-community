@@ -1,16 +1,16 @@
 import { MemberStatusBadge } from '../members/MemberStatusBadge'
-import { PRIMARY_BUTTON_CLASSES, TOUCH_BUTTON_SIZE_CLASSES } from './eventButtonStyles'
+import { PRIMARY_BUTTON_CLASSES, TOUCH_BUTTON_SIZE_CLASSES } from '../../theme/controls'
 import { hasRegistrantArrived } from './registrant'
 import type { CommunitySearchResult } from './communitySearch'
 import type { Member } from '../members/member'
 import type { Registrant } from './registrant'
 
 const ROW_CLASSES =
-  'flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-300 px-4 py-3 dark:border-slate-700'
+  'flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-hairline bg-surface px-4 py-3'
 
 const ACTION_BUTTON_CLASSES = `${PRIMARY_BUTTON_CLASSES} ${TOUCH_BUTTON_SIZE_CLASSES}`
 
-const ALREADY_CLASSES = 'text-sm font-medium text-slate-600 dark:text-slate-400'
+const ALREADY_CLASSES = 'text-sm font-semibold text-ink-muted'
 
 type CommunitySearchResultRowProps = {
   result: CommunitySearchResult
@@ -31,10 +31,10 @@ export const CommunitySearchResultRow = ({
   return (
     <div className={ROW_CLASSES}>
       <span className="flex min-w-0 flex-col gap-0.5">
-        <span className="text-base font-semibold break-words text-slate-900 dark:text-slate-100">
+        <span className="text-base font-bold break-words text-ink">
           {member.name}
         </span>
-        <span className="text-xs break-words text-slate-500 dark:text-slate-400">{member.mail}</span>
+        <span className="text-sm break-words text-ink-muted">{member.mail}</span>
         {member.status !== 'Active' && (
           <span>
             <MemberStatusBadge status={member.status} />

@@ -1,5 +1,5 @@
 import { useId } from 'react'
-import { FIELD_LABEL_CLASSES, READ_ONLY_FIELD_CONTROL_CLASSES } from './memberFieldStyles'
+import { FIELD_LABEL_CLASSES, READ_ONLY_FIELD_CONTROL_CLASSES } from '../../theme/fields'
 
 type MemberReadOnlyTextFieldProps = {
   label: string
@@ -28,7 +28,7 @@ export const MemberReadOnlyTextField = ({
         type="text"
         value={value ?? ''}
       />
-      <p className="text-xs text-slate-500 dark:text-slate-400" id={explanationId}>
+      <p className="text-xs text-ink-muted" id={explanationId}>
         {explanation}
       </p>
     </div>

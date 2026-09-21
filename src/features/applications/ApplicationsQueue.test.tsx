@@ -524,3 +524,112 @@ describe('ApplicationsQueue, when a decision failed', () => {
     expect(screen.getByRole('button', { name: /approve/i })).toBeEnabled()
   })
 })
+
+describe('ApplicationsQueue, filtering by status', () => {
+  const declinedLead = (overrides: Partial<Lead> = {}): Lead =>
+    pendingLead({
+      rowNumber: 3,
+      name: 'Turned Away',
+      email: 'turned@example.com',
+      status: 'declined',
+      ...overrides,
+    })
+
+  const showDeclined = async () => {
+    await userEvent.selectOptions(screen.getByLabelText(/status/i), 'Declined')
+  }
+
+  const showPending = async () => {
+    await userEvent.selectOptions(screen.getByLabelText(/status/i), 'Pending')
+  }
+
+  const renderBothStates = (decisions = stubDecisions()) =>
+    renderQueue({ decisions, leads: [pendingLead(), declinedLead()] })
+
+  it('should show the applications waiting for review before the reviewer filters anything', () => {
+    renderBothStates()
+
+    expect(screen.getByRole('heading', { level: 3, name: 'Dana Maman' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { level: 3, name: 'Turned Away' })).not.toBeInTheDocument()
+  })
+
+  it('should show only the declined applications once the reviewer asks for them', async () => {
+    renderBothStates()
+
+    await showDeclined()
+
+    expect(screen.getByRole('heading', { level: 3, name: 'Turned Away' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { level: 3, name: 'Dana Maman' })).not.toBeInTheDocument()
+  })
+
+  it('should bring the queue back when the reviewer switches to Pending again', async () => {
+    renderBothStates()
+
+    await showDeclined()
+    await showPending()
+
+    expect(screen.getByRole('heading', { level: 3, name: 'Dana Maman' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { level: 3, name: 'Turned Away' })).not.toBeInTheDocument()
+  })
+
+  it('should offer no way to decline an application that was already declined', async () => {
+    renderBothStates()
+
+    await showDeclined()
+
+    expect(screen.queryByRole('button', { name: /decline/i })).not.toBeInTheDocument()
+  })
+
+  it('should approve a declined applicant through the same approve path', async () => {
+    const onApprove = vi.fn()
+    renderBothStates(stubDecisions({ approve: onApprove }))
+
+    await showDeclined()
+    await userEvent.selectOptions(screen.getByLabelText(/gender/i), 'F')
+    await userEvent.click(screen.getByRole('button', { name: /approve/i }))
+
+    expect(onApprove).toHaveBeenCalledWith({
+      lead: expect.objectContaining({ name: 'Turned Away' }),
+      gender: 'F',
+    })
+  })
+
+  it('should count what is waiting under Pending', () => {
+    renderBothStates()
+
+    expect(screen.getByText('1 waiting')).toBeInTheDocument()
+  })
+
+  it('should count the declined applications under Declined', async () => {
+    renderBothStates()
+
+    await showDeclined()
+
+    expect(screen.getByText('1 declined')).toBeInTheDocument()
+  })
+
+  it('should say that nothing is waiting when every application has been decided', () => {
+    renderQueue({ leads: [declinedLead()] })
+
+    expect(screen.getByText('No applications waiting for review.')).toBeInTheDocument()
+  })
+
+  it('should say that nothing has been declined when the declined list is empty', async () => {
+    renderQueue({ leads: [pendingLead()] })
+
+    await showDeclined()
+
+    expect(screen.getByText('No applications have been declined.')).toBeInTheDocument()
+  })
+
+  it('should still report what the sheet itself needs fixing under either view', async () => {
+    renderQueue({
+      leads: [declinedLead()],
+      rowsWithoutEmail: [{ rowNumber: 412, name: 'Dana Levi' }],
+    })
+
+    await showDeclined()
+
+    expect(screen.getByText(/1 application has no email address/i)).toBeInTheDocument()
+  })
+})

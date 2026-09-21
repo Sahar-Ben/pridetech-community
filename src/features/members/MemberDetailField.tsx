@@ -1,7 +1,6 @@
 import { EmptyValue } from './EmptyValue'
 
-const LINK_CLASSES =
-  'text-indigo-700 underline underline-offset-2 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300'
+const LINK_CLASSES = 'font-semibold text-accent underline underline-offset-2'
 
 type MemberDetailFieldProps = {
   label: string
@@ -13,9 +12,9 @@ export const MemberDetailField = ({ label, value, href }: MemberDetailFieldProps
   const doesOpenInNewTab = href !== undefined && href.startsWith('https://')
 
   return (
-    <div className="border-t border-slate-200 py-2 dark:border-slate-800">
-      <dt className="text-xs font-medium text-slate-500 dark:text-slate-400">{label}</dt>
-      <dd className="mt-0.5 text-sm break-words text-slate-900 dark:text-slate-100">
+    <div className="border-t border-hairline py-2.5">
+      <dt className="text-xs font-bold tracking-wide text-ink-muted uppercase">{label}</dt>
+      <dd className="mt-1 text-sm break-words text-ink">
         {value === undefined && <EmptyValue />}
         {value !== undefined && href === undefined && value}
         {value !== undefined && href !== undefined && (

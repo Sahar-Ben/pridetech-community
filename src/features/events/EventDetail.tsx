@@ -10,10 +10,11 @@ import {
   PRIMARY_BUTTON_CLASSES,
   SECONDARY_BUTTON_CLASSES,
   TOUCH_BUTTON_SIZE_CLASSES,
-} from './eventButtonStyles'
+} from '../../theme/controls'
 import type { CommunityEvent } from './communityEvent'
 import type { Member } from '../members/member'
 import type { Registrant } from './registrant'
+import { DATA_PANEL_CLASSES, RECORD_TITLE_CLASSES } from '../../theme/surfaces'
 
 const BACK_ARROW = '\u{2190}'
 const SEPARATOR = ' \u{00b7} '
@@ -21,6 +22,8 @@ const SEPARATOR = ' \u{00b7} '
 const CHECK_IN_BUTTON_CLASSES = `${PRIMARY_BUTTON_CLASSES} ${TOUCH_BUTTON_SIZE_CLASSES}`
 
 const SECONDARY_ACTION_CLASSES = `${SECONDARY_BUTTON_CLASSES} ${COMPACT_BUTTON_SIZE_CLASSES}`
+
+const DETAIL_CLASSES = `${DATA_PANEL_CLASSES} animate-rise flex flex-col gap-4 px-4 py-4 sm:px-6`
 
 type EventDetailProps = {
   event: CommunityEvent
@@ -48,33 +51,33 @@ export const EventDetail = ({
   }
 
   return (
-    <article className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-900">
+    <article className={DETAIL_CLASSES}>
       <button className={`${SECONDARY_ACTION_CLASSES} self-start`} onClick={onBack} type="button">
         <span aria-hidden="true">{BACK_ARROW} </span>
         Back to events
       </button>
 
       <div className="flex flex-col gap-1">
-        <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100">{event.name}</h3>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
+        <h3 className={RECORD_TITLE_CLASSES}>{event.name}</h3>
+        <p className="text-sm text-ink">
           {formatEventDate(event.date)}
           {SEPARATOR}
           {event.location}
         </p>
         {event.host !== undefined && (
-          <p className="text-sm text-slate-600 dark:text-slate-400">Hosted by {event.host}</p>
+          <p className="text-sm text-ink">Hosted by {event.host}</p>
         )}
-        <p className="text-sm text-slate-600 dark:text-slate-400">
+        <p className="text-sm text-ink">
           {event.isMembersOnly
             ? 'Members only. The door warns before admitting somebody who is not in the member list.'
             : 'Open to non-members.'}
         </p>
-        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+        <p className="text-sm font-bold text-ink">
           {describeAttendanceForEvent(summary)}
         </p>
         {/* The figures above are the ones that could be believed. They are
             invented, and a check-in made in this app never leaves the tab. */}
-        <p className="text-xs font-medium text-amber-800 dark:text-amber-400">
+        <p className="text-xs font-semibold text-warning-ink">
           Sample data: these registrants are invented, and the attendance shown here has never
           been recorded anywhere. Check-ins made in this app are lost when the page reloads.
         </p>
@@ -84,7 +87,7 @@ export const EventDetail = ({
 
       <div className="flex flex-wrap items-center gap-3">
         {event.isClosedOut ? (
-          <p className="text-sm text-slate-600 dark:text-slate-400">
+          <p className="text-sm text-ink">
             Closed out. This is the final attendance for the event.
           </p>
         ) : (
@@ -95,7 +98,7 @@ export const EventDetail = ({
             <button className={SECONDARY_ACTION_CLASSES} onClick={closeOutEvent} type="button">
               Close out attendance
             </button>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-ink-muted">
               Closing out records this as the final attendance, so do it after the door shuts.
             </p>
           </>
@@ -103,7 +106,7 @@ export const EventDetail = ({
       </div>
 
       {registrants.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-slate-300 px-4 py-10 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+        <p className="rounded-xl border border-dashed border-edge px-4 py-10 text-center text-sm text-ink-muted">
           No registrants. Nothing has been read from a response sheet for this event.
         </p>
       ) : (

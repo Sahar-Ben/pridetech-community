@@ -500,3 +500,104 @@ describe('LeadsSection, when the reviewer reloads while a decision is in flight'
     expect(screen.getByRole('heading', { level: 3, name: 'Ariel Cohen' })).toBeInTheDocument()
   })
 })
+
+describe('LeadsSection, the declined applications', () => {
+  const sheetWithADeclinedLead = (): FakeSheet =>
+    createFakeSheet({
+      tabs: {
+        Leads: [
+          LEADS_HEADER_ROW,
+          leadRow({ name: 'Noa Feldman', email: 'noa@example.com' }),
+          leadRow({ name: 'Ariel Cohen', email: 'ariel@example.com', status: 'Declined' }),
+        ],
+        Members: [MEMBERS_HEADER_ROW],
+      },
+    })
+
+  const showDeclined = async () => {
+    await userEvent.selectOptions(await screen.findByLabelText(/status/i), 'Declined')
+  }
+
+  it('should keep a declined application out of the queue but list it under Declined', async () => {
+    renderSection({ sheetsClient: sheetWithADeclinedLead().client })
+    await screen.findByText('Noa Feldman')
+    expect(screen.queryByRole('heading', { level: 3, name: 'Ariel Cohen' })).not.toBeInTheDocument()
+
+    await showDeclined()
+
+    expect(screen.getByRole('heading', { level: 3, name: 'Ariel Cohen' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { level: 3, name: 'Noa Feldman' })).not.toBeInTheDocument()
+  })
+
+  it('should count a status nobody recognises as pending, so the applicant stays visible', async () => {
+    const sheet = createFakeSheet({
+      tabs: {
+        Leads: [
+          LEADS_HEADER_ROW,
+          leadRow({ name: 'Ariel Cohen', email: 'ariel@example.com', status: 'Decline' }),
+        ],
+        Members: [MEMBERS_HEADER_ROW],
+      },
+    })
+    renderSection({ sheetsClient: sheet.client })
+
+    expect(await screen.findByRole('heading', { level: 3, name: 'Ariel Cohen' })).toBeInTheDocument()
+
+    await showDeclined()
+
+    expect(screen.queryByRole('heading', { level: 3, name: 'Ariel Cohen' })).not.toBeInTheDocument()
+  })
+
+  it('should add a declined applicant to the Members tab and rewrite their status when approved', async () => {
+    const sheet = sheetWithADeclinedLead()
+    renderSection({ sheetsClient: sheet.client })
+    await screen.findByText('Noa Feldman')
+    await showDeclined()
+
+    await decide({ applicant: 'Ariel Cohen', action: /approve/i })
+
+    await waitFor(() => {
+      expect(sheet.rowsOf('Leads')[2]?.[10]).toBe('Approved')
+    })
+    expect(sheet.writes.map((write) => write.kind)).toEqual(['append', 'update'])
+    const appended = sheet.rowsOf('Members')[1] ?? []
+    expect(memberCell({ row: appended, heading: 'Name' })).toBe('Ariel Cohen')
+    expect(memberCell({ row: appended, heading: 'Status' })).toBe('Active')
+  })
+
+  it('should take the approved application out of the declined list and count down', async () => {
+    const sheet = sheetWithADeclinedLead()
+    renderSection({ sheetsClient: sheet.client })
+    await screen.findByText('Noa Feldman')
+    await showDeclined()
+    expect(screen.getByText('1 declined')).toBeInTheDocument()
+
+    await decide({ applicant: 'Ariel Cohen', action: /approve/i })
+
+    await waitFor(() => {
+      expect(screen.queryByRole('heading', { level: 3, name: 'Ariel Cohen' })).not.toBeInTheDocument()
+    })
+    expect(screen.getByText('No applications have been declined.')).toBeInTheDocument()
+  })
+
+  it('should keep the declined applicant listed with the failure on their card when the write fails', async () => {
+    const sheet = sheetWithADeclinedLead()
+    const refusingClient: SheetsClient = {
+      ...sheet.client,
+      appendRow: () =>
+        Promise.reject(
+          new SheetsRequestError({ range: 'Members!A:Z', status: 500, detail: 'Backend error' }),
+        ),
+    }
+    renderSection({ sheetsClient: refusingClient })
+    await screen.findByText('Noa Feldman')
+    await showDeclined()
+
+    await decide({ applicant: 'Ariel Cohen', action: /approve/i })
+
+    expect(await within(cardFor('Ariel Cohen')).findByRole('alert')).toHaveTextContent(
+      /Approving Ariel Cohen failed.*Backend error/,
+    )
+    expect(sheet.rowsOf('Leads')[2]?.[10]).toBe('Declined')
+  })
+})

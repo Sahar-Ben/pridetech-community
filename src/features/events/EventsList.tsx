@@ -1,10 +1,11 @@
 import { EventListGroup } from './EventListGroup'
 import { EventsLocalChangeNotice } from './EventsLocalChangeNotice'
-import { COMPACT_BUTTON_SIZE_CLASSES, PRIMARY_BUTTON_CLASSES } from './eventButtonStyles'
+import { COMPACT_BUTTON_SIZE_CLASSES, PRIMARY_BUTTON_CLASSES } from '../../theme/controls'
 import type { CommunityEvent } from './communityEvent'
 import type { EventLocalChange } from './eventLocalChange'
 import type { EventSchedule } from './eventSchedule'
 import type { Registrant } from './registrant'
+import { EMPTY_STATE_CLASSES } from '../../theme/surfaces'
 
 const ADD_BUTTON_CLASSES = `${PRIMARY_BUTTON_CLASSES} ${COMPACT_BUTTON_SIZE_CLASSES}`
 
@@ -42,7 +43,7 @@ export const EventsList = ({
       </div>
 
       {isEmpty ? (
-        <p className="rounded-lg border border-dashed border-slate-300 px-4 py-10 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+        <p className={EMPTY_STATE_CLASSES}>
           No events yet. Adding one here keeps it in this browser only.
         </p>
       ) : (

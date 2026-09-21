@@ -1,13 +1,21 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { SidebarNav } from './SidebarNav'
 import type { Section } from './section'
+import { SHELL_BUTTON_CLASSES } from '../theme/controls'
 
 const BURGER_GLYPH = '\u{2630}'
 
-/* The rail is fixed, so `md:pl-56` reserves the width it covers. The matching
+/* The rail is fixed, so `md:pl-60` reserves the width it covers. The matching
    right padding from `xl` up is what keeps the content column centred on the
    viewport instead of centred in the space left beside the rail. */
-const MAIN_CLASSES = 'md:pl-56 xl:pr-56'
+const MAIN_CLASSES = 'md:pl-60 xl:pr-60'
+
+const BURGER_CLASSES = `${SHELL_BUTTON_CLASSES} px-4 py-2 text-base`
+
+const SCRIM_CLASSES = [
+  'fixed inset-0 z-30 bg-[rgb(9_6_24/0.55)] backdrop-blur-sm md:hidden',
+  'animate-fade',
+].join(' ')
 
 type AppShellProps = {
   activeSection: Section
@@ -55,12 +63,12 @@ export const AppShell = ({ activeSection, onSelectSection, children }: AppShellP
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+    <div className="min-h-dvh text-on-brand">
       <main className={MAIN_CLASSES}>
         <div className="flex justify-start px-4 pt-4 md:hidden">
           <button
             aria-expanded={isDrawerOpen}
-            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+            className={BURGER_CLASSES}
             onClick={() => setIsDrawerOpen(true)}
             ref={burgerRef}
             type="button"
@@ -75,7 +83,7 @@ export const AppShell = ({ activeSection, onSelectSection, children }: AppShellP
       {isDrawerOpen && (
         <button
           aria-label="Close menu"
-          className="fixed inset-0 z-30 bg-slate-900/40 md:hidden"
+          className={SCRIM_CLASSES}
           onClick={closeDrawer}
           type="button"
         />

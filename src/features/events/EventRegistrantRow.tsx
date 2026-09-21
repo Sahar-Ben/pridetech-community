@@ -7,7 +7,7 @@ import type { Registrant } from './registrant'
 import { resolveRegistrantLink } from './registrantLink'
 import { REGISTRANT_COLUMN_CLASSES } from './registrantColumns'
 
-const CELL_CLASSES = 'px-2 py-2 align-top text-slate-700 dark:text-slate-300'
+const CELL_CLASSES = 'px-3 py-2.5 align-top text-ink'
 
 type EventRegistrantRowProps = {
   registrant: Registrant
@@ -26,11 +26,11 @@ export const EventRegistrantRow = ({
   const status = deriveRegistrantStatus({ registrant, isClosedOut })
 
   return (
-    <tr className="border-t border-slate-200 dark:border-slate-800">
+    <tr className="border-t border-hairline">
       <td className={`${CELL_CLASSES} ${REGISTRANT_COLUMN_CLASSES.name} break-words`}>
-        <span className="font-medium text-slate-900 dark:text-slate-100">{registrant.name}</span>
+        <span className="font-semibold text-ink">{registrant.name}</span>
         {registrant.isWalkIn && (
-          <span className="ml-1 text-xs text-slate-500 dark:text-slate-400">(walk-in)</span>
+          <span className="ml-1 text-xs text-ink-muted">(walk-in)</span>
         )}
       </td>
       <td className={`${CELL_CLASSES} ${REGISTRANT_COLUMN_CLASSES.email} break-words`}>

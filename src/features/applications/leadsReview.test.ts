@@ -266,6 +266,7 @@ describe('buildLeadsReview', () => {
     expect(review.counts).toEqual({
       waitingCount: 0,
       alreadyMemberCount: 0,
+      declinedCount: 0,
       leadsWithoutEmailCount: 0,
       membersWithoutEmailCount: 0,
       repeatedLeadEmailCount: 0,
@@ -382,5 +383,95 @@ describe('buildLeadsReview', () => {
 
     expect(review.counts.waitingCount).toBe(1)
     expect(review.counts.alreadyMemberCount).toBe(0)
+  })
+})
+
+describe('buildLeadsReview, the applications that were declined', () => {
+  it('should list an application marked declined, so the decision can be revisited', () => {
+    const review = reviewOf({
+      leads: [lead({ name: 'Turned Away', email: 'declined@example.com', status: 'declined' })],
+    })
+
+    expect(review.declinedApplications.map((declined) => declined.lead.email)).toEqual([
+      'declined@example.com',
+    ])
+  })
+
+  it('should leave a pending application out of the declined list', () => {
+    const review = reviewOf({ leads: [lead({ email: 'waiting@example.com' })] })
+
+    expect(review.declinedApplications).toEqual([])
+  })
+
+  it('should leave an approved application out of the declined list', () => {
+    const review = reviewOf({
+      leads: [lead({ email: 'approved@example.com', status: 'approved' })],
+    })
+
+    expect(review.declinedApplications).toEqual([])
+  })
+
+  it('should list the declined applications in sheet order, like the queue above them', () => {
+    const review = reviewOf({
+      leads: [
+        lead({ rowNumber: 9, name: 'Newer', email: 'newer@example.com', status: 'declined' }),
+        lead({ rowNumber: 2, name: 'Older', email: 'older@example.com', status: 'declined' }),
+      ],
+    })
+
+    expect(review.declinedApplications.map((declined) => declined.lead.name)).toEqual([
+      'Older',
+      'Newer',
+    ])
+  })
+
+  it('should count the declined applications, since the view has to say how many', () => {
+    const review = reviewOf({
+      leads: [
+        lead({ rowNumber: 2, email: 'one@example.com', status: 'declined' }),
+        lead({ rowNumber: 3, email: 'two@example.com', status: 'declined' }),
+        lead({ rowNumber: 4, email: 'waiting@example.com' }),
+      ],
+    })
+
+    expect(review.counts.declinedCount).toBe(2)
+  })
+
+  it('should tell the reviewer which member row a declined ex-member already has', () => {
+    const review = reviewOf({
+      leads: [lead({ email: 'dana@example.com', status: 'declined' })],
+      memberRows: [
+        exMember({ name: 'Dana Maman', mail: 'dana@example.com', removalReason: 'Moved abroad' }),
+      ],
+    })
+
+    expect(review.declinedApplications[0]?.priorMember?.rowNumber).toBe(2)
+  })
+
+  it('should keep a declined applicant who is already an active member visible rather than dropping them', () => {
+    const review = reviewOf({
+      leads: [lead({ email: 'dana@example.com', status: 'declined' })],
+      memberRows: [activeMember({ name: 'Dana Maman', mail: 'dana@example.com' })],
+    })
+
+    expect(review.declinedApplications.map((declined) => declined.lead.email)).toEqual([
+      'dana@example.com',
+    ])
+  })
+
+  it('should promise no reactivation for a declined applicant whose member row is active', () => {
+    const review = reviewOf({
+      leads: [lead({ email: 'dana@example.com', status: 'declined' })],
+      memberRows: [activeMember({ name: 'Dana Maman', mail: 'dana@example.com' })],
+    })
+
+    expect(review.declinedApplications[0]?.priorMember).toBeUndefined()
+  })
+
+  it('should report nothing declined for an empty Leads tab', () => {
+    const review = reviewOf({ leads: [] })
+
+    expect(review.declinedApplications).toEqual([])
+    expect(review.counts.declinedCount).toBe(0)
   })
 })

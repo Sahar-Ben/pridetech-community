@@ -1,1 +1,348 @@
 @import 'tailwindcss';
+
+/* The PrideTech brand, measured from www.pridetech.co.il: a violet-to-blue-to-teal
+   gradient under a fine fractal-noise texture, Sulphur Point for display type,
+   Source Sans 3 for everything read at length, heavily rounded translucent cards.
+
+   Two divergences from the site are deliberate and load-bearing, and everything
+   below is arranged around them:
+
+   1. The gradient is deepened. The site's own stops (#8B5CF6, #3B9BDC, #4EB183)
+      put white text at 4.23:1, 3.04:1 and 2.64:1. A visitor reads one heading on
+      that; an organiser reads this screen for hours. The stops here are the same
+      hues at 5.9:1 or better, and glass over the lightest of them still clears
+      4.8:1, so no panel can be composed into a contrast failure.
+   2. Glass and display type stop at the shell. The three working surfaces -- the
+      applications queue, the members table, the check-in list -- run on opaque
+      `--ui-surface` so their contrast is a fixed number rather than a function of
+      whatever the gradient is doing behind them. */
+
+:root {
+  color-scheme: light;
+
+  --ui-brand-violet: #6d3fd4;
+  --ui-brand-blue: #2563a8;
+  --ui-brand-teal: #15715b;
+
+  /* White text over this sits at 4.82:1 at the gradient's lightest point, which
+     is the number that decided the alpha. */
+  --ui-glass-fill: rgb(255 255 255 / 0.1);
+  --ui-glass-edge: rgb(255 255 255 / 0.28);
+  --ui-glass-hover: rgb(255 255 255 / 0.18);
+  --ui-on-brand: #ffffff;
+
+  --ui-surface: #ffffff;
+  --ui-surface-raised: #f4f6fa;
+  --ui-surface-sunken: #eceff5;
+  --ui-ink: #151823;
+  --ui-ink-muted: #4a5468;
+  --ui-hairline: #d5dae5;
+  --ui-edge: #868fa3;
+
+  --ui-accent: #5227cc;
+  --ui-accent-solid: #5b2fd0;
+  --ui-accent-solid-hover: #4a24b3;
+  --ui-on-accent: #ffffff;
+
+  --ui-danger-surface: #fff1f3;
+  --ui-danger-ink: #9f1239;
+  --ui-danger-edge: #c81e4e;
+
+  --ui-warning-surface: #fff8eb;
+  --ui-warning-ink: #7a4405;
+  --ui-warning-edge: #d08700;
+
+  --ui-success-surface: #ecfdf5;
+  --ui-success-ink: #0a5f42;
+  --ui-success-edge: #0f9b6c;
+
+  --ui-arrived-surface: #dcfce7;
+  --ui-arrived-ink: #0a5f42;
+  --ui-arrived-edge: #0f9b6c;
+
+  --ui-neutral-surface: #e6e9f0;
+  --ui-neutral-ink: #3f4757;
+
+  --ui-focus-ring: #150a2e;
+  --ui-focus-halo: rgb(255 255 255 / 0.95);
+
+  /* Chart marks, and the only colours in the app chosen by a validator rather
+     than by eye. They are the brand's own three gradient hues re-stepped onto
+     the opaque data surface, because the gradient stops themselves collapse
+     under deuteranopia when they sit side by side as pie slices. Run
+     `validate_palette.js` against `--ui-surface` before changing any of them.
+
+     `--ui-chart-unknown` is grey on purpose and is never a fourth series: it is
+     the one colour reserved for "we do not know", so an unrecorded share reads
+     as a gap in the data rather than as another category. */
+  --ui-chart-1: #5b2fd0;
+  --ui-chart-2: #3d9ad8;
+  --ui-chart-3: #0e7f5f;
+  --ui-chart-unknown: #6f7a91;
+}
+
+/* Dark is not a tint of light here. At a venue door at night the gradient drops
+   to near-black so the opaque working surfaces sit above it rather than under
+   it, which is the opposite of the light theme's stacking. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+
+    --ui-brand-violet: #170b2e;
+    --ui-brand-blue: #05162a;
+    --ui-brand-teal: #031a14;
+
+    --ui-glass-fill: rgb(255 255 255 / 0.08);
+    --ui-glass-edge: rgb(255 255 255 / 0.16);
+    --ui-glass-hover: rgb(255 255 255 / 0.14);
+
+    --ui-surface: #1a2030;
+    --ui-surface-raised: #232a3c;
+    --ui-surface-sunken: #141927;
+    --ui-ink: #f2f4fa;
+    --ui-ink-muted: #a7b0c4;
+    --ui-hairline: #333c52;
+    --ui-edge: #697389;
+
+    --ui-accent: #b9a3ff;
+    --ui-accent-solid: #c4b0ff;
+    --ui-accent-solid-hover: #d4c5ff;
+    --ui-on-accent: #150a2e;
+
+    --ui-danger-surface: #3a0b16;
+    --ui-danger-ink: #ffc9d4;
+    --ui-danger-edge: #f4708f;
+
+    --ui-warning-surface: #33220a;
+    --ui-warning-ink: #ffd68f;
+    --ui-warning-edge: #e0a53c;
+
+    --ui-success-surface: #06291e;
+    --ui-success-ink: #8ce8be;
+    --ui-success-edge: #34a97c;
+
+    --ui-arrived-surface: #06291e;
+    --ui-arrived-ink: #9df0cb;
+    --ui-arrived-edge: #34a97c;
+
+    --ui-neutral-surface: #2b3243;
+    --ui-neutral-ink: #c3cbdb;
+
+    --ui-focus-ring: #ffffff;
+    --ui-focus-halo: rgb(7 5 16 / 0.95);
+
+    /* Re-derived against the dark `--ui-surface`, not lightened from the light
+       steps: the light trio drops below the dark lightness band and the violet
+       and blue stop separating on it. */
+    --ui-chart-1: #b264fb;
+    --ui-chart-2: #4570a8;
+    --ui-chart-3: #35aa76;
+    --ui-chart-unknown: #7c879e;
+  }
+}
+
+/* `inline` so every utility emits `var(--ui-*)` rather than the resolved colour:
+   that is what lets the block above re-theme the whole app without a `dark:`
+   variant on each of several hundred class strings. */
+@theme inline {
+  --font-display:
+    'Sulphur Point', 'Trebuchet MS', ui-sans-serif, system-ui, sans-serif;
+  --font-sans:
+    'Source Sans 3', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --color-brand-violet: var(--ui-brand-violet);
+  --color-brand-blue: var(--ui-brand-blue);
+  --color-brand-teal: var(--ui-brand-teal);
+  --color-glass: var(--ui-glass-fill);
+  --color-glass-edge: var(--ui-glass-edge);
+  --color-glass-hover: var(--ui-glass-hover);
+  --color-on-brand: var(--ui-on-brand);
+
+  --color-surface: var(--ui-surface);
+  --color-surface-raised: var(--ui-surface-raised);
+  --color-surface-sunken: var(--ui-surface-sunken);
+  --color-ink: var(--ui-ink);
+  --color-ink-muted: var(--ui-ink-muted);
+  --color-hairline: var(--ui-hairline);
+  --color-edge: var(--ui-edge);
+
+  --color-accent: var(--ui-accent);
+  --color-accent-solid: var(--ui-accent-solid);
+  --color-accent-solid-hover: var(--ui-accent-solid-hover);
+  --color-on-accent: var(--ui-on-accent);
+
+  --color-danger-surface: var(--ui-danger-surface);
+  --color-danger-ink: var(--ui-danger-ink);
+  --color-danger-edge: var(--ui-danger-edge);
+
+  --color-warning-surface: var(--ui-warning-surface);
+  --color-warning-ink: var(--ui-warning-ink);
+  --color-warning-edge: var(--ui-warning-edge);
+
+  --color-success-surface: var(--ui-success-surface);
+  --color-success-ink: var(--ui-success-ink);
+  --color-success-edge: var(--ui-success-edge);
+
+  --color-arrived-surface: var(--ui-arrived-surface);
+  --color-arrived-ink: var(--ui-arrived-ink);
+  --color-arrived-edge: var(--ui-arrived-edge);
+
+  --color-neutral-surface: var(--ui-neutral-surface);
+  --color-neutral-ink: var(--ui-neutral-ink);
+
+  --color-chart-1: var(--ui-chart-1);
+  --color-chart-2: var(--ui-chart-2);
+  --color-chart-3: var(--ui-chart-3);
+  --color-chart-unknown: var(--ui-chart-unknown);
+
+  /* 28px and 44px are measured off the site's cards. 14px is not: data surfaces
+     get a tighter corner so a dense table does not lose its first cell to a
+     44px curve. */
+  --radius-brand: 28px;
+  --radius-brand-lg: 44px;
+  --radius-data: 14px;
+
+  --shadow-glass: 0 15px 73px rgb(0 0 0 / 0.15);
+  --shadow-data: 0 1px 2px rgb(9 11 18 / 0.06), 0 12px 32px -20px rgb(9 11 18 / 0.5);
+  --shadow-lift: 0 2px 4px rgb(9 11 18 / 0.08), 0 18px 40px -22px rgb(9 11 18 / 0.55);
+
+  --ease-brand: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --animate-rise: rise 180ms var(--ease-brand) both;
+  --animate-fade: fade 140ms var(--ease-brand) both;
+  --animate-slide-up: slide-up 180ms var(--ease-brand) both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+  }
+
+  body {
+    min-height: 100dvh;
+    background-color: var(--ui-brand-blue);
+    color: var(--ui-on-brand);
+    /* Not `background-attachment: fixed`: on iOS that repaints the whole
+       gradient on every scroll frame, and the check-in list scrolls. */
+    overflow-x: hidden;
+  }
+
+  /* The gradient and its texture are one fixed layer behind everything, so a
+     long members table scrolls over a still background instead of dragging a
+     514-row-tall gradient with it. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+      url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiI+PGZpbHRlciBpZD0ibiI+PGZlVHVyYnVsZW5jZSB0eXBlPSJmcmFjdGFsTm9pc2UiIGJhc2VGcmVxdWVuY3k9IjAuODc1IiByZXN1bHQ9Im5vaXNlIi8+PGZlQ29sb3JNYXRyaXggdHlwZT0ibWF0cml4IiB2YWx1ZXM9IjAuNTkgMCAwIDAgMCAwIDAuMzYgMCAwIDAgMCAwIDAuODMgMCAwIDAgMCAwIDAuMTggMCIvPjwvZmlsdGVyPjxyZWN0IGZpbHRlcj0idXJsKCNuKSIgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIGZpbGw9InRyYW5zcGFyZW50Ii8+PC9zdmc+'),
+      linear-gradient(
+        140deg,
+        var(--ui-brand-violet) 0%,
+        var(--ui-brand-violet) 18%,
+        var(--ui-brand-blue) 55%,
+        var(--ui-brand-teal) 100%
+      );
+    background-size: 512px 512px, cover;
+    background-repeat: repeat, no-repeat;
+    opacity: 1;
+  }
+
+  /* One ring for the whole app, and it has to survive landing on a violet
+     gradient, a white table row and a solid violet button. No single colour
+     does that, so it is a dark ring inside a light halo: whichever of the two
+     the background swallows, the other one is still visible against it. */
+  :focus-visible {
+    outline: 2px solid var(--ui-focus-ring);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 5px var(--ui-focus-halo);
+  }
+}
+
+@layer components {
+  /* Brand-faithful: translucent white over the gradient, blurred, heavily
+     rounded, soft diffuse shadow. Only ever carries white text. */
+  .glass-panel {
+    background-color: var(--ui-glass-fill);
+    border: 1px solid var(--ui-glass-edge);
+    border-radius: var(--radius-brand);
+    box-shadow: var(--shadow-glass);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+  }
+
+  /* The opposite promise: opaque, so its contrast does not depend on the
+     gradient, the blur support of the browser, or what scrolled behind it. */
+  .data-panel {
+    background-color: var(--ui-surface);
+    border: 1px solid var(--ui-hairline);
+    border-radius: var(--radius-data);
+    box-shadow: var(--shadow-data);
+    color: var(--ui-ink);
+  }
+
+  /* The rainbow is a mark beside a label, never a surface and never on text.
+     Six flags' worth of stops in 4px, so it reads as an accent at a glance. */
+  .rainbow-mark {
+    display: inline-block;
+    width: 4px;
+    align-self: stretch;
+    min-height: 1em;
+    border-radius: 999px;
+    background-image: linear-gradient(
+      180deg,
+      #e40303 0 16.67%,
+      #ff8c00 0 33.33%,
+      #ffed00 0 50%,
+      #008026 0 66.67%,
+      #24408e 0 83.33%,
+      #732982 0 100%
+    );
+  }
+}
+
+/* Every animation above is an entrance or a state change, so removing it leaves
+   the same screen rather than a missing one. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

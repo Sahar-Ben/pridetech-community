@@ -5,7 +5,7 @@ import {
   FIELD_ERROR_CLASSES,
   FIELD_LABEL_CLASSES,
   INVALID_FIELD_BORDER_CLASSES,
-} from '../members/memberFieldStyles'
+} from '../../theme/fields'
 
 type FormTextFieldProps = {
   label: string

@@ -5,6 +5,7 @@ import { selectEventRegistrants } from './eventRegistrants'
 import { summariseEventAttendance } from './eventAttendance'
 import type { CommunityEvent } from './communityEvent'
 import type { Registrant } from './registrant'
+import { EMPTY_STATE_CLASSES } from '../../theme/surfaces'
 
 type EventListGroupProps = {
   title: string
@@ -38,15 +39,13 @@ export const EventListGroup = ({
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-2">
       <h3
-        className="text-sm font-semibold text-slate-500 uppercase dark:text-slate-400"
+        className="text-xs font-bold tracking-[0.18em] text-on-brand uppercase"
         id={headingId}
       >
         {title}
       </h3>
       {events.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-slate-300 px-4 py-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
-          {emptyMessage}
-        </p>
+        <p className={`${EMPTY_STATE_CLASSES} py-6`}>{emptyMessage}</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {events.map((event) => (

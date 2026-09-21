@@ -9,11 +9,12 @@ import { WalkInPanel } from './WalkInPanel'
 import { buildCheckInBoard, otherCheckInTab, toTabButtonId, type CheckInTab } from './checkInBoard'
 import { describeCheckInToggle, describeWalkInAdded } from './checkInActionText'
 import { toWalkInFieldsFromMember } from './checkIn'
+import { DOOR_CONTROLS_CLASSES, DOOR_SHEET_CLASSES } from './checkInDoorStyles'
 import {
   COMPACT_BUTTON_SIZE_CLASSES,
   SECONDARY_BUTTON_CLASSES,
   TOUCH_BUTTON_SIZE_CLASSES,
-} from './eventButtonStyles'
+} from '../../theme/controls'
 import { summariseEventAttendance } from './eventAttendance'
 import type { CommunityEvent } from './communityEvent'
 import type { Member } from '../members/member'
@@ -21,9 +22,6 @@ import type { Registrant } from './registrant'
 import type { WalkInFields } from './walkInValidation'
 
 const BACK_ARROW = '\u{2190}'
-
-const STICKY_DOOR_CONTROLS_CLASSES =
-  'sticky top-0 z-10 flex flex-col gap-2 bg-slate-50 py-2 dark:bg-slate-950'
 
 const WALK_IN_BUTTON_CLASSES = `w-full ${SECONDARY_BUTTON_CLASSES} ${TOUCH_BUTTON_SIZE_CLASSES}`
 
@@ -110,13 +108,13 @@ export const CheckInScreen = ({
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className={DOOR_SHEET_CLASSES}>
       <button className={BACK_BUTTON_CLASSES} onClick={onBack} type="button">
         <span aria-hidden="true">{BACK_ARROW} </span>
         Back to the event
       </button>
 
-      <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+      <h3 className="text-2xl font-bold text-ink">
         Check in: {event.name}
       </h3>
 
@@ -126,7 +124,7 @@ export const CheckInScreen = ({
 
       {/* Sticky: at a door the search box, the two tabs and the running total
           are the screen. Everything above them is read once and scrolled away. */}
-      <div className={STICKY_DOOR_CONTROLS_CLASSES}>
+      <div className={DOOR_CONTROLS_CLASSES}>
         <DoorSearchField
           inputRef={searchInputRef}
           label="Search by name or email"

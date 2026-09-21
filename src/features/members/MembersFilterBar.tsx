@@ -1,10 +1,12 @@
 import { useId } from 'react'
 import { MEMBER_STATUS_FILTERS, type MemberStatusFilter } from './memberFilters'
+import { FIELD_BORDER_CLASSES, FIELD_CONTROL_CLASSES } from '../../theme/fields'
 
-const LABEL_CLASSES = 'text-xs font-medium text-slate-500 dark:text-slate-400'
+/* The labels sit on the gradient rather than on a card, so they are white
+   rather than muted ink -- the controls under them are the opaque part. */
+const LABEL_CLASSES = 'text-xs font-bold tracking-wide text-on-brand uppercase'
 
-const CONTROL_CLASSES =
-  'rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100'
+const CONTROL_CLASSES = `${FIELD_CONTROL_CLASSES} ${FIELD_BORDER_CLASSES}`
 
 const isMemberStatusFilter = (value: string): value is MemberStatusFilter =>
   MEMBER_STATUS_FILTERS.some((statusFilter) => statusFilter === value)
@@ -32,7 +34,7 @@ export const MembersFilterBar = ({
           Search by name, email or company
         </label>
         <input
-          className={`${CONTROL_CLASSES} w-full`}
+          className={CONTROL_CLASSES}
           id={searchInputId}
           onChange={(event) => onSearchTextChange(event.target.value)}
           type="search"
@@ -40,7 +42,7 @@ export const MembersFilterBar = ({
         />
       </div>
 
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1 sm:w-44">
         <label className={LABEL_CLASSES} htmlFor={statusSelectId}>
           Status
         </label>

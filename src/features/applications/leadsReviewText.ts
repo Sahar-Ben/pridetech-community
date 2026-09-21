@@ -1,4 +1,5 @@
 import type { DuplicateApplicant } from './duplicateApplicants'
+import type { LeadView } from './leadViews'
 import type { LeadsReviewCounts } from './leadsReview'
 import type { LeadWithoutEmail } from './parseLeads'
 
@@ -19,7 +20,10 @@ const countPhrase = ({
    number it removed is on screen next to the number it kept. The second half
    counts Leads rows, not people, and repeat applicants make it larger than the
    Members tab is long, so it must never be worded as a headcount. */
-export const describeQueueCount = ({ counts }: { counts: LeadsReviewCounts }): string => {
+const describePendingCount = ({ counts }: { counts: LeadsReviewCounts }): string | undefined => {
+  if (counts.waitingCount + counts.alreadyMemberCount === 0) {
+    return undefined
+  }
   const waiting = `${counts.waitingCount} waiting`
   if (counts.alreadyMemberCount === 0) {
     return waiting
@@ -31,6 +35,37 @@ export const describeQueueCount = ({ counts }: { counts: LeadsReviewCounts }): s
   })
   return `${waiting}${SEPARATOR}${alreadyMembers}`
 }
+
+/* One number, and not the queue's second one. The already-a-member count says
+   how many waiting applications the filter set aside, which is a fact about the
+   queue: repeated over a list of declined applications it would read as a count
+   of them, and it counts none of them. */
+const describeDeclinedCount = ({ counts }: { counts: LeadsReviewCounts }): string | undefined => {
+  if (counts.declinedCount === 0) {
+    return undefined
+  }
+  return `${counts.declinedCount} declined`
+}
+
+/* Undefined rather than a zero: an empty view already says so in words below,
+   and `0 waiting` above it would be the same sentence twice. */
+export const describeApplicationsCount = ({
+  view,
+  counts,
+}: {
+  view: LeadView
+  counts: LeadsReviewCounts
+}): string | undefined =>
+  view === 'Declined' ? describeDeclinedCount({ counts }) : describePendingCount({ counts })
+
+/* Each view names itself when it is empty. Both are legitimately empty \u{2014} a
+   queue that has been worked through, and a sheet nobody has been declined on
+   \u{2014} and a shared "nothing here" would leave the reviewer unable to tell
+   which of the two they were looking at. */
+export const describeEmptyView = ({ view }: { view: LeadView }): string =>
+  view === 'Declined'
+    ? 'No applications have been declined.'
+    : 'No applications waiting for review.'
 
 /* Each note is its own function rather than one list of strings: the two that
    name Leads rows open a list of those rows, and a caller cannot attach a list

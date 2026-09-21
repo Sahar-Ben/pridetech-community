@@ -1,7 +1,7 @@
 import { LocalOnlySaveNotice } from '../members/LocalOnlySaveNotice'
 import type { EventLocalChange } from './eventLocalChange'
 
-const DETAIL_CLASSES = 'text-sm text-slate-600 dark:text-slate-400'
+const DETAIL_CLASSES = 'text-sm font-medium text-on-brand'
 
 type EventsLocalChangeNoticeProps = {
   change: EventLocalChange

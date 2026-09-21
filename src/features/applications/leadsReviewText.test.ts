@@ -5,8 +5,9 @@ import {
   describeDuplicateNames,
   describeLeadsWithoutEmailNote,
   describeLeadWithoutEmail,
+  describeApplicationsCount,
+  describeEmptyView,
   describeMembersWithoutEmailNote,
-  describeQueueCount,
   describeRepeatedEmailsNote,
   describeSharedAddressNote,
 } from './leadsReviewText'
@@ -14,26 +15,68 @@ import {
 const counts = (overrides: Partial<LeadsReviewCounts> = {}): LeadsReviewCounts => ({
   waitingCount: 0,
   alreadyMemberCount: 0,
+  declinedCount: 0,
   leadsWithoutEmailCount: 0,
   membersWithoutEmailCount: 0,
   repeatedLeadEmailCount: 0,
   ...overrides,
 })
 
-describe('describeQueueCount', () => {
+describe('describeApplicationsCount, under Pending', () => {
+  const describePending = (overrides: Partial<LeadsReviewCounts>) =>
+    describeApplicationsCount({ view: 'Pending', counts: counts(overrides) })
+
   it('should show what was set aside beside what is waiting, so the filter can be checked', () => {
-    expect(describeQueueCount({ counts: counts({ waitingCount: 307, alreadyMemberCount: 773 }) }))
-      .toBe('307 waiting \u{00b7} 773 applications from existing members')
+    expect(describePending({ waitingCount: 307, alreadyMemberCount: 773 })).toBe(
+      '307 waiting \u{00b7} 773 applications from existing members',
+    )
   })
 
   it('should say only how many are waiting when nothing was set aside', () => {
-    expect(describeQueueCount({ counts: counts({ waitingCount: 307 }) })).toBe('307 waiting')
+    expect(describePending({ waitingCount: 307 })).toBe('307 waiting')
   })
 
   it('should keep the sentence readable when a single person was set aside', () => {
-    expect(describeQueueCount({ counts: counts({ waitingCount: 4, alreadyMemberCount: 1 }) })).toBe(
+    expect(describePending({ waitingCount: 4, alreadyMemberCount: 1 })).toBe(
       '4 waiting \u{00b7} 1 application from an existing member',
     )
+  })
+
+  it('should count nothing when the queue is empty, since the empty state says it instead', () => {
+    expect(describePending({ declinedCount: 12 })).toBeUndefined()
+  })
+})
+
+describe('describeApplicationsCount, under Declined', () => {
+  const describeDeclined = (overrides: Partial<LeadsReviewCounts>) =>
+    describeApplicationsCount({ view: 'Declined', counts: counts(overrides) })
+
+  it('should say how many applications were declined', () => {
+    expect(describeDeclined({ declinedCount: 17 })).toBe('17 declined')
+  })
+
+  it('should keep the sentence readable for a single declined application', () => {
+    expect(describeDeclined({ declinedCount: 1 })).toBe('1 declined')
+  })
+
+  it('should never repeat the already-a-member count, which is about the queue', () => {
+    expect(describeDeclined({ declinedCount: 17, waitingCount: 256, alreadyMemberCount: 824 })).toBe(
+      '17 declined',
+    )
+  })
+
+  it('should count nothing when nobody has been declined', () => {
+    expect(describeDeclined({ waitingCount: 256 })).toBeUndefined()
+  })
+})
+
+describe('describeEmptyView', () => {
+  it('should say which view is empty when no application is waiting', () => {
+    expect(describeEmptyView({ view: 'Pending' })).toBe('No applications waiting for review.')
+  })
+
+  it('should say which view is empty when nothing has been declined', () => {
+    expect(describeEmptyView({ view: 'Declined' })).toBe('No applications have been declined.')
   })
 })
 

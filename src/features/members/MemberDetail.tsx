@@ -3,11 +3,17 @@ import { MemberSavedNotice } from './MemberSavedNotice'
 import { MemberDetailFields } from './MemberDetailFields'
 import { MemberEditForm } from './MemberEditForm'
 import type { Member } from './member'
+import {
+  COMPACT_BUTTON_SIZE_CLASSES,
+  SECONDARY_BUTTON_CLASSES,
+} from '../../theme/controls'
+import { DATA_PANEL_CLASSES, RECORD_TITLE_CLASSES } from '../../theme/surfaces'
 
 const BACK_ARROW = '\u{2190}'
 
-const SECONDARY_BUTTON_CLASSES =
-  'rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800'
+const ACTION_BUTTON_CLASSES = `${SECONDARY_BUTTON_CLASSES} ${COMPACT_BUTTON_SIZE_CLASSES}`
+
+const DETAIL_CLASSES = `${DATA_PANEL_CLASSES} animate-rise flex flex-col gap-4 px-4 py-4 sm:px-6`
 
 type MemberDetailProps = {
   member: Member
@@ -67,11 +73,11 @@ export const MemberDetail = ({ member, onClose, onSave }: MemberDetailProps) => 
   }
 
   return (
-    <article className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-900">
+    <article className={DETAIL_CLASSES}>
       <div className="flex flex-col gap-2">
         {!isEditing && (
           <button
-            className={`${SECONDARY_BUTTON_CLASSES} self-start`}
+            className={`${ACTION_BUTTON_CLASSES} self-start`}
             onClick={onClose}
             type="button"
           >
@@ -81,7 +87,7 @@ export const MemberDetail = ({ member, onClose, onSave }: MemberDetailProps) => 
         )}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h3
-            className="text-xl font-semibold text-slate-900 outline-none dark:text-slate-100"
+            className={`${RECORD_TITLE_CLASSES} outline-none`}
             ref={headingRef}
             tabIndex={-1}
           >
@@ -89,7 +95,7 @@ export const MemberDetail = ({ member, onClose, onSave }: MemberDetailProps) => 
           </h3>
           {!isEditing && (
             <button
-              className={SECONDARY_BUTTON_CLASSES}
+              className={ACTION_BUTTON_CLASSES}
               onClick={() => setIsEditing(true)}
               ref={editButtonRef}
               type="button"
@@ -110,9 +116,9 @@ export const MemberDetail = ({ member, onClose, onSave }: MemberDetailProps) => 
         <MemberDetailFields member={member} />
       )}
 
-      <section className="rounded-md border border-dashed border-slate-300 px-4 py-3 dark:border-slate-700">
-        <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Event history</h4>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+      <section className="rounded-xl border border-dashed border-edge px-4 py-3">
+        <h4 className="text-sm font-bold text-ink">Event history</h4>
+        <p className="mt-1 text-sm text-ink-muted">
           Not built yet. Nothing in this app records who attended which event, so there is no
           attendance to show here.
         </p>

@@ -5,7 +5,7 @@ import { searchCommunityMembers } from './communitySearch'
 import type { Member } from '../members/member'
 import type { Registrant } from './registrant'
 
-const HINT_CLASSES = 'text-sm text-slate-500 dark:text-slate-400'
+const HINT_CLASSES = 'text-sm text-ink-muted'
 
 type CommunityWalkInSearchProps = {
   members: readonly Member[]
@@ -41,7 +41,7 @@ export const CommunityWalkInSearch = ({
 
       {/* The sheet is the thing this screen could be believed about, so the
           sentence that would be a lie is the one spelled out. */}
-      <p className="text-xs font-medium text-amber-800 dark:text-amber-400">
+      <p className="text-xs font-semibold text-warning-ink">
         These are invented sample members held in this browser. This search does not read your
         Google Sheet.
       </p>

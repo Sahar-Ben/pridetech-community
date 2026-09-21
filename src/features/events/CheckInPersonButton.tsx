@@ -5,23 +5,32 @@ const CIRCLE_GLYPH = '\u{25CB}'
 const SEPARATOR = ' \u{00b7} '
 
 /* `min-h-16` is the tap target, not decoration: this is used one-handed, on a
-   phone, by somebody who is also talking to the person in front of them. */
-const BUTTON_CLASSES =
-  'flex min-h-16 w-full items-center justify-between gap-3 rounded-lg border-2 px-4 py-3 text-left'
+   phone, by somebody who is also talking to the person in front of them.
 
-const CHECKED_IN_CLASSES =
-  'border-emerald-600 bg-emerald-50 dark:border-emerald-500 dark:bg-emerald-950'
+   Nothing on this row is translucent and nothing on it is display type. It is
+   the screen the brief would have kept plain if it could only keep one, so the
+   only thing the restyle gave it is a softer corner and a 150ms state change. */
+const BUTTON_CLASSES = [
+  'flex min-h-16 w-full items-center justify-between gap-3 rounded-2xl border-2 px-4 py-3 text-left',
+  'transition-colors duration-150 ease-brand',
+].join(' ')
 
-const UNARRIVED_CLASSES =
-  'border-slate-300 bg-white hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800'
+const CHECKED_IN_CLASSES = 'border-arrived-edge bg-arrived-surface'
+
+const UNARRIVED_CLASSES = 'border-edge bg-surface hover:bg-surface-sunken'
 
 const TAG_CLASSES =
-  'rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+  'rounded-full bg-neutral-surface px-2.5 py-0.5 text-xs font-bold text-neutral-ink'
 
 /* Quiet on purpose: at a members-only door this is the one row in twenty that
    needs a second look, and a loud badge on it would train the eye to skip it. */
 const MEMBER_MARKER_CLASSES =
-  'rounded-full border border-amber-400 px-2 py-0.5 text-xs font-medium text-amber-800 dark:border-amber-700 dark:text-amber-400'
+  'rounded-full border border-warning-edge px-2.5 py-0.5 text-xs font-bold text-warning-ink'
+
+const STATE_CLASSES = {
+  checkedIn: 'text-arrived-ink',
+  unarrived: 'text-ink-muted',
+} as const
 
 type CheckInPersonButtonProps = {
   registrant: Registrant
@@ -43,14 +52,14 @@ export const CheckInPersonButton = ({
       onClick={() => onToggle(registrant.id)}
       type="button"
     >
-      <span className="flex min-w-0 flex-col gap-0.5">
-        <span className="text-base font-semibold break-words text-slate-900 dark:text-slate-100">
+      <span className="flex min-w-0 flex-col gap-1">
+        <span className="text-lg leading-tight font-bold break-words text-ink">
           {registrant.name}
         </span>
-        <span className="text-xs break-words text-slate-500 dark:text-slate-400">
+        <span className="text-sm break-words text-ink-muted">
           {registrant.email ?? 'No email on this sheet'}
         </span>
-        <span className="flex flex-wrap gap-1">
+        <span className="flex flex-wrap gap-1.5">
           {registrant.registration === 'waitlist' && <span className={TAG_CLASSES}>Waitlist</span>}
           {registrant.isWalkIn && <span className={TAG_CLASSES}>Walk-in</span>}
           {memberMarker !== undefined && (
@@ -60,13 +69,13 @@ export const CheckInPersonButton = ({
       </span>
 
       <span
-        className={`flex shrink-0 items-center gap-1.5 text-sm font-semibold ${
-          isCheckedIn
-            ? 'text-emerald-800 dark:text-emerald-300'
-            : 'text-slate-500 dark:text-slate-400'
+        className={`flex shrink-0 items-center gap-1.5 text-sm font-bold ${
+          isCheckedIn ? STATE_CLASSES.checkedIn : STATE_CLASSES.unarrived
         }`}
       >
-        <span aria-hidden="true">{isCheckedIn ? CHECK_GLYPH : CIRCLE_GLYPH}</span>
+        <span aria-hidden="true" className="text-lg">
+          {isCheckedIn ? CHECK_GLYPH : CIRCLE_GLYPH}
+        </span>
         {isCheckedIn ? `Checked in${SEPARATOR}tap to undo` : 'Tap to check in'}
       </span>
     </button>

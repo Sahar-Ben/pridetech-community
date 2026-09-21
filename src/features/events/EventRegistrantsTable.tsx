@@ -5,10 +5,11 @@ import type { Member } from '../members/member'
 import type { Registrant } from './registrant'
 
 const HEADER_CELL_CLASSES =
-  'px-2 py-2 text-left text-xs font-semibold text-slate-500 dark:text-slate-400'
+  'px-3 py-2.5 text-left text-xs font-bold tracking-wide text-ink-muted uppercase'
 
-const WRAPPER_CLASSES =
-  'rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900'
+/* Nested inside the event detail panel, so it borrows that panel's surface
+   rather than stacking a second shadow on top of it. */
+const WRAPPER_CLASSES = 'rounded-xl border border-hairline bg-surface'
 
 type EventRegistrantsTableProps = {
   registrants: readonly Registrant[]
@@ -23,7 +24,7 @@ export const EventRegistrantsTable = ({
 }: EventRegistrantsTableProps) => (
   <div className={WRAPPER_CLASSES}>
     <table aria-label="Registrants" className="w-full table-fixed text-sm">
-      <thead className="bg-slate-100 dark:bg-slate-800">
+      <thead className="bg-surface-raised">
         <tr>
           <th className={`${HEADER_CELL_CLASSES} ${REGISTRANT_COLUMN_CLASSES.name}`} scope="col">
             Name

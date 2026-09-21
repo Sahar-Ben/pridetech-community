@@ -1,8 +1,15 @@
-import { COMPACT_BUTTON_SIZE_CLASSES, SECONDARY_BUTTON_CLASSES } from './eventButtonStyles'
+import { COMPACT_BUTTON_SIZE_CLASSES, SECONDARY_BUTTON_CLASSES } from '../../theme/controls'
+import { DATA_PANEL_CLASSES } from '../../theme/surfaces'
 import { formatEventDate } from './eventDate'
 import type { CommunityEvent } from './communityEvent'
 
 const SEPARATOR = ' \u{00b7} '
+
+const ROW_CLASSES = [
+  DATA_PANEL_CLASSES,
+  'flex flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between',
+  'transition-shadow duration-200 ease-brand hover:shadow-lift',
+].join(' ')
 
 const ROW_BUTTON_CLASSES = `${SECONDARY_BUTTON_CLASSES} ${COMPACT_BUTTON_SIZE_CLASSES}`
 
@@ -15,26 +22,26 @@ type EventRowProps = {
 }
 
 export const EventRow = ({ event, attendanceText, onOpen, onEdit, onArchive }: EventRowProps) => (
-  <li className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800 dark:bg-slate-900">
+  <li className={ROW_CLASSES}>
     <div className="min-w-0 space-y-1">
-      <h4 className="text-base font-semibold">
+      <h4 className="text-base font-bold">
         <button
-          className="rounded text-left text-slate-900 underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:text-slate-100"
+          className="rounded text-left text-ink underline-offset-2 hover:underline"
           onClick={() => onOpen(event)}
           type="button"
         >
           {event.name}
         </button>
       </h4>
-      <p className="text-sm text-slate-600 dark:text-slate-400">
+      <p className="text-sm text-ink">
         {formatEventDate(event.date)}
         {SEPARATOR}
         {event.location}
       </p>
       {event.host !== undefined && (
-        <p className="text-xs text-slate-500 dark:text-slate-400">Hosted by {event.host}</p>
+        <p className="text-xs text-ink-muted">Hosted by {event.host}</p>
       )}
-      <p className="text-xs font-medium text-slate-700 dark:text-slate-300">{attendanceText}</p>
+      <p className="text-xs font-semibold text-ink">{attendanceText}</p>
     </div>
 
     <div className="flex shrink-0 items-center gap-2">

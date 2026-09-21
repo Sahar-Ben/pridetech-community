@@ -62,3 +62,33 @@ describe('withoutDecidedApplications', () => {
     expect(review.counts.leadsWithoutEmailCount).toBe(original.counts.leadsWithoutEmailCount)
   })
 })
+
+describe('withoutDecidedApplications, for an application approved from the declined list', () => {
+  const reviewOfOneDeclined = () =>
+    buildLeadsReviewFixture({
+      leads: [
+        lead({ rowNumber: 2, status: 'declined' }),
+        lead({ rowNumber: 3, name: 'Noa Feldman', email: 'noa@example.com', status: 'declined' }),
+      ],
+    })
+
+  it('should drop the application that has just been approved', () => {
+    const review = withoutDecidedApplications({
+      review: reviewOfOneDeclined(),
+      decidedRowNumbers: new Set([2]),
+    })
+
+    expect(review.declinedApplications.map((declined) => declined.lead.name)).toEqual([
+      'Noa Feldman',
+    ])
+  })
+
+  it('should count down as declined applications are approved', () => {
+    const review = withoutDecidedApplications({
+      review: reviewOfOneDeclined(),
+      decidedRowNumbers: new Set([2]),
+    })
+
+    expect(review.counts.declinedCount).toBe(1)
+  })
+})

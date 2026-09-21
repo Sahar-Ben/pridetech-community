@@ -3,7 +3,7 @@ import {
   FIELD_BORDER_CLASSES,
   FIELD_CONTROL_CLASSES,
   FIELD_LABEL_CLASSES,
-} from './memberFieldStyles'
+} from '../../theme/fields'
 import type { SelectOption } from './memberEditOptions'
 
 type MemberEditSelectFieldProps<TValue extends string> = {

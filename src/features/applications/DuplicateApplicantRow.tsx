@@ -5,6 +5,9 @@ import {
   describeSharedAddressNote,
 } from './leadsReviewText'
 import { SheetRowLink } from './SheetRowLink'
+import { DATA_PANEL_CLASSES } from '../../theme/surfaces'
+
+const ROW_CLASSES = `${DATA_PANEL_CLASSES} flex flex-col gap-0.5 px-3 py-2`
 
 type DuplicateApplicantRowProps = {
   duplicate: DuplicateApplicant
@@ -15,15 +18,11 @@ export const DuplicateApplicantRow = ({ duplicate, spreadsheetId }: DuplicateApp
   const sharedAddressNote = describeSharedAddressNote({ duplicate })
 
   return (
-    <li className="flex flex-col gap-0.5 rounded-md border border-slate-200 bg-white px-3 py-2 dark:border-slate-800 dark:bg-slate-900">
-      <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
-        {describeDuplicateNames({ duplicate })}
-      </p>
-      <p className="text-xs text-slate-500 dark:text-slate-400">
-        {describeDuplicateApplicant({ duplicate })}
-      </p>
+    <li className={ROW_CLASSES}>
+      <p className="text-sm font-semibold text-ink">{describeDuplicateNames({ duplicate })}</p>
+      <p className="text-xs text-ink-muted">{describeDuplicateApplicant({ duplicate })}</p>
       {sharedAddressNote !== undefined && (
-        <p className="text-xs text-amber-700 dark:text-amber-400">{sharedAddressNote}</p>
+        <p className="text-xs font-semibold text-warning-ink">{sharedAddressNote}</p>
       )}
       <p className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
         {duplicate.rowNumbers.map((rowNumber) => (

@@ -1,7 +1,7 @@
 import type { RegistrantLink } from './registrantLink'
 
-const NEUTRAL_CLASSES = 'text-slate-600 dark:text-slate-400'
-const UNRESOLVED_CLASSES = 'text-amber-800 dark:text-amber-400'
+const NEUTRAL_CLASSES = 'text-ink-muted'
+const UNRESOLVED_CLASSES = 'font-semibold text-warning-ink'
 
 type RegistrantLinkNoteProps = {
   link: RegistrantLink

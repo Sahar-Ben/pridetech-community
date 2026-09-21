@@ -7,6 +7,7 @@ import type { Member } from './member'
 import { filterMembers, type MemberStatusFilter } from './memberFilters'
 import { useDebouncedValue } from './useDebouncedValue'
 import type { SaveMember } from './useMemberSave'
+import { EMPTY_STATE_CLASSES, SHELL_SECTION_TITLE_CLASSES } from '../../theme/surfaces'
 
 const SEARCH_SETTLE_MILLISECONDS = 200
 
@@ -57,9 +58,9 @@ export const MembersDirectory = ({ members, onSaveMember }: MembersDirectoryProp
   )
 
   return (
-    <section className="mx-auto w-full max-w-3xl px-4 pb-10">
+    <section className="mx-auto w-full max-w-4xl px-4 pb-12">
       <header className="py-3">
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Members</h2>
+        <h2 className={SHELL_SECTION_TITLE_CLASSES}>Members</h2>
       </header>
 
       {openMember === undefined ? (
@@ -72,12 +73,10 @@ export const MembersDirectory = ({ members, onSaveMember }: MembersDirectoryProp
             statusFilter={statusFilter}
           />
           {visibleMembers.length === 0 ? (
-            <p className="rounded-lg border border-dashed border-slate-300 px-4 py-10 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
-              No members match this search.
-            </p>
+            <p className={EMPTY_STATE_CLASSES}>No members match this search.</p>
           ) : (
             <div className="flex flex-col gap-2">
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-sm font-semibold text-on-brand">
                 Showing {visibleMembers.length} of {members.length}
               </p>
               <MembersTable

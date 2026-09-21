@@ -1,6 +1,18 @@
 import { useId, useState } from 'react'
 import type { ApprovalDecision, DeclineDecision, Gender } from './decision'
 import type { Lead } from './lead'
+import {
+  COMPACT_BUTTON_SIZE_CLASSES,
+  PRIMARY_BUTTON_CLASSES,
+  SECONDARY_BUTTON_CLASSES,
+} from '../../theme/controls'
+import { FIELD_BORDER_CLASSES, FIELD_LABEL_CLASSES } from '../../theme/fields'
+
+const GENDER_SELECT_CLASSES = `rounded-xl border bg-surface px-2.5 py-1.5 text-sm text-ink disabled:opacity-50 ${FIELD_BORDER_CLASSES}`
+
+const APPROVE_BUTTON_CLASSES = `${PRIMARY_BUTTON_CLASSES} ${COMPACT_BUTTON_SIZE_CLASSES}`
+
+const DECLINE_BUTTON_CLASSES = `${SECONDARY_BUTTON_CLASSES} ${COMPACT_BUTTON_SIZE_CLASSES}`
 
 const GENDER_OPTIONS: ReadonlyArray<{ value: Gender; label: string }> = [
   { value: 'unknown', label: 'Unknown' },
@@ -11,11 +23,14 @@ const GENDER_OPTIONS: ReadonlyArray<{ value: Gender; label: string }> = [
 const isGender = (value: string): value is Gender =>
   GENDER_OPTIONS.some((option) => option.value === value)
 
+/* `onDecline` is absent on an application that was already declined, and the
+   button goes with it: the list it is being read from is the record of that
+   decision, so the only act left on it is the one that reverses it. */
 type ApplicationDecisionControlsProps = {
   lead: Lead
   isSaving: boolean
   onApprove: (decision: ApprovalDecision) => void
-  onDecline: (decision: DeclineDecision) => void
+  onDecline: ((decision: DeclineDecision) => void) | undefined
 }
 
 export const ApplicationDecisionControls = ({
@@ -29,14 +44,11 @@ export const ApplicationDecisionControls = ({
 
   return (
     <div className="flex shrink-0 items-center gap-2">
-      <label
-        className="text-xs font-medium text-slate-500 dark:text-slate-400"
-        htmlFor={genderSelectId}
-      >
+      <label className={FIELD_LABEL_CLASSES} htmlFor={genderSelectId}>
         Gender
       </label>
       <select
-        className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+        className={GENDER_SELECT_CLASSES}
         disabled={isSaving}
         id={genderSelectId}
         value={gender}
@@ -54,21 +66,23 @@ export const ApplicationDecisionControls = ({
         ))}
       </select>
       <button
-        className="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+        className={APPROVE_BUTTON_CLASSES}
         disabled={isSaving}
         type="button"
         onClick={() => onApprove({ lead, gender })}
       >
         {isSaving ? 'Saving...' : 'Approve'}
       </button>
-      <button
-        className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
-        disabled={isSaving}
-        type="button"
-        onClick={() => onDecline({ lead })}
-      >
-        Decline
-      </button>
+      {onDecline !== undefined && (
+        <button
+          className={DECLINE_BUTTON_CLASSES}
+          disabled={isSaving}
+          type="button"
+          onClick={() => onDecline({ lead })}
+        >
+          Decline
+        </button>
+      )}
     </div>
   )
 }

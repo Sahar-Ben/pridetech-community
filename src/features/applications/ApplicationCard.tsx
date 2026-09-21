@@ -1,19 +1,35 @@
 import { ApplicationDecisionControls } from './ApplicationDecisionControls'
 import type { ApprovalDecision, DeclineDecision } from './decision'
-import type { WaitingApplication } from './leadsReview'
+import type { ReviewableApplication } from './leadsReview'
 import { PriorMemberNotice } from './PriorMemberNotice'
 import type { LeadDecisionState } from './useLeadDecisions'
+import { NoticeBanner } from '../../app/NoticeBanner'
+import { DATA_PANEL_CLASSES } from '../../theme/surfaces'
 
 const FIELD_SEPARATOR = ' \u{00b7} '
+
+/* Opaque, not glass. This is the surface the organiser reads 256 times in a
+   sitting, so its contrast is a fixed 17.7:1 rather than a function of where
+   the card happens to fall on the gradient. */
+const CARD_CLASSES = [
+  DATA_PANEL_CLASSES,
+  'flex flex-col gap-3 px-4 py-3.5',
+  'transition-[opacity,transform,box-shadow] duration-200 ease-brand',
+  'hover:shadow-lift',
+].join(' ')
+
+/* The card is on its way out of the queue and cannot be acted on again, and
+   saying so with the same fade it will leave by costs no extra step. */
+const SAVING_CLASSES = 'scale-[0.995] opacity-60'
 
 const joinPresentFields = (fields: ReadonlyArray<string | undefined>): string =>
   fields.filter((field) => field !== undefined).join(FIELD_SEPARATOR)
 
 type ApplicationCardProps = {
-  application: WaitingApplication
+  application: ReviewableApplication
   decisionState: LeadDecisionState
   onApprove: (decision: ApprovalDecision) => void
-  onDecline: (decision: DeclineDecision) => void
+  onDecline: ((decision: DeclineDecision) => void) | undefined
 }
 
 export const ApplicationCard = ({
@@ -30,24 +46,18 @@ export const ApplicationCard = ({
   const contactLine = joinPresentFields([isNamedByEmail ? undefined : lead.email, lead.phone])
 
   return (
-    <li className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
+    <li className={`${CARD_CLASSES} ${decisionState.isSaving ? SAVING_CLASSES : ''}`}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0 space-y-1">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
-            {applicantName}
-          </h3>
-          {roleLine !== '' && (
-            <p className="text-sm text-slate-700 dark:text-slate-300">{roleLine}</p>
-          )}
-          {contextLine !== '' && (
-            <p className="text-xs text-slate-500 dark:text-slate-400">{contextLine}</p>
-          )}
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <h3 className="text-base font-bold text-ink">{applicantName}</h3>
+          {roleLine !== '' && <p className="text-sm text-ink">{roleLine}</p>}
+          {contextLine !== '' && <p className="text-xs text-ink-muted">{contextLine}</p>}
+          <p className="text-xs text-ink-muted">
             {lead.linkedIn === undefined ? (
-              <span className="font-medium text-amber-700 dark:text-amber-500">No LinkedIn</span>
+              <span className="font-semibold text-warning-ink">No LinkedIn</span>
             ) : (
               <a
-                className="font-medium text-indigo-700 underline underline-offset-2 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
+                className="font-semibold text-accent underline underline-offset-2"
                 href={lead.linkedIn}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -75,12 +85,7 @@ export const ApplicationCard = ({
       {priorMember !== undefined && <PriorMemberNotice priorMember={priorMember} />}
 
       {decisionState.errorMessage !== undefined && (
-        <p
-          className="rounded-md border-2 border-rose-600 bg-rose-50 px-3 py-2 text-sm text-rose-900 dark:border-rose-500 dark:bg-rose-950 dark:text-rose-200"
-          role="alert"
-        >
-          {decisionState.errorMessage}
-        </p>
+        <NoticeBanner role="alert" title={decisionState.errorMessage} tone="danger" />
       )}
     </li>
   )

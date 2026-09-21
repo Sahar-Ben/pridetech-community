@@ -33,7 +33,7 @@ export const WorkspaceSection = ({
      from the spreadsheet, and the notice above it says so. */
   return (
     <div className="flex flex-col gap-3">
-      <div className="mx-auto w-full max-w-3xl px-4 pt-4">
+      <div className="mx-auto w-full max-w-4xl px-4 pt-4">
         <SampleSectionNotice sectionName="event" />
       </div>
       <EventsSection

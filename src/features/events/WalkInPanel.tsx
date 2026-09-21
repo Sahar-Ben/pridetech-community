@@ -3,13 +3,15 @@ import { CommunityWalkInSearch } from './CommunityWalkInSearch'
 import { FormCheckboxField } from './FormCheckboxField'
 import { MembersOnlyWarning } from './MembersOnlyWarning'
 import { WalkInForm } from './WalkInForm'
-import { SECONDARY_BUTTON_CLASSES, TOUCH_BUTTON_SIZE_CLASSES } from './eventButtonStyles'
+import { SECONDARY_BUTTON_CLASSES, TOUCH_BUTTON_SIZE_CLASSES } from '../../theme/controls'
 import type { Member } from '../members/member'
 import type { Registrant } from './registrant'
 import type { WalkInFields } from './walkInValidation'
 
-const PANEL_CLASSES =
-  'flex flex-col gap-3 rounded-lg border border-slate-300 px-4 py-3 dark:border-slate-700'
+const PANEL_CLASSES = [
+  'flex flex-col gap-3 rounded-2xl border-2 border-edge bg-surface px-4 py-3',
+  'animate-slide-up shadow-data',
+].join(' ')
 
 const CANCEL_BUTTON_CLASSES = `self-start ${SECONDARY_BUTTON_CLASSES} ${TOUCH_BUTTON_SIZE_CLASSES}`
 
@@ -41,7 +43,7 @@ export const WalkInPanel = ({
 
   return (
     <section aria-label={PANEL_TITLE} className={PANEL_CLASSES}>
-      <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{PANEL_TITLE}</h4>
+      <h4 className="text-base font-bold text-ink">{PANEL_TITLE}</h4>
 
       <FormCheckboxField
         hint="Almost everybody at the door is a member. Tick this only for somebody the community list does not know."

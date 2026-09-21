@@ -1,8 +1,8 @@
 import { useId } from 'react'
 
-const CHECKBOX_CLASSES = 'size-5 shrink-0 accent-indigo-600'
+const CHECKBOX_CLASSES = 'size-5 shrink-0 accent-[var(--ui-accent-solid)]'
 
-const HINT_CLASSES = 'text-xs text-slate-500 dark:text-slate-400'
+const HINT_CLASSES = 'text-xs text-ink-muted'
 
 type FormCheckboxFieldProps = {
   label: string
@@ -26,7 +26,7 @@ export const FormCheckboxField = ({ label, isChecked, onChange, hint }: FormChec
           onChange={(changeEvent) => onChange(changeEvent.target.checked)}
           type="checkbox"
         />
-        <label className="text-sm text-slate-900 dark:text-slate-100" htmlFor={inputId}>
+        <label className="text-sm font-medium text-ink" htmlFor={inputId}>
           {label}
         </label>
       </div>

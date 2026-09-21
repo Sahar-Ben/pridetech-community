@@ -2,15 +2,15 @@ import { memo } from 'react'
 import { MemberRow } from './MemberRow'
 import { MEMBER_COLUMN_CLASSES } from './memberColumns'
 import type { Member } from './member'
+import { DATA_PANEL_CLASSES } from '../../theme/surfaces'
 
 const HEADER_CELL_CLASSES =
-  'px-2 py-2 text-left text-xs font-semibold text-slate-500 dark:text-slate-400'
+  'px-3 py-2.5 text-left text-xs font-bold tracking-wide text-ink-muted uppercase'
 
 /* No `overflow` on the wrapper: any scroll container here, hidden or auto,
    would become the sticky header's scrollport and the header would stop
    following the page. Narrow viewports drop columns instead of scrolling. */
-const WRAPPER_CLASSES =
-  'rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900'
+const WRAPPER_CLASSES = DATA_PANEL_CLASSES
 
 type MembersTableProps = {
   members: readonly Member[]
@@ -27,10 +27,10 @@ const MembersTableView = ({
 }: MembersTableProps) => (
   <div className={WRAPPER_CLASSES}>
     <table aria-label="Members" className="w-full table-fixed text-sm">
-      <thead className="sticky top-0 bg-slate-100 dark:bg-slate-800">
+      <thead className="sticky top-0 bg-surface-raised">
         <tr>
           <th
-            className={`${HEADER_CELL_CLASSES} ${MEMBER_COLUMN_CLASSES.name} rounded-tl-lg`}
+            className={`${HEADER_CELL_CLASSES} ${MEMBER_COLUMN_CLASSES.name} rounded-tl-[var(--radius-data)]`}
             scope="col"
           >
             Name
@@ -48,7 +48,7 @@ const MembersTableView = ({
             Gender
           </th>
           <th
-            className={`${HEADER_CELL_CLASSES} ${MEMBER_COLUMN_CLASSES.status} rounded-tr-lg`}
+            className={`${HEADER_CELL_CLASSES} ${MEMBER_COLUMN_CLASSES.status} rounded-tr-[var(--radius-data)]`}
             scope="col"
           >
             Status

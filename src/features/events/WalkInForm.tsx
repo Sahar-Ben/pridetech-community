@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { FormTextField } from './FormTextField'
-import { PRIMARY_BUTTON_CLASSES, TOUCH_BUTTON_SIZE_CLASSES } from './eventButtonStyles'
+import { PRIMARY_BUTTON_CLASSES, TOUCH_BUTTON_SIZE_CLASSES } from '../../theme/controls'
 import { hasWalkInErrors, validateWalkInDraft, type WalkInErrors } from './walkInValidation'
 import type { WalkInFields } from './walkInValidation'
 

@@ -1,5 +1,6 @@
-const ACTION_CLASSES =
-  'rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800'
+import { COMPACT_BUTTON_SIZE_CLASSES, SHELL_BUTTON_CLASSES } from '../theme/controls'
+
+const ACTION_CLASSES = `${SHELL_BUTTON_CLASSES} ${COMPACT_BUTTON_SIZE_CLASSES}`
 
 type WorkspaceHeaderProps = {
   onChangeSpreadsheet: () => void
@@ -7,8 +8,13 @@ type WorkspaceHeaderProps = {
 }
 
 export const WorkspaceHeader = ({ onChangeSpreadsheet, onSignOut }: WorkspaceHeaderProps) => (
-  <div className="mx-auto flex w-full max-w-3xl flex-wrap items-center justify-between gap-2 px-4 pt-4">
-    <h1 className="text-2xl font-semibold">PrideTech Community</h1>
+  <div className="mx-auto flex w-full max-w-4xl flex-wrap items-center justify-between gap-3 px-4 pt-6 pb-2">
+    <div className="flex items-stretch gap-3">
+      <span aria-hidden="true" className="rainbow-mark" />
+      <h1 className="font-display text-3xl leading-none font-light tracking-tight text-on-brand sm:text-4xl">
+        PrideTech Community
+      </h1>
+    </div>
     <div className="flex items-center gap-2">
       <button className={ACTION_CLASSES} onClick={onChangeSpreadsheet} type="button">
         Change spreadsheet

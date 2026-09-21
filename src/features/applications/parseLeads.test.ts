@@ -98,6 +98,14 @@ describe('parseLeads', () => {
     expect(leads.map((lead) => lead.status)).toEqual(['approved', 'declined'])
   })
 
+  it('should count a status nobody recognises as pending, so the applicant stays visible', () => {
+    const { leads } = parseLeads({
+      rows: [HEADER_ROW, dataRow(['t', 'A', '', '', '', 'a@b.com', '', '', '', '', 'Decline'])],
+    })
+
+    expect(leads.map((lead) => lead.status)).toEqual(['pending'])
+  })
+
   it('should give each lead its 1-based sheet row number so writes target the right row', () => {
     const { leads } = parseLeads({
       rows: [

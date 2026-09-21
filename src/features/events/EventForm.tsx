@@ -5,17 +5,20 @@ import {
   COMPACT_BUTTON_SIZE_CLASSES,
   PRIMARY_BUTTON_CLASSES,
   SECONDARY_BUTTON_CLASSES,
-} from './eventButtonStyles'
+} from '../../theme/controls'
 import {
   hasEventDraftErrors,
   validateEventDraft,
   type EventDraft,
   type EventDraftErrors,
 } from './eventDraft'
+import { DATA_PANEL_CLASSES } from '../../theme/surfaces'
 
 const SAVE_BUTTON_CLASSES = `${PRIMARY_BUTTON_CLASSES} ${COMPACT_BUTTON_SIZE_CLASSES}`
 
 const CANCEL_BUTTON_CLASSES = `${SECONDARY_BUTTON_CLASSES} ${COMPACT_BUTTON_SIZE_CLASSES}`
+
+const FORM_CLASSES = `${DATA_PANEL_CLASSES} animate-rise flex flex-col gap-4 px-4 py-4 sm:px-6`
 
 type EventFormProps = {
   title: string
@@ -49,11 +52,11 @@ export const EventForm = ({ title, initialDraft, onSave, onCancel }: EventFormPr
 
   return (
     <form
-      className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-900"
+      className={FORM_CLASSES}
       noValidate
       onSubmit={submitEvent}
     >
-      <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{title}</h3>
+      <h3 className="text-2xl font-bold tracking-tight text-ink">{title}</h3>
 
       <div className="grid grid-cols-1 gap-x-8 sm:grid-cols-2">
         <FormTextField
@@ -97,7 +100,7 @@ export const EventForm = ({ title, initialDraft, onSave, onCancel }: EventFormPr
         <button className={CANCEL_BUTTON_CLASSES} onClick={onCancel} type="button">
           Cancel
         </button>
-        <p className="text-xs font-medium text-amber-800 dark:text-amber-400">
+        <p className="text-xs font-semibold text-warning-ink">
           Saving keeps the event in this browser only. Nothing here reaches the Google Sheet yet.
         </p>
       </div>

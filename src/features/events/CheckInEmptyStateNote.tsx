@@ -1,11 +1,11 @@
-import { SECONDARY_BUTTON_CLASSES, TOUCH_BUTTON_SIZE_CLASSES } from './eventButtonStyles'
+import { SECONDARY_BUTTON_CLASSES, TOUCH_BUTTON_SIZE_CLASSES } from '../../theme/controls'
 import type { CheckInEmptyState, CheckInTab } from './checkInBoard'
 import type { Registrant } from './registrant'
 
 const NOTE_CLASSES =
-  'flex flex-col items-center gap-3 rounded-lg border border-dashed border-slate-300 px-4 py-10 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400'
+  'flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-edge px-4 py-10 text-center text-base text-ink-muted'
 
-const HEADLINE_CLASSES = 'text-base font-semibold text-slate-900 dark:text-slate-100'
+const HEADLINE_CLASSES = 'text-lg font-bold text-ink'
 
 const SHOW_BUTTON_CLASSES = `${SECONDARY_BUTTON_CLASSES} ${TOUCH_BUTTON_SIZE_CLASSES}`
 

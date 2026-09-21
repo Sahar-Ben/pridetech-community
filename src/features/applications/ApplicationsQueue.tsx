@@ -1,8 +1,23 @@
+import { useState } from 'react'
 import { ApplicationCard } from './ApplicationCard'
+import { isDecliningOffered, selectApplicationsInView, type LeadView } from './leadViews'
 import type { LeadsReview } from './leadsReview'
 import { LeadsDataQualityNotes } from './LeadsDataQualityNotes'
-import { describeQueueCount } from './leadsReviewText'
+import { describeApplicationsCount, describeEmptyView } from './leadsReviewText'
+import { LeadsFilterBar } from './LeadsFilterBar'
 import type { LeadDecisions } from './useLeadDecisions'
+import { COMPACT_BUTTON_SIZE_CLASSES, SHELL_BUTTON_CLASSES } from '../../theme/controls'
+import { EMPTY_STATE_CLASSES, SHELL_SECTION_TITLE_CLASSES } from '../../theme/surfaces'
+
+/* Glass and blur on the strip that follows the scroll, because it carries a
+   heading, a count and one button. The 256 cards under it do not. */
+const HEADER_CLASSES = [
+  'sticky top-0 z-10 -mx-1 flex flex-wrap items-baseline justify-between gap-3',
+  'rounded-b-[var(--radius-brand)] border-b border-glass-edge bg-glass px-1 py-3',
+  'backdrop-blur-xl',
+].join(' ')
+
+const RELOAD_BUTTON_CLASSES = `${SHELL_BUTTON_CLASSES} ${COMPACT_BUTTON_SIZE_CLASSES}`
 
 type ApplicationsQueueProps = {
   review: LeadsReview
@@ -13,34 +28,31 @@ type ApplicationsQueueProps = {
 
 /* The queue renders the review exactly as it was computed at read time: the
    filtering, the matching and the ordering all happened once in `buildLeadsReview`,
-   so a re-render of 300-odd cards does not redo any of it. */
+   so a re-render of 300-odd cards does not redo any of it, and switching views
+   picks one of two lists it already holds. */
 export const ApplicationsQueue = ({
   review,
   spreadsheetId,
   decisions,
   onReload,
 }: ApplicationsQueueProps) => {
-  const { waitingApplications, counts } = review
-  const hasApplications = counts.waitingCount + counts.alreadyMemberCount > 0
+  const [view, setView] = useState<LeadView>('Pending')
+  const applications = selectApplicationsInView({ review, view })
+  const countLine = describeApplicationsCount({ view, counts: review.counts })
+  const decline = isDecliningOffered({ view }) ? decisions.decline : undefined
 
   return (
-    <section className="mx-auto flex w-full max-w-3xl flex-col gap-3 px-4 pb-10">
-      <header className="sticky top-0 z-10 flex items-baseline justify-between gap-3 bg-slate-50/90 py-3 backdrop-blur dark:bg-slate-950/90">
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Applications</h2>
-        <div className="flex items-baseline gap-3">
-          {hasApplications && (
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              {describeQueueCount({ counts })}
-            </p>
+    <section className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 pb-12">
+      <header className={HEADER_CLASSES}>
+        <h2 className={SHELL_SECTION_TITLE_CLASSES}>Applications</h2>
+        <div className="flex flex-wrap items-baseline gap-3">
+          {countLine !== undefined && (
+            <p className="text-sm font-semibold text-on-brand">{countLine}</p>
           )}
           {/* The reviewer needs this without a failure first: a decision that
               aborted because the sheet moved leaves a card explaining why, and
               the only way forward is to read the sheet again. */}
-          <button
-            className="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
-            onClick={onReload}
-            type="button"
-          >
+          <button className={RELOAD_BUTTON_CLASSES} onClick={onReload} type="button">
             Reload applications
           </button>
         </div>
@@ -48,19 +60,21 @@ export const ApplicationsQueue = ({
 
       <LeadsDataQualityNotes review={review} spreadsheetId={spreadsheetId} />
 
-      {waitingApplications.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-slate-300 px-4 py-10 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
-          No applications waiting for review.
-        </p>
+      <LeadsFilterBar onViewChange={setView} view={view} />
+
+      {applications.length === 0 ? (
+        <p className={EMPTY_STATE_CLASSES}>{describeEmptyView({ view })}</p>
       ) : (
-        <ul className="flex flex-col gap-2">
-          {waitingApplications.map((application) => (
+        /* One entrance animation on the list, not 256 of them: the cards are
+           the work, and a stagger across them would be a wait before it. */
+        <ul className="animate-rise flex flex-col gap-2.5">
+          {applications.map((application) => (
             <ApplicationCard
               key={application.lead.rowNumber}
               application={application}
               decisionState={decisions.stateFor(application.lead.rowNumber)}
               onApprove={decisions.approve}
-              onDecline={decisions.decline}
+              onDecline={decline}
             />
           ))}
         </ul>

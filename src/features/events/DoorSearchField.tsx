@@ -1,9 +1,13 @@
 import { useId, type RefObject } from 'react'
 
 /* Bigger text and a heavier border than the rest of the app: this is typed
-   one-handed, at arm's length, in whatever light the venue has. */
-const INPUT_CLASSES =
-  'w-full rounded-lg border-2 border-slate-300 bg-white px-4 py-3 text-base text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100'
+   one-handed, at arm's length, in whatever light the venue has. Opaque fill
+   and a 3:1 edge on both themes, because a translucent field at a dark door
+   is a field you cannot find. */
+const INPUT_CLASSES = [
+  'w-full min-h-14 rounded-2xl border-2 border-edge bg-surface px-4 py-3',
+  'text-lg text-ink transition-[border-color] duration-150 ease-brand focus:border-accent',
+].join(' ')
 
 type DoorSearchFieldProps = {
   label: string
@@ -17,7 +21,7 @@ export const DoorSearchField = ({ label, value, onChange, inputRef }: DoorSearch
 
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-xs font-medium text-slate-500 dark:text-slate-400" htmlFor={inputId}>
+      <label className="text-xs font-bold tracking-wide text-ink-muted uppercase" htmlFor={inputId}>
         {label}
       </label>
       <input

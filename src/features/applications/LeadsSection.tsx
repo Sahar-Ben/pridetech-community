@@ -37,7 +37,7 @@ export const LeadsSection = ({ sheetsClient, onSessionExpired }: LeadsSectionPro
   if (state.status === 'loading') {
     return (
       <p
-        className="mx-auto w-full max-w-3xl px-4 py-10 text-sm text-slate-500 dark:text-slate-400"
+        className="mx-auto w-full max-w-4xl px-4 py-10 text-on-brand"
         role="status"
       >
         Reading applications from the Leads tab...

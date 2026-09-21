@@ -1,5 +1,10 @@
 import { useId, useState, type ReactNode } from 'react'
 
+const SUMMARY_BUTTON_CLASSES = [
+  'rounded-full text-left font-semibold text-on-brand underline underline-offset-4',
+  'transition-opacity duration-150 ease-brand hover:opacity-80',
+].join(' ')
+
 type SheetIssueDisclosureProps = {
   summary: string
   children: ReactNode
@@ -17,14 +22,14 @@ export const SheetIssueDisclosure = ({ summary, children }: SheetIssueDisclosure
       <button
         aria-controls={contentId}
         aria-expanded={isOpen}
-        className="text-left underline underline-offset-2 hover:text-slate-900 dark:hover:text-slate-200"
+        className={SUMMARY_BUTTON_CLASSES}
         onClick={() => setIsOpen((wasOpen) => !wasOpen)}
         type="button"
       >
         {summary}
       </button>
       {isOpen && (
-        <div className="mt-2" id={contentId}>
+        <div className="animate-fade mt-2" id={contentId}>
           {children}
         </div>
       )}

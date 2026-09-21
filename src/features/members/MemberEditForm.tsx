@@ -16,6 +16,12 @@ import {
   STATUS_OPTIONS,
 } from './memberEditOptions'
 import { useMemberEditSubmit } from './useMemberEditSubmit'
+import { NoticeBanner } from '../../app/NoticeBanner'
+import {
+  COMPACT_BUTTON_SIZE_CLASSES,
+  PRIMARY_BUTTON_CLASSES,
+  SECONDARY_BUTTON_CLASSES,
+} from '../../theme/controls'
 
 const PLAIN_TEXT_FIELDS: ReadonlyArray<{ key: MemberDraftTextKey; label: string }> = [
   { key: 'title', label: 'Title' },
@@ -29,16 +35,11 @@ const PLAIN_TEXT_FIELDS: ReadonlyArray<{ key: MemberDraftTextKey; label: string 
   { key: 'notes', label: 'Notes' },
 ]
 
-const SAVE_BUTTON_CLASSES =
-  'rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60'
+const SAVE_BUTTON_CLASSES = `${PRIMARY_BUTTON_CLASSES} ${COMPACT_BUTTON_SIZE_CLASSES}`
 
-const CANCEL_BUTTON_CLASSES =
-  'rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800'
+const CANCEL_BUTTON_CLASSES = `${SECONDARY_BUTTON_CLASSES} ${COMPACT_BUTTON_SIZE_CLASSES}`
 
-const WARNING_CLASSES = 'text-xs font-medium text-amber-800 dark:text-amber-400'
-
-const SAVE_ERROR_CLASSES =
-  'rounded-md border-2 border-rose-600 bg-rose-50 px-4 py-3 text-sm text-rose-900 dark:border-rose-500 dark:bg-rose-950 dark:text-rose-200'
+const WARNING_CLASSES = 'text-xs font-semibold text-warning-ink'
 
 type MemberEditFormProps = {
   member: Member
@@ -134,9 +135,7 @@ export const MemberEditForm = ({ member, onSave, onCancel }: MemberEditFormProps
 
       <div aria-live="assertive">
         {saveErrorMessage !== undefined && (
-          <p className={SAVE_ERROR_CLASSES} role="alert">
-            {saveErrorMessage}
-          </p>
+          <NoticeBanner role="alert" title={saveErrorMessage} tone="danger" />
         )}
       </div>
 

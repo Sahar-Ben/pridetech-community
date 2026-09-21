@@ -1,11 +1,13 @@
 import type { RegistrantStatus } from './eventAttendance'
 
 const BADGE_CLASSES: Readonly<Record<RegistrantStatus, string>> = {
-  registered: 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
-  attended: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300',
-  waitlist: 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300',
-  'no-show': 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300',
+  registered: 'bg-neutral-surface text-neutral-ink ring-neutral-ink/25',
+  attended: 'bg-arrived-surface text-arrived-ink ring-arrived-edge/40',
+  waitlist: 'bg-surface-sunken text-ink ring-edge/40',
+  'no-show': 'bg-warning-surface text-warning-ink ring-warning-edge/50',
 }
+
+const BASE_CLASSES = 'inline-block rounded-full px-2.5 py-0.5 text-xs font-bold ring-1 ring-inset'
 
 const BADGE_LABELS: Readonly<Record<RegistrantStatus, string>> = {
   registered: 'Registered',
@@ -20,7 +22,7 @@ type RegistrantStatusBadgeProps = {
 
 export const RegistrantStatusBadge = ({ status }: RegistrantStatusBadgeProps) => (
   <span
-    className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${BADGE_CLASSES[status]}`}
+    className={`${BASE_CLASSES} ${BADGE_CLASSES[status]}`}
   >
     {BADGE_LABELS[status]}
   </span>
