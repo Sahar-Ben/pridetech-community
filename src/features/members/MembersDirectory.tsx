@@ -1,26 +1,36 @@
-import { useCallback, useState } from 'react'
-import { LocalOnlySaveNotice } from './LocalOnlySaveNotice'
+import { useCallback, useMemo, useState } from 'react'
 import { MemberDetail } from './MemberDetail'
 import { MembersFilterBar } from './MembersFilterBar'
 import { MembersSummary } from './MembersSummary'
 import { MembersTable } from './MembersTable'
 import type { Member } from './member'
 import { filterMembers, type MemberStatusFilter } from './memberFilters'
-import { replaceMember } from './memberUpdates'
+import { useDebouncedValue } from './useDebouncedValue'
+import type { SaveMember } from './useMemberSave'
+
+const SEARCH_SETTLE_MILLISECONDS = 200
 
 type MembersDirectoryProps = {
   members: readonly Member[]
+  onSaveMember: SaveMember
 }
 
-export const MembersDirectory = ({ members: loadedMembers }: MembersDirectoryProps) => {
-  const [members, setMembers] = useState<readonly Member[]>(loadedMembers)
-  const [hasLocalOnlyEdits, setHasLocalOnlyEdits] = useState(false)
+export const MembersDirectory = ({ members, onSaveMember }: MembersDirectoryProps) => {
   const [searchText, setSearchText] = useState('')
   const [statusFilter, setStatusFilter] = useState<MemberStatusFilter>('Active')
   const [openRowNumber, setOpenRowNumber] = useState<number | undefined>(undefined)
   const [rowNumberToFocus, setRowNumberToFocus] = useState<number | undefined>(undefined)
 
-  const visibleMembers = filterMembers({ members, searchText, statusFilter })
+  const settledSearchText = useDebouncedValue({
+    value: searchText,
+    delayInMilliseconds: SEARCH_SETTLE_MILLISECONDS,
+  })
+
+  const visibleMembers = useMemo(
+    () => filterMembers({ members, searchText: settledSearchText, statusFilter }),
+    [members, settledSearchText, statusFilter],
+  )
+
   const openMember = members.find((member) => member.rowNumber === openRowNumber)
 
   const openDetail = useCallback((member: Member) => {
@@ -32,14 +42,19 @@ export const MembersDirectory = ({ members: loadedMembers }: MembersDirectoryPro
     setOpenRowNumber(undefined)
   }, [openRowNumber])
 
-  const saveMember = useCallback((updatedMember: Member) => {
-    setMembers((currentMembers) => replaceMember({ members: currentMembers, updatedMember }))
-    setHasLocalOnlyEdits(true)
-  }, [])
-
   const forgetFocusRequest = useCallback(() => {
     setRowNumberToFocus(undefined)
   }, [])
+
+  const saveOpenMember = useCallback(
+    async (updatedMember: Member): Promise<void> => {
+      if (openMember === undefined) {
+        return
+      }
+      await onSaveMember({ originalMember: openMember, updatedMember })
+    },
+    [onSaveMember, openMember],
+  )
 
   return (
     <section className="mx-auto w-full max-w-3xl px-4 pb-10">
@@ -49,7 +64,6 @@ export const MembersDirectory = ({ members: loadedMembers }: MembersDirectoryPro
 
       {openMember === undefined ? (
         <div className="flex flex-col gap-4">
-          {hasLocalOnlyEdits && <LocalOnlySaveNotice />}
           <MembersSummary members={members} />
           <MembersFilterBar
             onSearchTextChange={setSearchText}
@@ -76,7 +90,7 @@ export const MembersDirectory = ({ members: loadedMembers }: MembersDirectoryPro
           )}
         </div>
       ) : (
-        <MemberDetail member={openMember} onClose={closeDetail} onSave={saveMember} />
+        <MemberDetail member={openMember} onClose={closeDetail} onSave={saveOpenMember} />
       )}
     </section>
   )

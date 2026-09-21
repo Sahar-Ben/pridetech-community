@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { GenderSplitBar } from './GenderSplitBar'
 import { calculateGenderSplit } from './genderSplit'
 import type { Member } from './member'
@@ -9,7 +10,7 @@ type MembersSummaryProps = {
   members: readonly Member[]
 }
 
-export const MembersSummary = ({ members }: MembersSummaryProps) => {
+const MembersSummaryView = ({ members }: MembersSummaryProps) => {
   const activeMembers = selectActiveMembers(members)
   const split = calculateGenderSplit(activeMembers)
 
@@ -28,3 +29,7 @@ export const MembersSummary = ({ members }: MembersSummaryProps) => {
     </div>
   )
 }
+
+/* The gender split walks all 787 members three times, and nothing about it
+   changes while somebody is typing in the search box. */
+export const MembersSummary = memo(MembersSummaryView)

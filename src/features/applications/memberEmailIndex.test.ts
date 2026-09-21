@@ -203,7 +203,11 @@ describe('isActiveMemberMatch', () => {
     expect(isActiveMemberMatch(matchWithStatus('Ex-member'))).toBe(false)
   })
 
-  it('should not treat a row with no status as still a member', () => {
-    expect(isActiveMemberMatch(matchWithStatus(undefined))).toBe(false)
+  it('should treat a row whose status was never filled in as still a member', () => {
+    expect(isActiveMemberMatch(matchWithStatus(undefined))).toBe(true)
+  })
+
+  it('should treat a status cell holding nothing but spaces as never filled in', () => {
+    expect(isActiveMemberMatch(matchWithStatus('   '))).toBe(true)
   })
 })

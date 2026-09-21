@@ -19,6 +19,12 @@ const MEMBER_COLUMNS = {
   city: { label: 'City', aliases: COLUMN_ALIASES.city },
   linkedIn: { label: 'LinkedIn', aliases: COLUMN_ALIASES.linkedIn },
   interests: { label: 'Interests', aliases: COLUMN_ALIASES.interests },
+  shirtSize: { label: 'Shirt Size', aliases: COLUMN_ALIASES.shirtSize },
+  notes: { label: 'Notes', aliases: COLUMN_ALIASES.notes },
+  informedForMembership: {
+    label: 'Informed for membership',
+    aliases: COLUMN_ALIASES.informedForMembership,
+  },
   status: { label: 'Status', aliases: COLUMN_ALIASES.status },
   removalReason: { label: 'Removal reason', aliases: COLUMN_ALIASES.removalReason },
   approvedAt: { label: 'Approved at', aliases: COLUMN_ALIASES.approvedAt },
@@ -95,6 +101,31 @@ export const findMissingMemberColumns = ({
   return targets.flatMap((target) =>
     columnOf({ headerMap, target }) === undefined ? [MEMBER_COLUMNS[target].label] : [],
   )
+}
+
+export type MemberColumnIndexes = Partial<Record<MemberColumnTarget, number>>
+
+const MEMBER_COLUMN_TARGETS: readonly MemberColumnTarget[] = Object.keys(MEMBER_COLUMNS).filter(
+  (key): key is MemberColumnTarget => key in MEMBER_COLUMNS,
+)
+
+/* Every column resolved once for a whole tab, which `readMemberCell` cannot do:
+   it rebuilds the header map per cell, and the Members tab is 787 rows of
+   sixteen columns. The aliases are the same ones the writes resolve through, so
+   a tab that reads correctly still writes to the column it was read from. */
+export const locateMemberColumns = ({
+  membersHeaderRow,
+}: {
+  membersHeaderRow: readonly string[]
+}): MemberColumnIndexes => {
+  const headerMap = buildHeaderMap(membersHeaderRow)
+  return MEMBER_COLUMN_TARGETS.reduce<MemberColumnIndexes>((located, target) => {
+    const columnIndex = columnOf({ headerMap, target })
+    if (columnIndex === undefined) {
+      return located
+    }
+    return { ...located, [target]: columnIndex }
+  }, {})
 }
 
 export const readMemberCell = ({

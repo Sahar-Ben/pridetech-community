@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { LocalOnlySaveNotice } from './LocalOnlySaveNotice'
+import { MemberSavedNotice } from './MemberSavedNotice'
 import { MemberDetailFields } from './MemberDetailFields'
 import { MemberEditForm } from './MemberEditForm'
 import type { Member } from './member'
@@ -12,7 +12,7 @@ const SECONDARY_BUTTON_CLASSES =
 type MemberDetailProps = {
   member: Member
   onClose: () => void
-  onSave: (member: Member) => void
+  onSave: (member: Member) => Promise<void>
 }
 
 export const MemberDetail = ({ member, onClose, onSave }: MemberDetailProps) => {
@@ -20,7 +20,7 @@ export const MemberDetail = ({ member, onClose, onSave }: MemberDetailProps) => 
   const editButtonRef = useRef<HTMLButtonElement>(null)
   const isEditButtonFocusRequested = useRef(false)
   const [isEditing, setIsEditing] = useState(false)
-  const [wasSavedLocally, setWasSavedLocally] = useState(false)
+  const [wasSaved, setWasSaved] = useState(false)
 
   useEffect(() => {
     headingRef.current?.focus()
@@ -58,9 +58,11 @@ export const MemberDetail = ({ member, onClose, onSave }: MemberDetailProps) => 
     }
   }, [isEditing, leaveEditMode, onClose])
 
-  const saveEdit = (updatedMember: Member) => {
-    onSave(updatedMember)
-    setWasSavedLocally(true)
+  /* Nothing is recorded here until the sheet has taken it: a rejection is left
+     to travel back to the form, which stays open with the reason on it. */
+  const saveEdit = async (updatedMember: Member): Promise<void> => {
+    await onSave(updatedMember)
+    setWasSaved(true)
     leaveEditMode()
   }
 
@@ -99,7 +101,7 @@ export const MemberDetail = ({ member, onClose, onSave }: MemberDetailProps) => 
       </div>
 
       <div aria-live="polite" role="status">
-        {wasSavedLocally && <LocalOnlySaveNotice />}
+        {wasSaved && !isEditing && <MemberSavedNotice />}
       </div>
 
       {isEditing ? (

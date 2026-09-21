@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { buildMemberCellWrites, buildMemberSheetRow, readMemberCell } from './memberSheetColumns'
+import {
+  buildMemberCellWrites,
+  buildMemberSheetRow,
+  locateMemberColumns,
+  readMemberCell,
+} from './memberSheetColumns'
 import { MEMBERS_HEADER_ROW } from '../../testing/sheetsClientFactory'
 
 describe('buildMemberSheetRow', () => {
@@ -130,5 +135,33 @@ describe('buildMemberCellWrites', () => {
         writes: [{ target: 'mail', value: 'dana@example.com' }],
       }),
     ).toThrow(/Mail/)
+  })
+})
+
+describe('locateMemberColumns', () => {
+  it('should resolve every column the tab actually has', () => {
+    const columns = locateMemberColumns({
+      membersHeaderRow: ['Name', 'Company', 'Mail', 'Status'],
+    })
+
+    expect(columns).toEqual({ name: 0, company: 1, mail: 2, status: 3 })
+  })
+
+  it('should leave out a column the tab does not have', () => {
+    const columns = locateMemberColumns({ membersHeaderRow: ['Name', 'Mail'] })
+
+    expect(columns.city).toBeUndefined()
+  })
+
+  it('should resolve a heading through the same aliases a write uses', () => {
+    const columns = locateMemberColumns({ membersHeaderRow: ['Full Name', 'E-Mail', 'Job Title'] })
+
+    expect(columns).toEqual({ name: 0, mail: 1, title: 2 })
+  })
+
+  it('should read a heading whatever its case and spacing', () => {
+    const columns = locateMemberColumns({ membersHeaderRow: ['  shirt   SIZE ', 'notes'] })
+
+    expect(columns).toEqual({ shirtSize: 0, notes: 1 })
   })
 })

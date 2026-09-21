@@ -26,3 +26,9 @@ export const readCell = ({
   }
   return cleaned
 }
+
+/* A spacer row between blocks of records is not a record that lost its
+   contents, so every parser has to tell the two apart before it reports the
+   second one to somebody. */
+export const hasAnyRecordedCell = (row: readonly string[]): boolean =>
+  row.some((_cell, column) => readCell({ row, column }) !== undefined)

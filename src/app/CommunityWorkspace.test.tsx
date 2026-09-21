@@ -6,6 +6,8 @@ import {
   createFakeSheetsClient,
   LEADS_HEADER_ROW,
   leadRow,
+  MEMBERS_HEADER_ROW,
+  memberRow,
 } from '../testing/sheetsClientFactory'
 
 const renderWorkspace = (
@@ -14,6 +16,10 @@ const renderWorkspace = (
   const props = {
     sheetsClient: createFakeSheetsClient({
       rows: [LEADS_HEADER_ROW, leadRow({ name: 'Noa Feldman', email: 'noa@example.com' })],
+      memberRows: [
+        MEMBERS_HEADER_ROW,
+        memberRow({ name: 'Dana Sorkin', mail: 'dana@example.com' }),
+      ],
     }),
     onSessionExpired: vi.fn(),
     onChangeSpreadsheet: vi.fn(),
@@ -75,7 +81,7 @@ describe('CommunityWorkspace', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Members' }))
 
-    const membersTable = within(screen.getByRole('table', { name: /members/i }))
+    const membersTable = within(await screen.findByRole('table', { name: /members/i }))
     expect(membersTable.getAllByRole('row').length).toBeGreaterThan(1)
   })
 
@@ -83,7 +89,7 @@ describe('CommunityWorkspace', () => {
     renderWorkspace()
 
     await userEvent.click(screen.getByRole('button', { name: 'Members' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Dana Sorkin' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Dana Sorkin' }))
 
     expect(screen.getByRole('heading', { name: 'Dana Sorkin' })).toBeInTheDocument()
   })
@@ -108,27 +114,30 @@ describe('CommunityWorkspace', () => {
     expect(screen.getByText(/not being recorded anywhere/i)).toBeInTheDocument()
   })
 
-  it('should say the Members section is invented, now that Applications is not', async () => {
-    renderWorkspace()
-
-    await userEvent.click(screen.getByRole('button', { name: 'Members' }))
-
-    expect(screen.getByText(/does not read your spreadsheet/i)).toBeInTheDocument()
-  })
-
-  it('should say the Events section is invented, now that Applications is not', async () => {
+  it('should say the Events section is invented, because it still is', async () => {
     renderWorkspace()
 
     await userEvent.click(screen.getByRole('button', { name: 'Events' }))
 
-    expect(screen.getByText(/does not read your spreadsheet/i)).toBeInTheDocument()
+    expect(screen.getByText(/every event below is invented/i)).toBeInTheDocument()
+    expect(screen.getByText(/nothing in this section is read from your spreadsheet/i)).toBeInTheDocument()
+  })
+
+  it('should not call the Members section sample data, now that it reads the sheet', async () => {
+    renderWorkspace()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Members' }))
+    await screen.findByRole('table', { name: /members/i })
+
+    expect(screen.queryByText(/is invented/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/read from your spreadsheet/i)).not.toBeInTheDocument()
   })
 
   it('should not call the Applications section sample data, because it is real', async () => {
     renderWorkspace()
     await screen.findByText('Noa Feldman')
 
-    expect(screen.queryByText(/does not read your spreadsheet/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/is invented/i)).not.toBeInTheDocument()
   })
 
   it('should let the reviewer choose a different spreadsheet', async () => {

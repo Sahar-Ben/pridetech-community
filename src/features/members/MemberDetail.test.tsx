@@ -8,18 +8,18 @@ import type { Member } from './member'
 const renderDetail = ({
   member,
   onClose = vi.fn(),
-  onSave = vi.fn(),
+  onSave = vi.fn().mockResolvedValue(undefined),
 }: {
   member: Member
   onClose?: () => void
-  onSave?: (member: Member) => void
+  onSave?: (member: Member) => Promise<void>
 }) => render(<MemberDetail member={member} onClose={onClose} onSave={onSave} />)
 
 const editButton = () => screen.getByRole('button', { name: /^edit$/i })
 const saveButton = () => screen.getByRole('button', { name: /^save$/i })
 const cancelButton = () => screen.getByRole('button', { name: /^cancel$/i })
 
-const startEditing = async (member: Member, onSave?: (member: Member) => void) => {
+const startEditing = async (member: Member, onSave?: (member: Member) => Promise<void>) => {
   renderDetail(onSave === undefined ? { member } : { member, onSave })
   await userEvent.click(editButton())
 }
@@ -210,17 +210,17 @@ describe('MemberDetail', () => {
     expect(screen.queryByLabelText('Name')).not.toBeInTheDocument()
   })
 
-  it('should warn that the edit is not written to the sheet after saving', async () => {
+  it('should confirm the edit reached the sheet rather than warning it did not', async () => {
     await startEditing(buildMember({ name: 'Dana Sorkin', city: 'Tel Aviv' }))
 
     await retype('City', 'Haifa')
     await userEvent.click(saveButton())
 
-    expect(screen.getByText(/not .*written to the google sheet/i)).toBeInTheDocument()
-    expect(screen.getByText(/lost when you reload/i)).toBeInTheDocument()
+    expect(await screen.findByText(/saved to the google sheet/i)).toBeInTheDocument()
+    expect(screen.queryByText(/in this browser only/i)).not.toBeInTheDocument()
   })
 
-  it('should keep the unwritten-to-the-sheet warning on screen instead of letting it fade', async () => {
+  it('should keep the confirmation on screen instead of letting it fade', async () => {
     await startEditing(buildMember({ name: 'Dana Sorkin', city: 'Tel Aviv' }))
 
     await retype('City', 'Haifa')
@@ -228,7 +228,7 @@ describe('MemberDetail', () => {
     await userEvent.click(editButton())
     await userEvent.click(cancelButton())
 
-    expect(screen.getByText(/not .*written to the google sheet/i)).toBeInTheDocument()
+    expect(screen.getByText(/saved to the google sheet/i)).toBeInTheDocument()
   })
 
   it('should show the removal reason field only when the status is Ex-member', async () => {

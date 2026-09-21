@@ -1,6 +1,6 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { buildMember } from '../../testing/memberFactory'
 import { MembersDirectory } from './MembersDirectory'
 
@@ -34,7 +34,10 @@ const formerMember = buildMember({
 
 const everyone = [dana, tomer, sparse, formerMember]
 
-const renderDirectory = () => render(<MembersDirectory members={everyone} />)
+const renderDirectory = (onSaveMember = vi.fn().mockResolvedValue(undefined)) => {
+  render(<MembersDirectory members={everyone} onSaveMember={onSaveMember} />)
+  return onSaveMember
+}
 
 const listedNames = (): readonly string[] =>
   within(screen.getByRole('table', { name: /members/i }))
@@ -43,6 +46,14 @@ const listedNames = (): readonly string[] =>
     .map((row) => within(row).getAllByRole('cell')[0]?.textContent ?? '')
 
 const searchBox = () => screen.getByRole('searchbox', { name: /search/i })
+
+/* The search is debounced, so the table follows the typing rather than keeping
+   up with it. */
+const waitForNames = async (names: readonly string[]): Promise<void> => {
+  await waitFor(() => {
+    expect(listedNames()).toEqual(names)
+  })
+}
 
 describe('MembersDirectory', () => {
   it('should list the active members in a table', () => {
@@ -81,7 +92,7 @@ describe('MembersDirectory', () => {
 
     await userEvent.type(searchBox(), 'Palewood')
 
-    expect(listedNames()).toEqual(['Tomer Reznik'])
+    await waitForNames(['Tomer Reznik'])
   })
 
   it('should narrow the table by email', async () => {
@@ -89,7 +100,15 @@ describe('MembersDirectory', () => {
 
     await userEvent.type(searchBox(), 'roni@example.com')
 
-    expect(listedNames()).toEqual(['Roni Halperin'])
+    await waitForNames(['Roni Halperin'])
+  })
+
+  it('should keep every keystroke in the search box while the table catches up', async () => {
+    renderDirectory()
+
+    await userEvent.type(searchBox(), 'Palewood')
+
+    expect(searchBox()).toHaveValue('Palewood')
   })
 
   it('should list everyone again once the search box is cleared', async () => {
@@ -98,7 +117,7 @@ describe('MembersDirectory', () => {
     await userEvent.type(searchBox(), 'Palewood')
     await userEvent.clear(searchBox())
 
-    expect(listedNames()).toEqual(['Dana Sorkin', 'Tomer Reznik', 'Roni Halperin'])
+    await waitForNames(['Dana Sorkin', 'Tomer Reznik', 'Roni Halperin'])
   })
 
   it('should say nobody matched rather than showing an empty table', async () => {
@@ -106,7 +125,7 @@ describe('MembersDirectory', () => {
 
     await userEvent.type(searchBox(), 'nobody-by-this-name')
 
-    expect(screen.getByText(/no members match/i)).toBeInTheDocument()
+    expect(await screen.findByText(/no members match/i)).toBeInTheDocument()
     expect(screen.queryByRole('table', { name: /members/i })).not.toBeInTheDocument()
   })
 
@@ -192,25 +211,28 @@ describe('MembersDirectory', () => {
     await userEvent.keyboard('{Escape}')
     await userEvent.type(searchBox(), 'Palewood')
 
-    expect(listedNames()).toEqual(['Tomer Reznik'])
+    await waitForNames(['Tomer Reznik'])
   })
 
-  it('should update the row in the directory after a save', async () => {
-    renderDirectory()
+  it('should hand the save the member as it was and as it is now', async () => {
+    const onSaveMember = renderDirectory()
 
     await userEvent.click(screen.getByRole('button', { name: 'Dana Sorkin' }))
     await userEvent.click(screen.getByRole('button', { name: /^edit$/i }))
-    const companyField = screen.getByLabelText('Company')
-    await userEvent.clear(companyField)
-    await userEvent.type(companyField, 'Northbridge Labs')
+    const cityField = screen.getByLabelText('City')
+    await userEvent.clear(cityField)
+    await userEvent.type(cityField, 'Haifa')
     await userEvent.click(screen.getByRole('button', { name: /^save$/i }))
-    await userEvent.click(screen.getByRole('button', { name: /back to members/i }))
 
-    expect(screen.getByRole('cell', { name: 'Northbridge Labs' })).toBeInTheDocument()
-    expect(screen.queryByRole('cell', { name: 'Ridgeway Systems' })).not.toBeInTheDocument()
+    await waitFor(() => {
+      expect(onSaveMember).toHaveBeenCalledWith({
+        originalMember: dana,
+        updatedMember: { ...dana, city: 'Haifa' },
+      })
+    })
   })
 
-  it('should keep a saved edit when the member is opened again', async () => {
+  it('should never tell the organiser their edits stayed in this browser', async () => {
     renderDirectory()
 
     await userEvent.click(screen.getByRole('button', { name: 'Dana Sorkin' }))
@@ -219,23 +241,8 @@ describe('MembersDirectory', () => {
     await userEvent.clear(cityField)
     await userEvent.type(cityField, 'Haifa')
     await userEvent.click(screen.getByRole('button', { name: /^save$/i }))
-    await userEvent.click(screen.getByRole('button', { name: /back to members/i }))
-    await userEvent.click(screen.getByRole('button', { name: 'Dana Sorkin' }))
 
-    expect(screen.getByText('Haifa')).toBeInTheDocument()
-  })
-
-  it('should keep warning on the list that saved edits never reached the sheet', async () => {
-    renderDirectory()
-
-    await userEvent.click(screen.getByRole('button', { name: 'Dana Sorkin' }))
-    await userEvent.click(screen.getByRole('button', { name: /^edit$/i }))
-    const cityField = screen.getByLabelText('City')
-    await userEvent.clear(cityField)
-    await userEvent.type(cityField, 'Haifa')
-    await userEvent.click(screen.getByRole('button', { name: /^save$/i }))
-    await userEvent.click(screen.getByRole('button', { name: /back to members/i }))
-
-    expect(screen.getByText(/not .*written to the google sheet/i)).toBeInTheDocument()
+    expect(await screen.findByText(/saved to the google sheet/i)).toBeInTheDocument()
+    expect(screen.queryByText(/in this browser only/i)).not.toBeInTheDocument()
   })
 })

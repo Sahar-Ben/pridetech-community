@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { readCell } from './readCell'
+import { hasAnyRecordedCell, readCell } from './readCell'
 
 describe('readCell', () => {
   it('should return the trimmed value at the column', () => {
@@ -79,5 +79,23 @@ describe('readCell', () => {
   it('should keep the zero-width non-joiner that is meaningful in Hindi', () => {
     const kSha = '\u{0915}\u{094d}\u{200c}\u{0937}'
     expect(readCell({ row: [kSha], column: 0 })).toBe(kSha)
+  })
+})
+
+describe('hasAnyRecordedCell', () => {
+  it('should say a row with a value in it holds something', () => {
+    expect(hasAnyRecordedCell(['', '', 'Dana Sorkin'])).toBe(true)
+  })
+
+  it('should say a spacer row of empty cells holds nothing', () => {
+    expect(hasAnyRecordedCell(['', '', ''])).toBe(false)
+  })
+
+  it('should say a row trimmed away to nothing holds nothing', () => {
+    expect(hasAnyRecordedCell([])).toBe(false)
+  })
+
+  it('should not count a cell that is only invisible formatting', () => {
+    expect(hasAnyRecordedCell(['\u{200e}', '  '])).toBe(false)
   })
 })

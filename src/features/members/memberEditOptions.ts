@@ -3,7 +3,6 @@ import {
   REMOVAL_REASONS,
   type MemberGender,
   type MemberStatus,
-  type RemovalReason,
 } from './member'
 
 export type SelectOption<TValue extends string> = {
@@ -23,7 +22,22 @@ export const STATUS_OPTIONS: ReadonlyArray<SelectOption<MemberStatus>> = MEMBER_
   (status) => ({ value: status, label: status }),
 )
 
-export const REMOVAL_REASON_OPTIONS: ReadonlyArray<SelectOption<RemovalReason | ''>> = [
+const LISTED_REMOVAL_REASONS: ReadonlyArray<SelectOption<string>> = [
   { value: '', label: NOT_RECORDED_LABEL },
   ...REMOVAL_REASONS.map((reason) => ({ value: reason, label: reason })),
 ]
+
+/* A reason somebody typed into the sheet by hand is offered back alongside the
+   list. Without it the select would silently show the first option instead, and
+   saving would replace a recorded reason with one nobody chose. */
+export const buildRemovalReasonOptions = (
+  recordedReason: string | undefined,
+): ReadonlyArray<SelectOption<string>> => {
+  if (
+    recordedReason === undefined ||
+    LISTED_REMOVAL_REASONS.some((option) => option.value === recordedReason)
+  ) {
+    return LISTED_REMOVAL_REASONS
+  }
+  return [...LISTED_REMOVAL_REASONS, { value: recordedReason, label: recordedReason }]
+}

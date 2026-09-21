@@ -3,6 +3,7 @@ import { ApplicationsQueue } from './ApplicationsQueue'
 import { withoutDecidedApplications } from './decidedApplications'
 import { useLeadDecisions } from './useLeadDecisions'
 import { useLeads } from './useLeads'
+import { SectionErrorNotice } from '../../app/SectionErrorNotice'
 import type { SheetsClient } from '../../sheets/sheetsClient'
 
 type LeadsSectionProps = {
@@ -46,21 +47,10 @@ export const LeadsSection = ({ sheetsClient, onSessionExpired }: LeadsSectionPro
 
   if (state.status === 'failed' || review === undefined) {
     return (
-      <section className="mx-auto w-full max-w-3xl px-4 py-10">
-        <p
-          className="rounded-md border-2 border-rose-600 bg-rose-50 px-4 py-3 text-sm text-rose-900 dark:border-rose-500 dark:bg-rose-950 dark:text-rose-200"
-          role="alert"
-        >
-          {state.status === 'failed' ? state.message : 'The applications could not be read.'}
-        </p>
-        <button
-          className="mt-4 rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
-          onClick={reload}
-          type="button"
-        >
-          Try again
-        </button>
-      </section>
+      <SectionErrorNotice
+        message={state.status === 'failed' ? state.message : 'The applications could not be read.'}
+        onRetry={reload}
+      />
     )
   }
 

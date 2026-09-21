@@ -1,7 +1,7 @@
 import { COLUMN_ALIASES } from '../../sheets/columnAliases'
 import { toEmailKey } from '../../sheets/emailKey'
 import { buildHeaderMap, findColumn } from '../../sheets/headerMap'
-import { readCell } from '../../sheets/readCell'
+import { hasAnyRecordedCell, readCell } from '../../sheets/readCell'
 import type { Lead, LeadStatus } from './lead'
 
 const HEADER_ROW_COUNT = 1
@@ -18,11 +18,6 @@ export type ParsedLeads = {
   leads: readonly Lead[]
   rowsWithoutEmail: readonly LeadWithoutEmail[]
 }
-
-/* A spacer row between blocks of applications is not an application that forgot
-   its email, so it is left out of the unmatchable count. */
-const hasAnyValue = (row: readonly string[]): boolean =>
-  row.some((_cell, column) => readCell({ row, column }) !== undefined)
 
 const parseStatus = (value: string | undefined): LeadStatus => {
   const normalized = value?.toLowerCase()
@@ -72,7 +67,7 @@ export const parseLeads = ({ rows }: { rows: readonly (readonly string[])[] }): 
 
   const rowsWithoutEmail = dataRows.flatMap((row, index) => {
     const hasEmail = readCell({ row, column: emailColumn }) !== undefined
-    if (hasEmail || !hasAnyValue(row)) {
+    if (hasEmail || !hasAnyRecordedCell(row)) {
       return []
     }
     return [

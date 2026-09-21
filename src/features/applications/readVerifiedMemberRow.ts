@@ -9,6 +9,24 @@ export type VerifiedMemberRow = {
   existingRow: readonly string[]
 }
 
+/* An empty expected key is a member row whose `Mail` cell is blank. The
+   applications path cannot produce one, because it indexes the tab by address,
+   but the directory can: those rows are on the sheet and they can be edited.
+   The row has to still be blank there for it to be the same record, so the
+   absence is checked as strictly as a match would be. */
+const doesMailStillMatch = ({
+  recordedMail,
+  expectedEmailKey,
+}: {
+  recordedMail: string | undefined
+  expectedEmailKey: string
+}): boolean => {
+  if (expectedEmailKey === '') {
+    return recordedMail === undefined
+  }
+  return recordedMail !== undefined && toEmailKey(recordedMail) === expectedEmailKey
+}
+
 /* Member row numbers go stale exactly the way lead row numbers do: the Members
    tab is hand-maintained, and a row inserted above this one turns an update into
    an overwrite of somebody else's record. The row is read back and checked
@@ -45,10 +63,11 @@ export const readVerifiedMemberRow = async ({
   const recordedCell = (target: 'mail' | 'name' | 'approvedAt'): string | undefined =>
     readMemberCell({ membersHeaderRow, row: existingRow, target })
 
-  const recordedMail = recordedCell('mail')
   const doesRowStillHoldThisMember =
-    recordedMail !== undefined &&
-    toEmailKey(recordedMail) === expectedMember.emailKey &&
+    doesMailStillMatch({
+      recordedMail: recordedCell('mail'),
+      expectedEmailKey: expectedMember.emailKey,
+    }) &&
     doesMemberMatchName({ member: expectedMember, name: recordedCell('name') }) &&
     recordedCell('approvedAt') === expectedMember.approvedAt
 

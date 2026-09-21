@@ -462,6 +462,16 @@ describe('ApplicationsQueue, for an applicant who was a member before', () => {
 
     expect(screen.queryByText(/already has a member record/i)).not.toBeInTheDocument()
   })
+
+  it('should not call a member whose status was never filled in a returning ex-member', () => {
+    renderQueue({
+      leads: [pendingLead({ name: 'Dana Maman' })],
+      memberRows: [memberRow({ name: 'Dana Maman', mail: 'dana@saltedmind.co', status: '' })],
+    })
+
+    expect(screen.queryByText(/already has a member record/i)).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { level: 3, name: 'Dana Maman' })).not.toBeInTheDocument()
+  })
 })
 
 describe('ApplicationsQueue, while a decision is being written', () => {

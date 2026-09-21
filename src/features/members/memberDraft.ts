@@ -1,4 +1,4 @@
-import type { Member, MemberGender, MemberStatus, RemovalReason } from './member'
+import type { Member, MemberGender, MemberStatus } from './member'
 
 export type MemberDraftTextKey =
   | 'name'
@@ -16,7 +16,7 @@ export type MemberDraftTextKey =
 export type MemberDraft = Record<MemberDraftTextKey, string> & {
   gender: MemberGender | ''
   status: MemberStatus
-  removalReason: RemovalReason | ''
+  removalReason: string
 }
 
 const toFieldValue = (value: string | undefined): string => value ?? ''

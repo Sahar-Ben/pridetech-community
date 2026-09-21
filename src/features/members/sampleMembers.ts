@@ -1,10 +1,14 @@
 import type { Member } from './member'
 
-/* Invented people so the directory can be reviewed before the sheet reads land.
-   Nobody here is real; every address is @example.com. The gaps are deliberate:
-   the live sheet was filled in by hand over years, so gender, phone, city,
-   LinkedIn, interests, shirt size and notes are blank far more often than not.
-   Delete this file once MembersDirectory is fed by the real sheet. */
+/* Invented people. Nobody here is real; every address is @example.com. The gaps
+   are deliberate: the live sheet was filled in by hand over years, so gender,
+   phone, city, LinkedIn, interests, shirt size and notes are blank far more
+   often than not.
+
+   The members directory no longer uses any of this \u{2014} it reads the real
+   Members tab. What is left is the cast the Events section is populated with,
+   and it lives here only because Events imports it from here. Delete it with
+   the last of the invented Events screens. */
 export const SAMPLE_MEMBERS: readonly Member[] = [
   {
     rowNumber: 2,

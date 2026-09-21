@@ -20,14 +20,24 @@ export type MemberMatch = {
 }
 
 const ACTIVE_STATUS = 'active'
+const UNRECORDED_STATUS = ''
 
-/* Only a member the sheet calls Active counts as already dealt with. Anything
-   else \u{2014} an ex-member, a status nobody recognises, a blank cell \u{2014} leaves
-   the application in the queue, because showing a reviewer somebody who needed
-   no review costs one click, while hiding somebody who did means they never
-   hear back and nothing anywhere records that it happened. */
-export const isActiveMemberMatch = (member: MemberMatch): boolean =>
-  member.status?.trim().toLowerCase() === ACTIVE_STATUS
+const toStatusKey = (status: string | undefined): string =>
+  status?.trim().toLowerCase() ?? UNRECORDED_STATUS
+
+/* A blank cell counts as Active, which is the opposite of what it looks like.
+   `Status` was added to a Members tab that already held 787 rows, so it is
+   blank on every member who joined before the column existed: blank records
+   that nobody has been back to fill it in, never that somebody left. The only
+   writer of `Ex-member` is this app, and it writes it the moment somebody is
+   removed, so an explicit value other than Active \u{2014} an ex-member, or a
+   spelling nobody recognises \u{2014} is the only thing on this sheet that says
+   departed. Reading blank as departed put all 787 existing members back in the
+   review queue, each one captioned as an ex-member coming back. */
+export const isActiveMemberMatch = (member: MemberMatch): boolean => {
+  const statusKey = toStatusKey(member.status)
+  return statusKey === UNRECORDED_STATUS || statusKey === ACTIVE_STATUS
+}
 
 const whitespaceRun = /\s+/g
 

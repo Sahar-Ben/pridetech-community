@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { MemberRow } from './MemberRow'
 import { MEMBER_COLUMN_CLASSES } from './memberColumns'
 import type { Member } from './member'
@@ -18,7 +19,7 @@ type MembersTableProps = {
   onFocusRestored: () => void
 }
 
-export const MembersTable = ({
+const MembersTableView = ({
   members,
   rowNumberToFocus,
   onOpenMember,
@@ -68,3 +69,9 @@ export const MembersTable = ({
     </table>
   </div>
 )
+
+/* The whole table is skipped, not only its rows: a keystroke in the search box
+   re-renders the directory around it, and reconciling 787 unchanged rows is the
+   work that made typing lag. The debounce decides when this list changes; this
+   is what makes every render in between free. */
+export const MembersTable = memo(MembersTableView)

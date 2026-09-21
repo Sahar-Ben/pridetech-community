@@ -26,6 +26,18 @@ const exMember = ({
   removalReason?: string
 }): string[] => [name, 'Salted Mind', mail, 'Ex-member', removalReason]
 
+/* What all 787 rows that predate the Status column look like: an address, and a
+   Status cell nobody has been back to fill in. */
+const memberWithUnrecordedStatus = ({
+  name,
+  mail,
+  status = '',
+}: {
+  name: string
+  mail: string
+  status?: string
+}): string[] => [name, 'Salted Mind', mail, status, '']
+
 const waitingEmails = (review: LeadsReview): readonly string[] =>
   review.waitingApplications.map((waiting) => waiting.lead.email)
 
@@ -335,13 +347,31 @@ describe('buildLeadsReview', () => {
     expect(review.waitingApplications[0]?.priorMember).toBeUndefined()
   })
 
-  it('should keep an application in the queue when the matching member row has no status', () => {
+  it('should take an application out of the queue when the matching member row has a blank status', () => {
     const review = reviewOf({
       leads: [lead({ email: 'dana@example.com' })],
-      memberRows: [['Dana Maman', 'Salted Mind', 'dana@example.com', '', '']],
+      memberRows: [memberWithUnrecordedStatus({ name: 'Dana Maman', mail: 'dana@example.com' })],
     })
 
-    expect(waitingEmails(review)).toEqual(['dana@example.com'])
+    expect(review.waitingApplications).toEqual([])
+    expect(review.alreadyMemberLeads.map((excluded) => excluded.lead.email)).toEqual([
+      'dana@example.com',
+    ])
+  })
+
+  it('should take it out of the queue when that status cell holds nothing but spaces', () => {
+    const review = reviewOf({
+      leads: [lead({ email: 'dana@example.com' })],
+      memberRows: [
+        memberWithUnrecordedStatus({
+          name: 'Dana Maman',
+          mail: 'dana@example.com',
+          status: '   ',
+        }),
+      ],
+    })
+
+    expect(waitingEmails(review)).toEqual([])
   })
 
   it('should count a returning ex-member as waiting, since a reviewer still has to decide', () => {

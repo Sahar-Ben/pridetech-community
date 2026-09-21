@@ -1,10 +1,9 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { MemberEditSelectField } from './MemberEditSelectField'
 import { MemberEditTextField } from './MemberEditTextField'
 import { MemberReadOnlyTextField } from './MemberReadOnlyTextField'
 import type { Member } from './member'
 import {
-  applyDraftToMember,
   hasMailChanged,
   toMemberDraft,
   withDraftStatus,
@@ -12,11 +11,11 @@ import {
   type MemberDraftTextKey,
 } from './memberDraft'
 import {
-  hasDraftErrors,
-  validateMemberDraft,
-  type MemberDraftErrors,
-} from './memberDraftValidation'
-import { GENDER_OPTIONS, REMOVAL_REASON_OPTIONS, STATUS_OPTIONS } from './memberEditOptions'
+  buildRemovalReasonOptions,
+  GENDER_OPTIONS,
+  STATUS_OPTIONS,
+} from './memberEditOptions'
+import { useMemberEditSubmit } from './useMemberEditSubmit'
 
 const PLAIN_TEXT_FIELDS: ReadonlyArray<{ key: MemberDraftTextKey; label: string }> = [
   { key: 'title', label: 'Title' },
@@ -31,23 +30,30 @@ const PLAIN_TEXT_FIELDS: ReadonlyArray<{ key: MemberDraftTextKey; label: string 
 ]
 
 const SAVE_BUTTON_CLASSES =
-  'rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700'
+  'rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60'
 
 const CANCEL_BUTTON_CLASSES =
   'rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800'
 
 const WARNING_CLASSES = 'text-xs font-medium text-amber-800 dark:text-amber-400'
 
+const SAVE_ERROR_CLASSES =
+  'rounded-md border-2 border-rose-600 bg-rose-50 px-4 py-3 text-sm text-rose-900 dark:border-rose-500 dark:bg-rose-950 dark:text-rose-200'
+
 type MemberEditFormProps = {
   member: Member
-  onSave: (member: Member) => void
+  onSave: (member: Member) => Promise<void>
   onCancel: () => void
 }
 
 export const MemberEditForm = ({ member, onSave, onCancel }: MemberEditFormProps) => {
   const [draft, setDraft] = useState<MemberDraft>(() => toMemberDraft(member))
-  const [errors, setErrors] = useState<MemberDraftErrors>({})
   const nameInputRef = useRef<HTMLInputElement>(null)
+  const { fieldErrors, saveErrorMessage, isSaving, submit } = useMemberEditSubmit({
+    member,
+    draft,
+    onSave,
+  })
 
   useEffect(() => {
     nameInputRef.current?.focus()
@@ -57,21 +63,11 @@ export const MemberEditForm = ({ member, onSave, onCancel }: MemberEditFormProps
     setDraft((currentDraft) => ({ ...currentDraft, ...change }))
   }
 
-  const submitEdit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    const foundErrors = validateMemberDraft(draft)
-    setErrors(foundErrors)
-    if (hasDraftErrors(foundErrors)) {
-      return
-    }
-    onSave(applyDraftToMember({ member, draft }))
-  }
-
   return (
-    <form className="flex flex-col gap-4" noValidate onSubmit={submitEdit}>
+    <form className="flex flex-col gap-4" noValidate onSubmit={submit}>
       <div className="grid grid-cols-1 gap-x-8 sm:grid-cols-2">
         <MemberEditTextField
-          errorMessage={errors.name}
+          errorMessage={fieldErrors.name}
           inputRef={nameInputRef}
           label="Name"
           onChange={(name) => updateDraft({ name })}
@@ -80,7 +76,7 @@ export const MemberEditForm = ({ member, onSave, onCancel }: MemberEditFormProps
 
         <div>
           <MemberEditTextField
-            errorMessage={errors.mail}
+            errorMessage={fieldErrors.mail}
             label="Email"
             onChange={(mail) => updateDraft({ mail })}
             value={draft.mail}
@@ -108,7 +104,7 @@ export const MemberEditForm = ({ member, onSave, onCancel }: MemberEditFormProps
           <MemberEditSelectField
             label="Removal reason"
             onChange={(removalReason) => updateDraft({ removalReason })}
-            options={REMOVAL_REASON_OPTIONS}
+            options={buildRemovalReasonOptions(member.removalReason)}
             value={draft.removalReason}
           />
         )}
@@ -136,16 +132,21 @@ export const MemberEditForm = ({ member, onSave, onCancel }: MemberEditFormProps
         />
       </div>
 
+      <div aria-live="assertive">
+        {saveErrorMessage !== undefined && (
+          <p className={SAVE_ERROR_CLASSES} role="alert">
+            {saveErrorMessage}
+          </p>
+        )}
+      </div>
+
       <div className="flex flex-wrap items-center gap-3">
-        <button className={SAVE_BUTTON_CLASSES} type="submit">
-          Save
+        <button className={SAVE_BUTTON_CLASSES} disabled={isSaving} type="submit">
+          {isSaving ? 'Saving...' : 'Save'}
         </button>
         <button className={CANCEL_BUTTON_CLASSES} onClick={onCancel} type="button">
           Cancel
         </button>
-        <p className={WARNING_CLASSES}>
-          Saving keeps the change in this browser only. Nothing here reaches the Google Sheet yet.
-        </p>
       </div>
     </form>
   )

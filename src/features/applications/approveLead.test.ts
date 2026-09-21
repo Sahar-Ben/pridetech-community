@@ -175,6 +175,37 @@ describe('approveLead', () => {
   })
 })
 
+describe('approveLead, for a member whose status cell was never filled in', () => {
+  const unrecordedStatusSheet = ({ leadStatus = '' }: { leadStatus?: string } = {}) =>
+    sheetWith({
+      members: [
+        MEMBERS_HEADER_ROW,
+        memberRow({ name: 'Dana Maman', mail: 'dana@example.com', status: '' }),
+      ],
+      leads: [
+        LEADS_HEADER_ROW,
+        leadRow({ name: 'Noa Feldman', email: 'noa@example.com' }),
+        leadRow({ name: 'Dana Maman', email: 'dana@example.com', status: leadStatus }),
+      ],
+    })
+
+  it('should leave their member row alone rather than reactivate somebody who never left', async () => {
+    const sheet = unrecordedStatusSheet()
+
+    await approve({ sheet })
+
+    expect(sheet.rowsOf('Members')).toHaveLength(2)
+    expect(sheet.writes.map((write) => write.range)).toEqual(['Leads!K3'])
+  })
+
+  it('should refuse as an approval of an active member once the application carries a decision', async () => {
+    const sheet = unrecordedStatusSheet({ leadStatus: 'Approved' })
+
+    await expect(approve({ sheet })).rejects.toThrow(/already an active member/i)
+    expect(sheet.writes).toEqual([])
+  })
+})
+
 describe('approveLead, for somebody who was a member before', () => {
   const exMemberSheet = ({ gender = 'F', onWrite }: { gender?: string; onWrite?: (write: SheetWrite) => void } = {}) =>
     sheetWith({

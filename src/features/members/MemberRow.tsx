@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { memo, useEffect, useRef } from 'react'
 import { EmptyValue } from './EmptyValue'
 import { MemberStatusBadge } from './MemberStatusBadge'
 import { MEMBER_COLUMN_CLASSES } from './memberColumns'
@@ -17,7 +17,7 @@ type MemberRowProps = {
   onFocusRestored: () => void
 }
 
-export const MemberRow = ({
+const MemberRowView = ({
   member,
   isFocusRequested,
   onOpen,
@@ -66,3 +66,7 @@ export const MemberRow = ({
     </tr>
   )
 }
+
+/* 787 of these are mounted at once, so a row that re-rendered because something
+   elsewhere on the screen changed would multiply that by 787. */
+export const MemberRow = memo(MemberRowView)
