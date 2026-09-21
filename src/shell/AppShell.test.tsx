@@ -2,10 +2,18 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { AppShell } from './AppShell'
+import type { WorkspaceAccount } from './workspaceAccount'
 
-const renderShell = () =>
+const account = (overrides: Partial<WorkspaceAccount> = {}): WorkspaceAccount => ({
+  spreadsheetName: undefined,
+  onChangeSpreadsheet: vi.fn(),
+  onSignOut: vi.fn(),
+  ...overrides,
+})
+
+const renderShell = (workspaceAccount: WorkspaceAccount = account()) =>
   render(
-    <AppShell activeSection="leads" onSelectSection={vi.fn()}>
+    <AppShell account={workspaceAccount} activeSection="leads" onSelectSection={vi.fn()}>
       <p>Section content</p>
     </AppShell>,
   )
@@ -81,5 +89,27 @@ describe('AppShell', () => {
     renderShell()
 
     expect(screen.queryByRole('button', { name: 'Close menu' })).not.toBeInTheDocument()
+  })
+})
+
+describe('AppShell, the account actions in the drawer', () => {
+  it('should close the drawer on Escape with the account actions in it', async () => {
+    renderShell()
+
+    await userEvent.click(burger())
+    await userEvent.keyboard('{Escape}')
+
+    expect(burger()).toHaveAttribute('aria-expanded', 'false')
+    expect(burger()).toHaveFocus()
+  })
+
+  it('should reach the account actions from the drawer without leaving it', async () => {
+    const onSignOut = vi.fn()
+    renderShell(account({ onSignOut }))
+
+    await userEvent.click(burger())
+    await userEvent.click(screen.getByRole('button', { name: /sign out/i }))
+
+    expect(onSignOut).toHaveBeenCalledOnce()
   })
 })

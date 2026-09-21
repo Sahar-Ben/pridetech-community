@@ -22,6 +22,7 @@ export type GoogleTokenClientConfig = {
 
 export type GooglePickerDocument = {
   id?: string
+  name?: string
 }
 
 export type GooglePickerResponse = {

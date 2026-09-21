@@ -1,12 +1,8 @@
-/* The one decision this app's styling turns on: which of these two a thing gets.
+/* The one decision this app's styling turns on: which of these a thing gets.
 
-   Glass is brand. It is translucent, it is 28px-rounded, it carries white text,
-   and its contrast depends on the gradient behind it -- which is why nothing
-   smaller or denser than a page heading is ever put on it.
-
-   A data panel is opaque. Its contrast is a fixed number. The applications
-   queue, the members table and the check-in list are all data panels, and they
-   stay that way no matter how much of the shell turns to glass around them.
+   Glass is brand. It is translucent at the shell's 0.1, it is 28px-rounded, it
+   carries white text, and its contrast depends on the gradient behind it --
+   which is why nothing smaller or denser than a page heading is ever put on it.
 
    White is the only ink allowed on glass, and there is no muted companion to it
    on purpose: it clears 4.5:1 over glass at the gradient's lightest point
@@ -16,7 +12,23 @@
 
 export const GLASS_PANEL_CLASSES = 'glass-panel'
 
+/* Opaque, so its contrast does not depend on the gradient, on the blur support
+   of the browser, or on what scrolled behind it. One screen still wants that
+   promise and it is the check-in list: read one-handed at a venue door in bad
+   light, and given the least styling in the app on purpose. */
 export const DATA_PANEL_CLASSES = 'data-panel'
+
+/* Brand again, but eight times deeper than the shell's glass, which is what
+   turns "it depends on the backdrop" back into a measured number. The dashboard
+   wears it at the brand radius with a blur. */
+export const CHART_PANEL_CLASSES = 'chart-panel'
+
+/* The same fill for the screens that are worked rather than glanced at: the
+   applications queue and the members directory. Tighter radius and no blur --
+   see the rule in `index.css` for both reasons -- and it re-points the ink,
+   hairline, edge and surface variables underneath it, so a component written
+   for a white panel renders correctly on this one without knowing it moved. */
+export const WORK_PANEL_CLASSES = 'work-panel'
 
 export const SHELL_SECTION_TITLE_CLASSES =
   'font-display text-2xl font-light tracking-tight text-on-brand'

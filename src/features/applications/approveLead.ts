@@ -5,6 +5,7 @@ import {
 } from './approvalConflictText'
 import { buildMemberRow } from './buildMemberRow'
 import type { ApprovalDecision } from './decision'
+import { RECORDED_LEAD_STATUS } from './lead'
 import {
   buildMemberEmailIndex,
   doesMemberMatchName,
@@ -17,8 +18,6 @@ import { readVerifiedMemberRow } from './readVerifiedMemberRow'
 import { buildReactivationWrites } from './reactivationWrites'
 import { MEMBERS_APPEND_RANGE, MEMBERS_RANGE, MEMBERS_TAB_NAME } from './sheetTabs'
 import type { SheetsClient } from '../../sheets/sheetsClient'
-
-const APPROVED_STATUS = 'Approved'
 
 const addMember = async ({
   sheetsClient,
@@ -116,7 +115,7 @@ const finishApprovalOfActiveMember = async ({
 
   await sheetsClient.updateCell({
     range: statusCell.range,
-    value: APPROVED_STATUS,
+    value: RECORDED_LEAD_STATUS.approved,
     valueInputOption: 'USER_ENTERED',
   })
 }
@@ -176,7 +175,7 @@ export const approveLead = async ({
 
   await sheetsClient.updateCell({
     range: statusCell.range,
-    value: APPROVED_STATUS,
+    value: RECORDED_LEAD_STATUS.approved,
     valueInputOption: 'USER_ENTERED',
   })
 }

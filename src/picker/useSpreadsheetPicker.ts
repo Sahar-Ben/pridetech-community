@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import type { PickSpreadsheet } from './spreadsheetPicker'
+import type { PickedSpreadsheet, PickSpreadsheet } from './spreadsheetPicker'
 import { describeError } from '../errors/describeError'
 
 const NOTHING_CHOSEN_MESSAGE = 'No spreadsheet was chosen, so nothing changed.'
@@ -17,7 +17,7 @@ export const useSpreadsheetPicker = ({
 }: {
   pickSpreadsheet: PickSpreadsheet
   accessToken: string | undefined
-  onPicked: (spreadsheetId: string) => void
+  onPicked: (spreadsheet: PickedSpreadsheet) => void
 }): SpreadsheetPicker => {
   const [message, setMessage] = useState<string | undefined>(undefined)
 
@@ -29,9 +29,9 @@ export const useSpreadsheetPicker = ({
     try {
       pickSpreadsheet({
         accessToken,
-        onPicked: (spreadsheetId) => {
+        onPicked: (spreadsheet) => {
           setMessage(undefined)
-          onPicked(spreadsheetId)
+          onPicked(spreadsheet)
         },
         onCancelled: () => {
           setMessage(NOTHING_CHOSEN_MESSAGE)

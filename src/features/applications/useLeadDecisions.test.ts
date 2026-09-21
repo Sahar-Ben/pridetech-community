@@ -245,6 +245,25 @@ describe('useLeadDecisions', () => {
       }])
   })
 
+  it('should keep an application for later through the same protected path', async () => {
+    const sheet = buildSheet()
+    const { result } = renderDecisions({ sheetsClient: sheet.client })
+
+    act(() => {
+      result.current.markMaybe({ lead: dana() })
+    })
+
+    await waitFor(() => {
+      expect(result.current.decidedRowNumbers.has(DANA_ROW_NUMBER)).toBe(true)
+    })
+    expect(sheet.writes).toEqual([{
+        kind: 'update',
+        range: 'Leads!K3',
+        values: ['Maybe in the future'],
+        valueInputOption: 'USER_ENTERED',
+      }])
+  })
+
   it('should say plainly when the address already belongs to another active member', async () => {
     const sheet = buildSheet({
       members: [

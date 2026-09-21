@@ -1,6 +1,6 @@
 import { vi } from 'vitest'
 import type { AccessTokenCallbacks, CreateAccessTokenRequester } from '../auth/accessTokenRequester'
-import type { PickSpreadsheet } from '../picker/spreadsheetPicker'
+import type { PickedSpreadsheet, PickSpreadsheet } from '../picker/spreadsheetPicker'
 
 export type FakeGoogleTokenPort = {
   createAccessTokenRequester: CreateAccessTokenRequester
@@ -28,15 +28,17 @@ export const createFakeGoogleTokenPort = (): FakeGoogleTokenPort => {
   }
 }
 
-export const createFakeSpreadsheetPicker = (spreadsheetIds: readonly string[]): PickSpreadsheet => {
+export const createFakeSpreadsheetPicker = (
+  spreadsheets: readonly (string | PickedSpreadsheet)[],
+): PickSpreadsheet => {
   let pickCount = 0
   return ({ onPicked, onCancelled }) => {
-    const spreadsheetId = spreadsheetIds[pickCount]
+    const picked = spreadsheets[pickCount]
     pickCount = pickCount + 1
-    if (spreadsheetId === undefined) {
+    if (picked === undefined) {
       onCancelled()
       return
     }
-    onPicked(spreadsheetId)
+    onPicked(typeof picked === 'string' ? { spreadsheetId: picked, name: undefined } : picked)
   }
 }

@@ -1,4 +1,4 @@
-import type { PickSpreadsheet } from './spreadsheetPicker'
+import type { PickedSpreadsheet, PickSpreadsheet } from './spreadsheetPicker'
 import type { GooglePickerResponse } from '../google/googleGlobals'
 import { describeError } from '../errors/describeError'
 
@@ -8,9 +8,14 @@ const SCRIPT_MISSING_MESSAGE =
 const PICKER_FAILED_MESSAGE = 'The Google Picker could not be opened.'
 const NO_FILE_IN_RESPONSE_MESSAGE = 'Google Picker returned no file. Try choosing it again.'
 
-const readPickedSpreadsheetId = (response: GooglePickerResponse): string | undefined => {
+const readPickedSpreadsheet = (
+  response: GooglePickerResponse,
+): PickedSpreadsheet | undefined => {
   const [document] = response.docs ?? []
-  return document?.id
+  if (document?.id === undefined) {
+    return undefined
+  }
+  return { spreadsheetId: document.id, name: document.name }
 }
 
 export const createGoogleSpreadsheetPicker = ({
@@ -51,12 +56,12 @@ export const createGoogleSpreadsheetPicker = ({
             if (response.action !== pickerApi.Action.PICKED) {
               return
             }
-            const spreadsheetId = readPickedSpreadsheetId(response)
-            if (spreadsheetId === undefined) {
+            const spreadsheet = readPickedSpreadsheet(response)
+            if (spreadsheet === undefined) {
               onError(NO_FILE_IN_RESPONSE_MESSAGE)
               return
             }
-            onPicked(spreadsheetId)
+            onPicked(spreadsheet)
           })
           .build()
         picker.setVisible(true)

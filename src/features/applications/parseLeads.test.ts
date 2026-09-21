@@ -98,6 +98,37 @@ describe('parseLeads', () => {
     expect(leads.map((lead) => lead.status)).toEqual(['approved', 'declined'])
   })
 
+  it('should read the maybe status the app itself writes', () => {
+    const { leads } = parseLeads({
+      rows: [
+        HEADER_ROW,
+        dataRow(['t', 'A', '', '', '', 'a@b.com', '', '', '', '', 'Maybe in the future']),
+      ],
+    })
+
+    expect(leads.map((lead) => lead.status)).toEqual(['maybe'])
+  })
+
+  it('should read a bare Maybe typed into the sheet by hand as the same status', () => {
+    const { leads } = parseLeads({
+      rows: [HEADER_ROW, dataRow(['t', 'A', '', '', '', 'a@b.com', '', '', '', '', 'Maybe'])],
+    })
+
+    expect(leads.map((lead) => lead.status)).toEqual(['maybe'])
+  })
+
+  it('should read a status whatever its case and spacing, since people type it', () => {
+    const { leads } = parseLeads({
+      rows: [
+        HEADER_ROW,
+        dataRow(['t', 'A', '', '', '', 'a@b.com', '', '', '', '', '  maybe   IN the Future ']),
+        dataRow(['t', 'B', '', '', '', 'b@b.com', '', '', '', '', ' DECLINED ']),
+      ],
+    })
+
+    expect(leads.map((lead) => lead.status)).toEqual(['maybe', 'declined'])
+  })
+
   it('should count a status nobody recognises as pending, so the applicant stays visible', () => {
     const { leads } = parseLeads({
       rows: [HEADER_ROW, dataRow(['t', 'A', '', '', '', 'a@b.com', '', '', '', '', 'Decline'])],

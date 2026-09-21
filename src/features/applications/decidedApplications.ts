@@ -11,11 +11,12 @@ const withoutRowNumbers = ({
 
 /* A decided application leaves the list it was decided from without the sheet
    being read again: rereading a thousand rows after every click would make the
-   queue unusable, and the one thing that changed is already known. Both lists
-   are filtered because both can be acted on \u{2014} an approval taken from the
-   declined list has just rewritten that row's Status too. Only those two counts
-   move with it \u{2014} the rest describe the sheet as it was read, and the decision
-   did not fix a missing address or merge a repeated row. */
+   queue unusable, and the one thing that changed is already known. All three
+   lists are filtered because all three can be acted on \u{2014} an approval taken
+   from the declined or the maybe list has just rewritten that row's Status too.
+   Only those three counts move with it \u{2014} the rest describe the sheet as it
+   was read, and the decision did not fix a missing address or merge a repeated
+   row. */
 export const withoutDecidedApplications = ({
   review,
   decidedRowNumbers,
@@ -30,6 +31,10 @@ export const withoutDecidedApplications = ({
     applications: review.waitingApplications,
     decidedRowNumbers,
   })
+  const maybeApplications = withoutRowNumbers({
+    applications: review.maybeApplications,
+    decidedRowNumbers,
+  })
   const declinedApplications = withoutRowNumbers({
     applications: review.declinedApplications,
     decidedRowNumbers,
@@ -37,10 +42,12 @@ export const withoutDecidedApplications = ({
   return {
     ...review,
     waitingApplications,
+    maybeApplications,
     declinedApplications,
     counts: {
       ...review.counts,
       waitingCount: waitingApplications.length,
+      maybeCount: maybeApplications.length,
       declinedCount: declinedApplications.length,
     },
   }

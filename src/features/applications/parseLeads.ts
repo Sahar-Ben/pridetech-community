@@ -2,7 +2,7 @@ import { COLUMN_ALIASES } from '../../sheets/columnAliases'
 import { toEmailKey } from '../../sheets/emailKey'
 import { buildHeaderMap, findColumn } from '../../sheets/headerMap'
 import { hasAnyRecordedCell, readCell } from '../../sheets/readCell'
-import type { Lead, LeadStatus } from './lead'
+import { RECORDED_LEAD_STATUS, type Lead, type LeadStatus } from './lead'
 
 const HEADER_ROW_COUNT = 1
 
@@ -19,15 +19,26 @@ export type ParsedLeads = {
   rowsWithoutEmail: readonly LeadWithoutEmail[]
 }
 
+const toComparableStatus = (value: string): string =>
+  value.trim().replace(/\s+/g, ' ').toLowerCase()
+
+/* Canonical on write, forgiving on read. The column is typed into by hand as
+   well as written by this app, so case and stray spacing decide nothing, and a
+   bare `Maybe` means what the full phrase means. Anything else is pending,
+   which is the safe direction: a status nobody here recognises leaves the
+   applicant in the queue rather than filed under a decision nobody took. */
+const STATUS_BY_RECORDED_VALUE: ReadonlyMap<string, LeadStatus> = new Map([
+  [toComparableStatus(RECORDED_LEAD_STATUS.approved), 'approved'],
+  [toComparableStatus(RECORDED_LEAD_STATUS.declined), 'declined'],
+  [toComparableStatus(RECORDED_LEAD_STATUS.maybe), 'maybe'],
+  ['maybe', 'maybe'],
+])
+
 const parseStatus = (value: string | undefined): LeadStatus => {
-  const normalized = value?.toLowerCase()
-  if (normalized === 'approved') {
-    return 'approved'
+  if (value === undefined) {
+    return 'pending'
   }
-  if (normalized === 'declined') {
-    return 'declined'
-  }
-  return 'pending'
+  return STATUS_BY_RECORDED_VALUE.get(toComparableStatus(value)) ?? 'pending'
 }
 
 export const parseLeads = ({ rows }: { rows: readonly (readonly string[])[] }): ParsedLeads => {

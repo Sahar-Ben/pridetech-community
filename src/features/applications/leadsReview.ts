@@ -1,5 +1,5 @@
 import { groupDuplicateApplicants, type DuplicateApplicant } from './duplicateApplicants'
-import type { Lead } from './lead'
+import type { Lead, LeadStatus } from './lead'
 import { isActiveMemberMatch, type MemberEmailIndex, type MemberMatch } from './memberEmailIndex'
 import type { LeadWithoutEmail, ParsedLeads } from './parseLeads'
 
@@ -20,6 +20,7 @@ export type AlreadyMemberLead = {
 export type LeadsReviewCounts = {
   waitingCount: number
   alreadyMemberCount: number
+  maybeCount: number
   declinedCount: number
   leadsWithoutEmailCount: number
   membersWithoutEmailCount: number
@@ -28,6 +29,7 @@ export type LeadsReviewCounts = {
 
 export type LeadsReview = {
   waitingApplications: readonly ReviewableApplication[]
+  maybeApplications: readonly ReviewableApplication[]
   declinedApplications: readonly ReviewableApplication[]
   alreadyMemberLeads: readonly AlreadyMemberLead[]
   leadsWithoutEmail: readonly LeadWithoutEmail[]
@@ -95,15 +97,24 @@ export const buildLeadsReview = ({
      they are carried whole rather than counted: approving one of them is the
      reason to open the list at all. Approved rows are not, and must not be \u{2014}
      824 of them would turn a work queue into a browser of the Members tab. */
-  const declinedApplications = parsedLeads.leads
-    .filter((lead) => lead.status === 'declined')
-    .map((lead) => ({ lead, priorMember: priorMemberOf({ lead, memberEmailIndex }) }))
-    .toSorted((earlier, later) => bySheetRow(earlier.lead, later.lead))
+  const applicationsWithStatus = (status: LeadStatus): readonly ReviewableApplication[] =>
+    parsedLeads.leads
+      .filter((lead) => lead.status === status)
+      .map((lead) => ({ lead, priorMember: priorMemberOf({ lead, memberEmailIndex }) }))
+      .toSorted((earlier, later) => bySheetRow(earlier.lead, later.lead))
+
+  const declinedApplications = applicationsWithStatus('declined')
+
+  /* Kept for later is a decision like the other two, so it leaves the queue the
+     same way -- but it is the one decision taken with the intention of coming
+     back to it, so the applications are carried whole rather than counted. */
+  const maybeApplications = applicationsWithStatus('maybe')
 
   const duplicateApplicants = groupDuplicateApplicants({ leads: parsedLeads.leads })
 
   return {
     waitingApplications,
+    maybeApplications,
     declinedApplications,
     alreadyMemberLeads,
     leadsWithoutEmail: parsedLeads.rowsWithoutEmail,
@@ -111,6 +122,7 @@ export const buildLeadsReview = ({
     counts: {
       waitingCount: waitingApplications.length,
       alreadyMemberCount: alreadyMemberLeads.length,
+      maybeCount: maybeApplications.length,
       declinedCount: declinedApplications.length,
       leadsWithoutEmailCount: parsedLeads.rowsWithoutEmail.length,
       membersWithoutEmailCount: memberEmailIndex.membersWithoutEmailCount,

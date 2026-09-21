@@ -24,6 +24,7 @@ const renderWorkspace = (
     onSessionExpired: vi.fn(),
     onChangeSpreadsheet: vi.fn(),
     onSignOut: vi.fn(),
+    spreadsheetName: undefined,
     ...overrides,
   }
   render(<CommunityWorkspace {...props} />)
@@ -37,14 +38,30 @@ describe('CommunityWorkspace', () => {
     expect(screen.getByRole('heading', { name: 'PrideTech Community' })).toBeInTheDocument()
   })
 
-  it('should open on the Leads section', () => {
+  it('should open on the Overview section', () => {
     renderWorkspace()
 
-    expect(screen.getByRole('button', { name: 'Leads' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('button', { name: 'Overview' })).toHaveAttribute('aria-current', 'page')
+  })
+
+  it('should show the member distributions the Overview is for', async () => {
+    renderWorkspace()
+
+    expect(await screen.findByRole('heading', { name: 'Overview' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Gender' })).toBeInTheDocument()
+  })
+
+  it('should switch to Leads when the Leads nav item is clicked', async () => {
+    renderWorkspace()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Leads' }))
+
+    expect(await screen.findByRole('heading', { name: 'Applications' })).toBeInTheDocument()
   })
 
   it('should show the applications read from the spreadsheet', async () => {
     renderWorkspace()
+    await userEvent.click(screen.getByRole('button', { name: 'Leads' }))
 
     expect(await screen.findByRole('heading', { name: 'Applications' })).toBeInTheDocument()
     expect(screen.getByText('Noa Feldman')).toBeInTheDocument()
@@ -73,7 +90,7 @@ describe('CommunityWorkspace', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Events' }))
 
     expect(screen.getByRole('button', { name: 'Events' })).toHaveAttribute('aria-current', 'page')
-    expect(screen.getByRole('button', { name: 'Leads' })).not.toHaveAttribute('aria-current')
+    expect(screen.getByRole('button', { name: 'Overview' })).not.toHaveAttribute('aria-current')
   })
 
   it('should list the community in the Members section', async () => {
@@ -135,6 +152,7 @@ describe('CommunityWorkspace', () => {
 
   it('should not call the Applications section sample data, because it is real', async () => {
     renderWorkspace()
+    await userEvent.click(screen.getByRole('button', { name: 'Leads' }))
     await screen.findByText('Noa Feldman')
 
     expect(screen.queryByText(/is invented/i)).not.toBeInTheDocument()
@@ -154,5 +172,33 @@ describe('CommunityWorkspace', () => {
     await userEvent.click(screen.getByRole('button', { name: /sign out/i }))
 
     expect(onSignOut).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('CommunityWorkspace, where the account actions live', () => {
+  it('should keep both account actions in the sidebar rather than over the work', () => {
+    renderWorkspace()
+
+    const navigation = screen.getByRole('navigation', { name: /sections/i })
+
+    expect(
+      within(navigation).getByRole('button', { name: /change spreadsheet/i }),
+    ).toBeInTheDocument()
+    expect(within(navigation).getByRole('button', { name: /sign out/i })).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: /sign out/i })).toHaveLength(1)
+  })
+
+  it('should still change the spreadsheet from its new home', async () => {
+    const { onChangeSpreadsheet } = renderWorkspace()
+
+    await userEvent.click(screen.getByRole('button', { name: /change spreadsheet/i }))
+
+    expect(onChangeSpreadsheet).toHaveBeenCalledOnce()
+  })
+
+  it('should name the spreadsheet it is working against when that name is known', () => {
+    renderWorkspace({ spreadsheetName: 'PrideTech WRITE TEST' })
+
+    expect(screen.getByText('PrideTech WRITE TEST')).toBeInTheDocument()
   })
 })

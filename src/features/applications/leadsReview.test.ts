@@ -266,6 +266,7 @@ describe('buildLeadsReview', () => {
     expect(review.counts).toEqual({
       waitingCount: 0,
       alreadyMemberCount: 0,
+      maybeCount: 0,
       declinedCount: 0,
       leadsWithoutEmailCount: 0,
       membersWithoutEmailCount: 0,
@@ -473,5 +474,39 @@ describe('buildLeadsReview, the applications that were declined', () => {
 
     expect(review.declinedApplications).toEqual([])
     expect(review.counts.declinedCount).toBe(0)
+  })
+})
+
+describe('buildLeadsReview, applications kept for later', () => {
+  it('should carry a maybe application in its own list, whole, so it can be decided later', () => {
+    const review = reviewOf({
+      leads: [
+        lead({ rowNumber: 2, email: 'waiting@example.com', name: 'Still Waiting' }),
+        lead({ rowNumber: 3, email: 'later@example.com', name: 'Come Back Later', status: 'maybe' }),
+      ],
+    })
+
+    expect(review.maybeApplications.map((kept) => kept.lead.name)).toEqual([
+      'Come Back Later',
+    ])
+  })
+
+  it('should count a maybe application as neither waiting nor declined', () => {
+    const review = reviewOf({
+      leads: [
+        lead({ rowNumber: 2, email: 'waiting@example.com' }),
+        lead({ rowNumber: 3, email: 'later@example.com', status: 'maybe' }),
+      ],
+    })
+
+    expect(review.counts).toMatchObject({ waitingCount: 1, maybeCount: 1, declinedCount: 0 })
+  })
+
+  it('should keep a maybe application out of the queue it was taken out of', () => {
+    const review = reviewOf({
+      leads: [lead({ rowNumber: 3, email: 'later@example.com', status: 'maybe' })],
+    })
+
+    expect(review.waitingApplications).toEqual([])
   })
 })

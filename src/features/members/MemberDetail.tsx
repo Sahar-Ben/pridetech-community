@@ -7,13 +7,13 @@ import {
   COMPACT_BUTTON_SIZE_CLASSES,
   SECONDARY_BUTTON_CLASSES,
 } from '../../theme/controls'
-import { DATA_PANEL_CLASSES, RECORD_TITLE_CLASSES } from '../../theme/surfaces'
+import { RECORD_TITLE_CLASSES, WORK_PANEL_CLASSES } from '../../theme/surfaces'
 
 const BACK_ARROW = '\u{2190}'
 
 const ACTION_BUTTON_CLASSES = `${SECONDARY_BUTTON_CLASSES} ${COMPACT_BUTTON_SIZE_CLASSES}`
 
-const DETAIL_CLASSES = `${DATA_PANEL_CLASSES} animate-rise flex flex-col gap-4 px-4 py-4 sm:px-6`
+const DETAIL_CLASSES = `${WORK_PANEL_CLASSES} animate-rise flex flex-col gap-4 px-4 py-4 sm:px-6`
 
 type MemberDetailProps = {
   member: Member

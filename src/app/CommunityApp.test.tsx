@@ -76,17 +76,18 @@ describe('CommunityApp', () => {
     await signIn(google)
 
     await userEvent.click(screen.getByRole('button', { name: /choose spreadsheet/i }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Leads' }))
 
     expect(await screen.findByText('Noa Feldman')).toBeInTheDocument()
   })
 
-  it('should go straight to the applications when a spreadsheet was chosen in an earlier session', async () => {
+  it('should go straight to the workspace when a spreadsheet was chosen in an earlier session', async () => {
     window.localStorage.setItem('pridetech.spreadsheetId', 'remembered-sheet')
     const google = renderCommunityApp()
 
     await signIn(google)
 
-    expect(await screen.findByText('Noa Feldman')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Overview' })).toBeInTheDocument()
   })
 
   it('should say why sign-in failed instead of leaving a dead button', async () => {
@@ -136,14 +137,14 @@ describe('CommunityApp', () => {
     const rangesRead = readRange.mock.calls.map(([options]) =>
       String((options as { range: string }).range),
     )
-    expect(rangesRead).toEqual(['Leads!A1:Z', 'Members!A1:Z'])
+    expect(rangesRead).toEqual(['Members!A1:Z', 'Leads!A1:Z'])
   })
 
   it('should return to the sign-in screen when the reviewer signs out', async () => {
     window.localStorage.setItem('pridetech.spreadsheetId', 'remembered-sheet')
     const google = renderCommunityApp()
     await signIn(google)
-    await screen.findByText('Noa Feldman')
+    await screen.findByRole('heading', { name: 'Overview' })
 
     await userEvent.click(screen.getByRole('button', { name: /sign out/i }))
 
@@ -158,7 +159,7 @@ describe('CommunityApp', () => {
       createClient,
     })
     await signIn(google)
-    await screen.findByText('Noa Feldman')
+    await screen.findByRole('heading', { name: 'Overview' })
 
     await userEvent.click(screen.getByRole('button', { name: /change spreadsheet/i }))
 

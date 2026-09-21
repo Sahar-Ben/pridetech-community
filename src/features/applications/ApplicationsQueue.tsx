@@ -1,6 +1,11 @@
 import { useState } from 'react'
 import { ApplicationCard } from './ApplicationCard'
-import { isDecliningOffered, selectApplicationsInView, type LeadView } from './leadViews'
+import {
+  isDecliningOffered,
+  isMaybeOffered,
+  selectApplicationsInView,
+  type LeadView,
+} from './leadViews'
 import type { LeadsReview } from './leadsReview'
 import { LeadsDataQualityNotes } from './LeadsDataQualityNotes'
 import { describeApplicationsCount, describeEmptyView } from './leadsReviewText'
@@ -39,7 +44,10 @@ export const ApplicationsQueue = ({
   const [view, setView] = useState<LeadView>('Pending')
   const applications = selectApplicationsInView({ review, view })
   const countLine = describeApplicationsCount({ view, counts: review.counts })
-  const decline = isDecliningOffered({ view }) ? decisions.decline : undefined
+  const cardDecisions = {
+    onDecline: isDecliningOffered({ view }) ? decisions.decline : undefined,
+    onMarkMaybe: isMaybeOffered({ view }) ? decisions.markMaybe : undefined,
+  }
 
   return (
     <section className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 pb-12">
@@ -74,7 +82,7 @@ export const ApplicationsQueue = ({
               application={application}
               decisionState={decisions.stateFor(application.lead.rowNumber)}
               onApprove={decisions.approve}
-              onDecline={decline}
+              decisions={cardDecisions}
             />
           ))}
         </ul>

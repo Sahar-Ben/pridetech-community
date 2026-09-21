@@ -1,4 +1,18 @@
-export type LeadStatus = 'pending' | 'approved' | 'declined'
+export type LeadStatus = 'pending' | 'approved' | 'declined' | 'maybe'
+
+/* The exact words this app writes into the Status column, and the spellings
+   `parseLeads` reads back canonically. Pending is absent on purpose: it is the
+   blank cell, and nothing here ever writes one back \u{2014} a blank says nobody
+   has looked at this person yet, and manufacturing one would hide a decision
+   that was taken. */
+export const RECORDED_LEAD_STATUS = {
+  approved: 'Approved',
+  declined: 'Declined',
+  maybe: 'Maybe in the future',
+} as const
+
+export type RecordedLeadStatusValue =
+  (typeof RECORDED_LEAD_STATUS)[keyof typeof RECORDED_LEAD_STATUS]
 
 /* `timestamp` is the Google Form's own submission stamp, written once when the
    response arrived and never touched afterwards. It is carried because a row

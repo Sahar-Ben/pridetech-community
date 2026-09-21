@@ -24,7 +24,7 @@ export const CommunityApp = ({
   const { accessToken, errorMessage, signIn, signOut, reportExpiredSession } = useGoogleAuth({
     createAccessTokenRequester,
   })
-  const { spreadsheetId, selectSpreadsheet } = useStoredSpreadsheetId()
+  const { spreadsheetId, spreadsheetName, selectSpreadsheet } = useStoredSpreadsheetId()
   const picker = useSpreadsheetPicker({
     pickSpreadsheet,
     accessToken,
@@ -51,6 +51,7 @@ export const CommunityApp = ({
   return (
     <CommunityWorkspace
       sheetsClient={sheetsClient}
+      spreadsheetName={spreadsheetName}
       onSessionExpired={reportExpiredSession}
       onChangeSpreadsheet={picker.choose}
       onSignOut={signOut}

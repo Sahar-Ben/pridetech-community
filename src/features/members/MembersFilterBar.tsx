@@ -1,10 +1,13 @@
 import { useId } from 'react'
 import { MEMBER_STATUS_FILTERS, type MemberStatusFilter } from './memberFilters'
 import { FIELD_BORDER_CLASSES, FIELD_CONTROL_CLASSES } from '../../theme/fields'
+import { WORK_PANEL_CLASSES } from '../../theme/surfaces'
 
-/* The labels sit on the gradient rather than on a card, so they are white
-   rather than muted ink -- the controls under them are the opaque part. */
-const LABEL_CLASSES = 'text-xs font-bold tracking-wide text-on-brand uppercase'
+/* Labels and controls share one panel, so the label is the panel's own ink --
+   white at 15.2:1 -- rather than a colour picked for the gradient behind it. */
+const BAR_CLASSES = `${WORK_PANEL_CLASSES} flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-end`
+
+const LABEL_CLASSES = 'text-xs font-bold tracking-wide text-ink uppercase'
 
 const CONTROL_CLASSES = `${FIELD_CONTROL_CLASSES} ${FIELD_BORDER_CLASSES}`
 
@@ -28,7 +31,7 @@ export const MembersFilterBar = ({
   const statusSelectId = useId()
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+    <div className={BAR_CLASSES}>
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <label className={LABEL_CLASSES} htmlFor={searchInputId}>
           Search by name, email or company

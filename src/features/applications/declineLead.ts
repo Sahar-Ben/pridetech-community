@@ -1,8 +1,7 @@
 import type { DeclineDecision } from './decision'
-import { locateLeadStatusCell } from './locateLeadStatusCell'
+import { RECORDED_LEAD_STATUS } from './lead'
+import { writeLeadStatus } from './writeLeadStatus'
 import type { SheetsClient } from '../../sheets/sheetsClient'
-
-const DECLINED_STATUS = 'Declined'
 
 /* Declining touches the Leads tab and nothing else. The Members tab is not read,
    not appended to and not reactivated: somebody who was turned away has no
@@ -13,11 +12,9 @@ export const declineLead = async ({
 }: {
   sheetsClient: SheetsClient
   decision: DeclineDecision
-}): Promise<void> => {
-  const statusCell = await locateLeadStatusCell({ sheetsClient, lead: decision.lead })
-  await sheetsClient.updateCell({
-    range: statusCell.range,
-    value: DECLINED_STATUS,
-    valueInputOption: 'USER_ENTERED',
+}): Promise<void> =>
+  await writeLeadStatus({
+    sheetsClient,
+    lead: decision.lead,
+    status: RECORDED_LEAD_STATUS.declined,
   })
-}

@@ -36,6 +36,12 @@ describe('describeDecisionFailure', () => {
     ).toMatch(/declining dana maman/i)
   })
 
+  it('should name keeping somebody for later as its own decision', () => {
+    expect(
+      describeDecisionFailure({ decision: 'maybe', lead: lead(), error: new Error('nope') }),
+    ).toMatch(/keeping dana maman for later/i)
+  })
+
   it('should fall back to the email when the application carries no name', () => {
     expect(
       describeDecisionFailure({

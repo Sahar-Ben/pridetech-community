@@ -15,6 +15,7 @@ import {
 const counts = (overrides: Partial<LeadsReviewCounts> = {}): LeadsReviewCounts => ({
   waitingCount: 0,
   alreadyMemberCount: 0,
+  maybeCount: 0,
   declinedCount: 0,
   leadsWithoutEmailCount: 0,
   membersWithoutEmailCount: 0,
@@ -205,5 +206,32 @@ describe('describeDuplicateNames', () => {
     })
 
     expect(names).toBe('office@example.com')
+  })
+})
+
+describe('describeApplicationsCount, under Maybe', () => {
+  const describeMaybe = (overrides: Partial<LeadsReviewCounts>) =>
+    describeApplicationsCount({ view: 'Maybe', counts: counts(overrides) })
+
+  it('should say how many applications are being kept for later', () => {
+    expect(describeMaybe({ maybeCount: 4 })).toBe('4 kept for later')
+  })
+
+  it('should say nothing when none are being kept', () => {
+    expect(describeMaybe({ maybeCount: 0 })).toBeUndefined()
+  })
+
+  it('should never repeat the already-a-member count, which is about the queue', () => {
+    expect(describeMaybe({ maybeCount: 4, waitingCount: 256, alreadyMemberCount: 824 })).toBe(
+      '4 kept for later',
+    )
+  })
+})
+
+describe('describeEmptyView, under Maybe', () => {
+  it('should say which view is empty when nothing is being kept for later', () => {
+    expect(describeEmptyView({ view: 'Maybe' })).toBe(
+      'No applications are being kept for later.',
+    )
   })
 })

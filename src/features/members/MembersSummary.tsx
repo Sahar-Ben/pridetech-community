@@ -3,14 +3,15 @@ import { GenderSplitBar } from './GenderSplitBar'
 import { calculateGenderSplit } from './genderSplit'
 import type { Member } from './member'
 import { selectActiveMembers } from './memberFilters'
-import { GLASS_PANEL_CLASSES } from '../../theme/surfaces'
+import { WORK_PANEL_CLASSES } from '../../theme/surfaces'
 
 const SEPARATOR = ' \u{00b7} '
 
-/* The one working screen where glass is allowed, because nothing here is read
-   row by row: two totals and a sentence, all in white at 4.82:1 or better even
-   over the lightest part of the gradient. The table below it stays opaque. */
-const SUMMARY_CLASSES = `${GLASS_PANEL_CLASSES} animate-rise flex flex-col gap-3 px-5 py-4`
+/* The same panel as the filter bar and the table under it. Nothing here is
+   read row by row, so shell glass would have been legible enough on its own --
+   but it would have been a pale band between two deep ones, and the split bar's
+   three white tints need one known fill behind them rather than the gradient. */
+const SUMMARY_CLASSES = `${WORK_PANEL_CLASSES} animate-rise flex flex-col gap-3 px-5 py-4`
 
 type MembersSummaryProps = {
   members: readonly Member[]

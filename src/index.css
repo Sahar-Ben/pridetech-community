@@ -12,10 +12,13 @@
       that; an organiser reads this screen for hours. The stops here are the same
       hues at 5.9:1 or better, and glass over the lightest of them still clears
       4.8:1, so no panel can be composed into a contrast failure.
-   2. Glass and display type stop at the shell. The three working surfaces -- the
-      applications queue, the members table, the check-in list -- run on opaque
-      `--ui-surface` so their contrast is a fixed number rather than a function of
-      whatever the gradient is doing behind them. */
+   2. Display type stops at the shell, and so does fully translucent glass. The
+      working surfaces that are read rather than glanced at -- the applications
+      queue, the members directory -- run on `.work-panel`, the same deep fill
+      as the dashboard's cards, where every contrast is a measured number
+      instead of a function of the gradient. The check-in list is the one
+      surface still opaque: it is read one-handed at a venue door in bad light,
+      and a backdrop is one variable too many there. */
 
 :root {
   color-scheme: light;
@@ -67,18 +70,60 @@
   --ui-focus-halo: rgb(255 255 255 / 0.95);
 
   /* Chart marks, and the only colours in the app chosen by a validator rather
-     than by eye. They are the brand's own three gradient hues re-stepped onto
-     the opaque data surface, because the gradient stops themselves collapse
-     under deuteranopia when they sit side by side as pie slices. Run
-     `validate_palette.js` against `--ui-surface` before changing any of them.
+     than by eye. One set for both themes, because the surface they sit on is
+     the same in both: `.chart-panel` is a deep brand fill, so the dashboard is
+     dark under the marks whichever theme the viewer is in. Validated against
+     the LIGHTEST composite that panel can produce (#2b1a54, the panel over the
+     gradient's violet stop) -- every other point on the gradient is darker and
+     therefore kinder. Re-run `validate_palette.js` against that surface before
+     changing any of them.
 
      `--ui-chart-unknown` is grey on purpose and is never a fourth series: it is
      the one colour reserved for "we do not know", so an unrecorded share reads
      as a gap in the data rather than as another category. */
-  --ui-chart-1: #5b2fd0;
-  --ui-chart-2: #3d9ad8;
-  --ui-chart-3: #0e7f5f;
-  --ui-chart-unknown: #6f7a91;
+  --ui-chart-1: #b264fb;
+  --ui-chart-2: #5385c2;
+  --ui-chart-3: #35aa76;
+  --ui-chart-unknown: #7c879e;
+
+  /* The far end of each bar's gradient: a lighter step of the fill's own hue,
+     never a second hue, so the gradient is depth rather than a second silent
+     encoding. Both ends are held above 4.5:1 against `--ui-chart-on-fill`,
+     because a value label is written on top of them and the lighter end is the
+     one that decides whether it can be read. */
+  --ui-chart-1-lift: #c07dff;
+  --ui-chart-unknown-lift: #8d97ab;
+  --ui-chart-on-fill: #150a2e;
+
+  --ui-chart-glow: rgb(178 100 251 / 0.3);
+
+  /* Deep enough to be measurable, translucent enough to still be glass, and the
+     surface every panel in the app that is not white now stands on: the
+     dashboard's charts, the applications queue, and the members directory.
+
+     0.8 rather than the shell's 0.1 is the whole trick: at that depth the
+     backdrop moves the panel's hue down the page without moving its luminance
+     enough to matter, so one validated palette holds from the violet stop to
+     the teal one. It is also why this panel, unlike the shell's glass, can
+     afford a dimmed white -- 9.1:1 at the worst point, against the 4.54:1 that
+     ruled one out over ordinary glass. */
+  --ui-panel-deep: rgb(26 17 52 / 0.8);
+  --ui-panel-deep-edge: rgb(255 255 255 / 0.18);
+  --ui-panel-deep-ink-muted: rgb(255 255 255 / 0.75);
+
+  /* The panel over the gradient's violet stop, spelled out as a flat colour:
+     the lightest composite it can ever produce, and therefore the surface the
+     whole palette above was validated against. A sticky table header is the one
+     place the panel cannot be translucent -- 787 rows scroll underneath it --
+     so it wears the validated colour rather than a second, unmeasured one. */
+  --ui-panel-deep-solid: #2b1a54;
+
+  /* A warning written straight onto a panel rather than inside a notice block.
+     A notice carries its own light surface and keeps `--ui-warning-ink` with
+     it; these two have to survive whichever panel they land on, which is why
+     they are the pair that re-resolves inside `.work-panel`. */
+  --ui-warning-on-panel: #7a4405;
+  --ui-danger-on-panel: #9f1239;
 }
 
 /* Dark is not a tint of light here. At a venue door at night the gradient drops
@@ -131,13 +176,14 @@
     --ui-focus-ring: #ffffff;
     --ui-focus-halo: rgb(7 5 16 / 0.95);
 
-    /* Re-derived against the dark `--ui-surface`, not lightened from the light
-       steps: the light trio drops below the dark lightness band and the violet
-       and blue stop separating on it. */
-    --ui-chart-1: #b264fb;
-    --ui-chart-2: #4570a8;
-    --ui-chart-3: #35aa76;
-    --ui-chart-unknown: #7c879e;
+    /* The deep panel keeps its fill in both themes -- it is already darker than
+       anything the dark gradient puts behind it -- but the flat stand-in for it
+       has to follow the gradient down, or a sticky header would glow violet
+       over near-black rows. */
+    --ui-panel-deep-solid: #191033;
+
+    --ui-warning-on-panel: #ffd68f;
+    --ui-danger-on-panel: #ffc9d4;
   }
 }
 
@@ -190,10 +236,19 @@
   --color-neutral-surface: var(--ui-neutral-surface);
   --color-neutral-ink: var(--ui-neutral-ink);
 
+  --color-warning-on-panel: var(--ui-warning-on-panel);
+  --color-danger-on-panel: var(--ui-danger-on-panel);
+
+  --color-panel-deep-solid: var(--ui-panel-deep-solid);
+
   --color-chart-1: var(--ui-chart-1);
   --color-chart-2: var(--ui-chart-2);
   --color-chart-3: var(--ui-chart-3);
   --color-chart-unknown: var(--ui-chart-unknown);
+  --color-chart-1-lift: var(--ui-chart-1-lift);
+  --color-chart-unknown-lift: var(--ui-chart-unknown-lift);
+  --color-chart-on-fill: var(--ui-chart-on-fill);
+  --color-panel-deep-ink-muted: var(--ui-panel-deep-ink-muted);
 
   /* 28px and 44px are measured off the site's cards. 14px is not: data surfaces
      get a tighter corner so a dense table does not lose its first cell to a
@@ -312,6 +367,85 @@
     border-radius: var(--radius-data);
     box-shadow: var(--shadow-data);
     color: var(--ui-ink);
+  }
+
+  /* Glass, but eight times deeper than the shell's. The same brand vocabulary
+     as `.glass-panel` -- translucent, blurred, 28px, soft diffuse shadow -- on
+     a fill dark enough that a chart's marks and its labels have measured
+     contrast wherever down the gradient the panel happens to land. */
+  .chart-panel {
+    background-color: var(--ui-panel-deep);
+    border: 1px solid var(--ui-panel-deep-edge);
+    border-radius: var(--radius-brand);
+    box-shadow: var(--shadow-glass);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    color: var(--ui-on-brand);
+  }
+
+  /* The same fill as `.chart-panel`, carrying the working screens rather than
+     the dashboard, and it differs from it in exactly two ways.
+
+     It takes the data radius rather than the brand one, for the reason
+     `--radius-data` exists: a 28px curve eats the first cell of a dense row.
+
+     It does not blur. A dashboard card blurs a few hundred pixels of backdrop;
+     these panels are a 256-card queue and a 787-row table, and a blur on those
+     is a full-height backdrop repaint on every scroll frame. At 0.8 alpha over
+     a gradient with nothing behind it but its own noise, the blur was buying a
+     softer texture and no legibility.
+
+     The variables below are the conversion. Every child keeps the class it had
+     on white -- `text-ink`, `border-hairline`, `bg-surface` -- and reads a
+     value that suits a deep panel instead, which is the whole reason the theme
+     above is `inline`. Measured against #2b1a54, the lightest composite this
+     panel can produce: body white 15.2:1, the dimmed white 9.1:1, a row rule
+     3.1:1 where the white theme's hairline was 1.4:1, an input border 4.2:1
+     against the panel and 3.1:1 against its own fill, white in that fill
+     11.4:1. Notice blocks keep their own light surfaces and are deliberately
+     not listed here: a warning that dissolved into the brand would be a warning
+     that stopped working. */
+  .work-panel {
+    background-color: var(--ui-panel-deep);
+    border: 1px solid var(--ui-panel-deep-edge);
+    border-radius: var(--radius-data);
+    box-shadow: var(--shadow-glass);
+    color: var(--ui-on-brand);
+
+    --ui-ink: var(--ui-on-brand);
+    --ui-ink-muted: var(--ui-panel-deep-ink-muted);
+    --ui-hairline: rgb(255 255 255 / 0.35);
+    --ui-edge: rgb(255 255 255 / 0.45);
+    --ui-surface: rgb(255 255 255 / 0.1);
+    --ui-surface-raised: rgb(255 255 255 / 0.18);
+    /* Sunken keeps its meaning by going the other way: on a deep panel the
+       recessed surfaces -- the read-only field, chiefly -- have to be darker
+       than the editable ones, or a field nobody may type in reads as the
+       raised one. 1.5:1 against an editable fill, and the dimmed white on it
+       is still 9.8:1. */
+    --ui-surface-sunken: rgb(0 0 0 / 0.22);
+    --ui-accent: #b9a3ff;
+    --ui-accent-solid: #c4b0ff;
+    --ui-accent-solid-hover: #d4c5ff;
+    --ui-on-accent: #150a2e;
+    --ui-warning-on-panel: #ffd68f;
+    --ui-danger-on-panel: #ffc9d4;
+  }
+
+  /* A chart mark is lifted off its panel rather than outlined on it: the glow
+     is the fill's own hue at low alpha, so it reads as the mark casting light
+     rather than as a border, and it costs the chart no data-weight ink. The
+     transition is what makes a hover feel like a response rather than a
+     repaint; `prefers-reduced-motion` already switches it off globally. */
+  .chart-mark {
+    filter: drop-shadow(0 1px 3px var(--ui-chart-glow));
+    transition:
+      opacity 150ms var(--ease-brand),
+      filter 150ms var(--ease-brand);
+  }
+
+  .chart-mark-lifted {
+    filter: drop-shadow(0 2px 9px var(--ui-chart-glow));
   }
 
   /* The rainbow is a mark beside a label, never a surface and never on text.

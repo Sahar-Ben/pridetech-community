@@ -38,34 +38,51 @@ const describePendingCount = ({ counts }: { counts: LeadsReviewCounts }): string
 
 /* One number, and not the queue's second one. The already-a-member count says
    how many waiting applications the filter set aside, which is a fact about the
-   queue: repeated over a list of declined applications it would read as a count
+   queue: repeated over a list of decided applications it would read as a count
    of them, and it counts none of them. */
-const describeDeclinedCount = ({ counts }: { counts: LeadsReviewCounts }): string | undefined => {
-  if (counts.declinedCount === 0) {
+const describeDecidedCount = ({
+  count,
+  word,
+}: {
+  count: number
+  word: string
+}): string | undefined => {
+  if (count === 0) {
     return undefined
   }
-  return `${counts.declinedCount} declined`
+  return `${count} ${word}`
 }
 
 /* Undefined rather than a zero: an empty view already says so in words below,
    and `0 waiting` above it would be the same sentence twice. */
+const DESCRIBE_COUNT: Readonly<
+  Record<LeadView, (counts: LeadsReviewCounts) => string | undefined>
+> = {
+  Pending: (counts) => describePendingCount({ counts }),
+  Maybe: (counts) => describeDecidedCount({ count: counts.maybeCount, word: 'kept for later' }),
+  Declined: (counts) => describeDecidedCount({ count: counts.declinedCount, word: 'declined' }),
+}
+
 export const describeApplicationsCount = ({
   view,
   counts,
 }: {
   view: LeadView
   counts: LeadsReviewCounts
-}): string | undefined =>
-  view === 'Declined' ? describeDeclinedCount({ counts }) : describePendingCount({ counts })
+}): string | undefined => DESCRIBE_COUNT[view](counts)
 
-/* Each view names itself when it is empty. Both are legitimately empty \u{2014} a
-   queue that has been worked through, and a sheet nobody has been declined on
-   \u{2014} and a shared "nothing here" would leave the reviewer unable to tell
-   which of the two they were looking at. */
+/* Each view names itself when it is empty. All three are legitimately empty
+   \u{2014} a queue that has been worked through, a sheet nobody has been declined
+   on, a reviewer who decides everything as they read it \u{2014} and a shared
+   "nothing here" would leave them unable to tell which they were looking at. */
+const EMPTY_VIEW_SENTENCES: Readonly<Record<LeadView, string>> = {
+  Pending: 'No applications waiting for review.',
+  Maybe: 'No applications are being kept for later.',
+  Declined: 'No applications have been declined.',
+}
+
 export const describeEmptyView = ({ view }: { view: LeadView }): string =>
-  view === 'Declined'
-    ? 'No applications have been declined.'
-    : 'No applications waiting for review.'
+  EMPTY_VIEW_SENTENCES[view]
 
 /* Each note is its own function rather than one list of strings: the two that
    name Leads rows open a list of those rows, and a caller cannot attach a list

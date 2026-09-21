@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createGoogleSpreadsheetPicker } from './googlePicker'
+import type { PickedSpreadsheet } from './spreadsheetPicker'
 import type { GooglePickerBuilder, GooglePickerResponse } from '../google/googleGlobals'
 
 const PICKED = 'picked'
@@ -68,7 +69,7 @@ const stubGooglePicker = () => {
 }
 
 const openPicker = (callbacks: {
-  onPicked?: (spreadsheetId: string) => void
+  onPicked?: (spreadsheet: PickedSpreadsheet) => void
   onCancelled?: () => void
   onError?: (message: string) => void
 }) => {
@@ -106,7 +107,23 @@ describe('createGoogleSpreadsheetPicker', () => {
     openPicker({ onPicked })
     picker.respond({ action: PICKED, docs: [{ id: 'spreadsheet-1' }] })
 
-    expect(onPicked).toHaveBeenCalledWith('spreadsheet-1')
+    expect(onPicked).toHaveBeenCalledWith({ spreadsheetId: 'spreadsheet-1', name: undefined })
+  })
+
+  it('should report the name the picker gave the file, which is what a reader recognises', () => {
+    const picker = stubGooglePicker()
+    const onPicked = vi.fn()
+
+    openPicker({ onPicked })
+    picker.respond({
+      action: PICKED,
+      docs: [{ id: 'spreadsheet-1', name: 'PrideTech WRITE TEST' }],
+    })
+
+    expect(onPicked).toHaveBeenCalledWith({
+      spreadsheetId: 'spreadsheet-1',
+      name: 'PrideTech WRITE TEST',
+    })
   })
 
   it('should report a cancelled picker', () => {

@@ -6,6 +6,7 @@ import { SAMPLE_EVENTS } from '../features/events/sampleEvents'
 import { SAMPLE_EVENT_REGISTRANTS } from '../features/events/sampleEventRegistrants'
 import { MembersSection } from '../features/members/MembersSection'
 import { SAMPLE_MEMBERS } from '../features/members/sampleMembers'
+import { OverviewSection } from '../features/overview/OverviewSection'
 import type { SheetsClient } from '../sheets/sheetsClient'
 import type { Section } from '../shell/section'
 
@@ -20,6 +21,10 @@ export const WorkspaceSection = ({
   sheetsClient,
   onSessionExpired,
 }: WorkspaceSectionProps) => {
+  if (section === 'overview') {
+    return <OverviewSection sheetsClient={sheetsClient} onSessionExpired={onSessionExpired} />
+  }
+
   if (section === 'leads') {
     return <LeadsSection sheetsClient={sheetsClient} onSessionExpired={onSessionExpired} />
   }

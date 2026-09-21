@@ -3,10 +3,11 @@ import { WorkspaceHeader } from './WorkspaceHeader'
 import { WorkspaceSection } from './WorkspaceSection'
 import type { SheetsClient } from '../sheets/sheetsClient'
 import { AppShell } from '../shell/AppShell'
-import type { Section } from '../shell/section'
+import { DEFAULT_SECTION, type Section } from '../shell/section'
 
 type CommunityWorkspaceProps = {
   sheetsClient: SheetsClient
+  spreadsheetName: string | undefined
   onSessionExpired: () => void
   onChangeSpreadsheet: () => void
   onSignOut: () => void
@@ -14,15 +15,21 @@ type CommunityWorkspaceProps = {
 
 export const CommunityWorkspace = ({
   sheetsClient,
+  spreadsheetName,
   onSessionExpired,
   onChangeSpreadsheet,
   onSignOut,
 }: CommunityWorkspaceProps) => {
-  const [activeSection, setActiveSection] = useState<Section>('leads')
+  const [activeSection, setActiveSection] = useState<Section>(DEFAULT_SECTION)
+  const account = { spreadsheetName, onChangeSpreadsheet, onSignOut }
 
   return (
-    <AppShell activeSection={activeSection} onSelectSection={setActiveSection}>
-      <WorkspaceHeader onChangeSpreadsheet={onChangeSpreadsheet} onSignOut={onSignOut} />
+    <AppShell
+      account={account}
+      activeSection={activeSection}
+      onSelectSection={setActiveSection}
+    >
+      <WorkspaceHeader />
       <WorkspaceSection
         section={activeSection}
         sheetsClient={sheetsClient}

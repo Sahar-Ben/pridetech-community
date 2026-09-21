@@ -19,10 +19,10 @@ describe('useSpreadsheetPicker', () => {
     )
   })
 
-  it('should hand the chosen spreadsheet id on', () => {
+  it('should hand the chosen spreadsheet on, name and all', () => {
     const onPicked = vi.fn()
     const pickSpreadsheet: PickSpreadsheet = ({ onPicked: picked }) => {
-      picked('spreadsheet-1')
+      picked({ spreadsheetId: 'spreadsheet-1', name: 'Community 2026' })
     }
     const { result } = renderHook(() =>
       useSpreadsheetPicker({ pickSpreadsheet, accessToken: 'token-1', onPicked }),
@@ -32,7 +32,10 @@ describe('useSpreadsheetPicker', () => {
       result.current.choose()
     })
 
-    expect(onPicked).toHaveBeenCalledWith('spreadsheet-1')
+    expect(onPicked).toHaveBeenCalledWith({
+      spreadsheetId: 'spreadsheet-1',
+      name: 'Community 2026',
+    })
     expect(result.current.message).toBeUndefined()
   })
 

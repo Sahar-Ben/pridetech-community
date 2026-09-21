@@ -92,3 +92,31 @@ describe('withoutDecidedApplications, for an application approved from the decli
     expect(review.counts.declinedCount).toBe(1)
   })
 })
+
+describe('withoutDecidedApplications, from the maybe list', () => {
+  const reviewWithMaybe = () =>
+    buildLeadsReviewFixture({
+      leads: [
+        lead(),
+        lead({ rowNumber: 3, name: 'Come Back Later', email: 'later@example.com', status: 'maybe' }),
+      ],
+    })
+
+  it('should drop an application decided out of the maybe list', () => {
+    const review = withoutDecidedApplications({
+      review: reviewWithMaybe(),
+      decidedRowNumbers: new Set([3]),
+    })
+
+    expect(review.maybeApplications).toEqual([])
+  })
+
+  it('should count down the maybe list as its applications are decided', () => {
+    const review = withoutDecidedApplications({
+      review: reviewWithMaybe(),
+      decidedRowNumbers: new Set([3]),
+    })
+
+    expect(review.counts.maybeCount).toBe(0)
+  })
+})

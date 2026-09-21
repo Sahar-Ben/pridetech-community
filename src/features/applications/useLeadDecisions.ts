@@ -2,7 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { approveLead } from './approveLead'
 import { formatApprovalDate } from './approvalDate'
 import { declineLead } from './declineLead'
-import type { ApprovalDecision, DeclineDecision, DecisionKind } from './decision'
+import { markLeadMaybe } from './markLeadMaybe'
+import type {
+  ApprovalDecision,
+  DeclineDecision,
+  DecisionKind,
+  MaybeDecision,
+} from './decision'
 import { describeDecisionFailure } from './decisionFailureText'
 import type { Lead } from './lead'
 import type { SheetsClient } from '../../sheets/sheetsClient'
@@ -18,6 +24,7 @@ export type LeadDecisions = {
   stateFor: (rowNumber: number) => LeadDecisionState
   approve: (decision: ApprovalDecision) => void
   decline: (decision: DeclineDecision) => void
+  markMaybe: (decision: MaybeDecision) => void
   forgetDecisions: () => void
 }
 
@@ -168,6 +175,17 @@ export const useLeadDecisions = ({
     [sheetsClient, write],
   )
 
+  const markMaybe = useCallback(
+    (decision: MaybeDecision): void => {
+      write({
+        kind: 'maybe',
+        lead: decision.lead,
+        toSheet: async () => await markLeadMaybe({ sheetsClient, decision }),
+      })
+    },
+    [sheetsClient, write],
+  )
+
   /* Row numbers are only meaningful against the read they came from. After a
      fresh read they may point at different people, and a remembered decision
      would then hide somebody nobody has looked at.
@@ -195,5 +213,5 @@ export const useLeadDecisions = ({
     [errorByRowNumber, savingRowNumbers],
   )
 
-  return { decidedRowNumbers, stateFor, approve, decline, forgetDecisions }
+  return { decidedRowNumbers, stateFor, approve, decline, markMaybe, forgetDecisions }
 }

@@ -1,33 +1,40 @@
+import { BrandEyebrow } from '../app/BrandEyebrow'
+import { NoticeBanner } from '../app/NoticeBanner'
+import { PRIMARY_BUTTON_CLASSES, TOUCH_BUTTON_SIZE_CLASSES } from '../theme/controls'
+import { GLASS_PANEL_CLASSES, SHELL_HERO_TITLE_CLASSES } from '../theme/surfaces'
+
+const CHOOSE_BUTTON_CLASSES = `mt-7 ${PRIMARY_BUTTON_CLASSES} ${TOUCH_BUTTON_SIZE_CLASSES}`
+
 type SpreadsheetPickerScreenProps = {
   message: string | undefined
   onChoose: () => void
 }
 
 export const SpreadsheetPickerScreen = ({ message, onChoose }: SpreadsheetPickerScreenProps) => (
-  <section className="mx-auto w-full max-w-md px-4 py-16">
-    <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-      Choose your spreadsheet
-    </h2>
-    <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-      Pick the <strong>PrideTech Dashboard</strong> spreadsheet. Google grants this app access to
-      that one file, and it is remembered in this browser so you only pick it once.
-    </p>
-
-    {message !== undefined && (
-      <p
-        className="mt-4 rounded-md border border-amber-500 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-600 dark:bg-amber-950 dark:text-amber-200"
-        role="status"
-      >
-        {message}
-      </p>
-    )}
-
-    <button
-      className="mt-6 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-      onClick={onChoose}
-      type="button"
+  <section className="mx-auto flex min-h-dvh w-full max-w-lg items-center px-4 py-16">
+    <div
+      className={`${GLASS_PANEL_CLASSES} animate-rise w-full rounded-[var(--radius-brand-lg)] px-6 py-10 sm:px-10`}
     >
-      Choose spreadsheet
-    </button>
+      <BrandEyebrow />
+
+      <h2 className={`mt-5 ${SHELL_HERO_TITLE_CLASSES}`}>
+        Choose your spreadsheet
+      </h2>
+      <p className="mt-4 text-on-brand">
+        Pick the <strong className="font-bold">PrideTech Dashboard</strong> spreadsheet. Google
+        grants this app access to that one file, and it is remembered in this browser so you only
+        pick it once.
+      </p>
+
+      {message !== undefined && (
+        <div className="mt-6">
+          <NoticeBanner role="status" title={message} tone="warning" />
+        </div>
+      )}
+
+      <button className={CHOOSE_BUTTON_CLASSES} onClick={onChoose} type="button">
+        Choose spreadsheet
+      </button>
+    </div>
   </section>
 )

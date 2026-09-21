@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { isDecliningOffered, LEAD_VIEWS, selectApplicationsInView } from './leadViews'
+import {
+  isDecliningOffered,
+  isMaybeOffered,
+  LEAD_VIEWS,
+  selectApplicationsInView,
+} from './leadViews'
 import type { Lead } from './lead'
 import { buildLeadsReviewFixture } from '../../testing/leadsReviewFactory'
 
@@ -56,8 +61,40 @@ describe('isDecliningOffered', () => {
   })
 })
 
-describe('LEAD_VIEWS', () => {
-  it('should offer the reviewer the two states they can act on, and no Approved browser', () => {
-    expect(LEAD_VIEWS).toEqual(['Pending', 'Declined'])
+
+describe('the maybe view', () => {
+  const reviewOfThree = () =>
+    buildLeadsReviewFixture({
+      leads: [
+        lead({ rowNumber: 2, name: 'Still Waiting', email: 'waiting@example.com' }),
+        lead({ rowNumber: 3, name: 'Turned Away', email: 'declined@example.com', status: 'declined' }),
+        lead({ rowNumber: 4, name: 'Come Back Later', email: 'maybe@example.com', status: 'maybe' }),
+      ],
+    })
+
+  it('should list only the applications kept for later under Maybe', () => {
+    const applications = selectApplicationsInView({ review: reviewOfThree(), view: 'Maybe' })
+
+    expect(applications.map((application) => application.lead.name)).toEqual(['Come Back Later'])
+  })
+
+  it('should keep an application kept for later out of the pending queue', () => {
+    const applications = selectApplicationsInView({ review: reviewOfThree(), view: 'Pending' })
+
+    expect(applications.map((application) => application.lead.name)).toEqual(['Still Waiting'])
+  })
+
+  it('should offer the reviewer the three states they can act on, and no Approved browser', () => {
+    expect(LEAD_VIEWS).toEqual(['Pending', 'Maybe', 'Declined'])
+  })
+
+  it('should offer declining an application that is only being kept for later', () => {
+    expect(isDecliningOffered({ view: 'Maybe' })).toBe(true)
+  })
+
+  it('should offer keeping an application for later only while it is pending', () => {
+    expect(isMaybeOffered({ view: 'Pending' })).toBe(true)
+    expect(isMaybeOffered({ view: 'Maybe' })).toBe(false)
+    expect(isMaybeOffered({ view: 'Declined' })).toBe(false)
   })
 })

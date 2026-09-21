@@ -2,15 +2,21 @@ import { memo } from 'react'
 import { MemberRow } from './MemberRow'
 import { MEMBER_COLUMN_CLASSES } from './memberColumns'
 import type { Member } from './member'
-import { DATA_PANEL_CLASSES } from '../../theme/surfaces'
+import { WORK_PANEL_CLASSES } from '../../theme/surfaces'
 
 const HEADER_CELL_CLASSES =
   'px-3 py-2.5 text-left text-xs font-bold tracking-wide text-ink-muted uppercase'
 
+/* The one opaque thing on the panel, and it has to be: rows scroll underneath a
+   sticky header, and a translucent one would show them through the column
+   names. `--ui-panel-deep-solid` is the panel's own lightest composite written
+   out flat, which is also the surface every contrast here was measured on. */
+const HEADER_ROW_CLASSES = 'sticky top-0 bg-panel-deep-solid'
+
 /* No `overflow` on the wrapper: any scroll container here, hidden or auto,
    would become the sticky header's scrollport and the header would stop
    following the page. Narrow viewports drop columns instead of scrolling. */
-const WRAPPER_CLASSES = DATA_PANEL_CLASSES
+const WRAPPER_CLASSES = WORK_PANEL_CLASSES
 
 type MembersTableProps = {
   members: readonly Member[]
@@ -27,7 +33,7 @@ const MembersTableView = ({
 }: MembersTableProps) => (
   <div className={WRAPPER_CLASSES}>
     <table aria-label="Members" className="w-full table-fixed text-sm">
-      <thead className="sticky top-0 bg-surface-raised">
+      <thead className={HEADER_ROW_CLASSES}>
         <tr>
           <th
             className={`${HEADER_CELL_CLASSES} ${MEMBER_COLUMN_CLASSES.name} rounded-tl-[var(--radius-data)]`}

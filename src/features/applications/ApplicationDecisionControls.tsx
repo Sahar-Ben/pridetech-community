@@ -1,5 +1,5 @@
 import { useId, useState } from 'react'
-import type { ApprovalDecision, DeclineDecision, Gender } from './decision'
+import type { ApprovalDecision, DeclineDecision, Gender, MaybeDecision } from './decision'
 import type { Lead } from './lead'
 import {
   COMPACT_BUTTON_SIZE_CLASSES,
@@ -12,7 +12,12 @@ const GENDER_SELECT_CLASSES = `rounded-xl border bg-surface px-2.5 py-1.5 text-s
 
 const APPROVE_BUTTON_CLASSES = `${PRIMARY_BUTTON_CLASSES} ${COMPACT_BUTTON_SIZE_CLASSES}`
 
-const DECLINE_BUTTON_CLASSES = `${SECONDARY_BUTTON_CLASSES} ${COMPACT_BUTTON_SIZE_CLASSES}`
+const SECONDARY_DECISION_BUTTON_CLASSES = `${SECONDARY_BUTTON_CLASSES} ${COMPACT_BUTTON_SIZE_CLASSES}`
+
+/* Wraps below `sm`, where a third decision no longer fits on one line beside
+   the gender select; from `sm` up the row keeps its width, so the applicant's
+   details take the space instead. */
+const CONTROL_ROW_CLASSES = 'flex flex-wrap items-center gap-2 sm:shrink-0'
 
 const GENDER_OPTIONS: ReadonlyArray<{ value: Gender; label: string }> = [
   { value: 'unknown', label: 'Unknown' },
@@ -23,27 +28,33 @@ const GENDER_OPTIONS: ReadonlyArray<{ value: Gender; label: string }> = [
 const isGender = (value: string): value is Gender =>
   GENDER_OPTIONS.some((option) => option.value === value)
 
-/* `onDecline` is absent on an application that was already declined, and the
-   button goes with it: the list it is being read from is the record of that
-   decision, so the only act left on it is the one that reverses it. */
+/* A handler is absent wherever its decision is not on offer, and the button
+   goes with it: the list an application is being read from is the record of a
+   decision already taken, so what is left on the card is only what would change
+   it. `onDecline` is gone under Declined, `onMarkMaybe` everywhere but the
+   queue. */
 type ApplicationDecisionControlsProps = {
   lead: Lead
   isSaving: boolean
   onApprove: (decision: ApprovalDecision) => void
-  onDecline: ((decision: DeclineDecision) => void) | undefined
+  decisions: {
+    onDecline: ((decision: DeclineDecision) => void) | undefined
+    onMarkMaybe: ((decision: MaybeDecision) => void) | undefined
+  }
 }
 
 export const ApplicationDecisionControls = ({
   lead,
   isSaving,
   onApprove,
-  onDecline,
+  decisions,
 }: ApplicationDecisionControlsProps) => {
+  const { onDecline, onMarkMaybe } = decisions
   const genderSelectId = useId()
   const [gender, setGender] = useState<Gender>('unknown')
 
   return (
-    <div className="flex shrink-0 items-center gap-2">
+    <div className={CONTROL_ROW_CLASSES}>
       <label className={FIELD_LABEL_CLASSES} htmlFor={genderSelectId}>
         Gender
       </label>
@@ -73,9 +84,19 @@ export const ApplicationDecisionControls = ({
       >
         {isSaving ? 'Saving...' : 'Approve'}
       </button>
+      {onMarkMaybe !== undefined && (
+        <button
+          className={SECONDARY_DECISION_BUTTON_CLASSES}
+          disabled={isSaving}
+          type="button"
+          onClick={() => onMarkMaybe({ lead })}
+        >
+          Maybe
+        </button>
+      )}
       {onDecline !== undefined && (
         <button
-          className={DECLINE_BUTTON_CLASSES}
+          className={SECONDARY_DECISION_BUTTON_CLASSES}
           disabled={isSaving}
           type="button"
           onClick={() => onDecline({ lead })}

@@ -1,5 +1,7 @@
 import type { Ref } from 'react'
 import { SECTION_LABELS, SECTIONS, type Section } from './section'
+import { SidebarFooter } from './SidebarFooter'
+import type { WorkspaceAccount } from './workspaceAccount'
 
 /* Off-canvas until opened on phones; a permanent left-hand rail from `md` up.
    `invisible` keeps the closed drawer out of the tab order without JavaScript
@@ -12,8 +14,11 @@ const DRAWER_STATE_CLASSES = {
 /* The rail is the one place the app looks most like the website: glass over the
    gradient, 28px corners on its inner edge, Sulphur Point on the wordmark. It
    holds three words and a title, so nothing dense is riding on the translucency. */
+/* `overflow-y-auto` is what lets the footer stay pinned on a short phone: the
+   rail is viewport-tall, and a drawer whose sections and footer together exceed
+   667px has to scroll rather than push the footer off the bottom. */
 const NAV_CLASSES = [
-  'fixed inset-y-0 left-0 z-40 flex w-72 flex-col gap-6 p-4',
+  'fixed inset-y-0 left-0 z-40 flex w-72 flex-col gap-6 overflow-y-auto p-4',
   'border-r border-glass-edge bg-glass backdrop-blur-2xl',
   'rounded-r-[var(--radius-brand-lg)] shadow-glass',
   'transition-transform duration-200 ease-brand outline-none',
@@ -36,11 +41,18 @@ const itemClasses = ({ isActive }: { isActive: boolean }): string =>
 type SidebarNavProps = {
   activeSection: Section
   onSelectSection: (section: Section) => void
+  account: WorkspaceAccount
   isOpen: boolean
   ref?: Ref<HTMLElement>
 }
 
-export const SidebarNav = ({ activeSection, onSelectSection, isOpen, ref }: SidebarNavProps) => (
+export const SidebarNav = ({
+  activeSection,
+  onSelectSection,
+  account,
+  isOpen,
+  ref,
+}: SidebarNavProps) => (
   <nav
     aria-label="Sections"
     className={`${NAV_CLASSES} ${isOpen ? DRAWER_STATE_CLASSES.open : DRAWER_STATE_CLASSES.closed}`}
@@ -68,5 +80,7 @@ export const SidebarNav = ({ activeSection, onSelectSection, isOpen, ref }: Side
         </li>
       ))}
     </ul>
+
+    <SidebarFooter account={account} />
   </nav>
 )

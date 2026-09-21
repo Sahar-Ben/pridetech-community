@@ -6,9 +6,16 @@ import type { Member } from './member'
 
 const CELL_CLASSES = 'px-3 py-2.5 align-middle text-ink'
 
+/* The rule between rows carries more here than it did on white: 787 of them
+   are scanned by eye, and on the deep panel the hairline resolves to a line at
+   3.1:1 against its surface where the white theme's was 1.4:1.
+
+   The hover wash is written out rather than taken from `--ui-surface-sunken`,
+   which on this panel now means recessed-and-darker: a row lights up under the
+   pointer, it does not sink. 1.35:1, against the white theme's 1.09:1. */
 const ROW_CLASSES = [
   'cursor-pointer border-t border-hairline',
-  'transition-colors duration-150 ease-brand hover:bg-surface-sunken',
+  'transition-colors duration-150 ease-brand hover:bg-on-brand/10',
 ].join(' ')
 
 /* The secondary columns are scan targets, not the record: the detail view

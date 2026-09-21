@@ -1,9 +1,9 @@
 import { describeLeadWithoutEmail } from './leadsReviewText'
 import type { LeadWithoutEmail } from './parseLeads'
 import { SheetRowLink } from './SheetRowLink'
-import { DATA_PANEL_CLASSES } from '../../theme/surfaces'
+import { WORK_PANEL_CLASSES } from '../../theme/surfaces'
 
-const ROW_CLASSES = `${DATA_PANEL_CLASSES} flex flex-wrap items-baseline gap-x-3 gap-y-1 px-3 py-2 text-xs`
+const ROW_CLASSES = `${WORK_PANEL_CLASSES} flex flex-wrap items-baseline gap-x-3 gap-y-1 px-3 py-2 text-xs`
 
 type LeadWithoutEmailRowProps = {
   leadWithoutEmail: LeadWithoutEmail

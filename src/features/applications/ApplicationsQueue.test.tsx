@@ -19,16 +19,19 @@ const pendingLead = (overrides: Partial<Lead> = {}): Lead => ({
 const stubDecisions = ({
   approve = vi.fn(),
   decline = vi.fn(),
+  markMaybe = vi.fn(),
   stateByRowNumber = new Map<number, LeadDecisionState>(),
 }: {
   approve?: LeadDecisions['approve']
   decline?: LeadDecisions['decline']
+  markMaybe?: LeadDecisions['markMaybe']
   stateByRowNumber?: ReadonlyMap<number, LeadDecisionState>
 } = {}): LeadDecisions => ({
   decidedRowNumbers: new Set(),
   stateFor: (rowNumber) => stateByRowNumber.get(rowNumber) ?? IDLE,
   approve,
   decline,
+  markMaybe,
   forgetDecisions: vi.fn(),
 })
 
@@ -631,5 +634,102 @@ describe('ApplicationsQueue, filtering by status', () => {
     await showDeclined()
 
     expect(screen.getByText(/1 application has no email address/i)).toBeInTheDocument()
+  })
+})
+
+describe('ApplicationsQueue, applications kept for later', () => {
+  const pending = () => pendingLead()
+
+  const maybeLead = () =>
+    pendingLead({
+      rowNumber: 4,
+      name: 'Come Back Later',
+      email: 'later@example.com',
+      status: 'maybe',
+    })
+
+  const showMaybe = async () => {
+    await userEvent.selectOptions(screen.getByLabelText(/status/i), 'Maybe')
+  }
+
+  const renderBothStates = (decisions = stubDecisions()) =>
+    renderQueue({ decisions, leads: [pending(), maybeLead()] })
+
+  it('should offer keeping a pending application for later', async () => {
+    const onMarkMaybe = vi.fn()
+    renderQueue({ decisions: stubDecisions({ markMaybe: onMarkMaybe }), leads: [pending()] })
+
+    await userEvent.click(screen.getByRole('button', { name: /maybe/i }))
+
+    expect(onMarkMaybe).toHaveBeenCalledWith({
+      lead: expect.objectContaining({ name: 'Dana Maman' }),
+    })
+  })
+
+  it('should keep an application marked for later out of the pending queue', () => {
+    renderBothStates()
+
+    expect(screen.getByRole('heading', { level: 3, name: 'Dana Maman' })).toBeInTheDocument()
+    expect(
+      screen.queryByRole('heading', { level: 3, name: 'Come Back Later' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('should list only the applications kept for later once the reviewer asks for them', async () => {
+    renderBothStates()
+
+    await showMaybe()
+
+    expect(screen.getByRole('heading', { level: 3, name: 'Come Back Later' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { level: 3, name: 'Dana Maman' })).not.toBeInTheDocument()
+  })
+
+  it('should offer approving and declining, and no second maybe, under Maybe', async () => {
+    renderBothStates()
+
+    await showMaybe()
+
+    expect(screen.getByRole('button', { name: /approve/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /decline/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^maybe$/i })).not.toBeInTheDocument()
+  })
+
+  it('should approve somebody kept for later through the same approve path', async () => {
+    const onApprove = vi.fn()
+    renderBothStates(stubDecisions({ approve: onApprove }))
+
+    await showMaybe()
+    await userEvent.selectOptions(screen.getByLabelText(/gender/i), 'F')
+    await userEvent.click(screen.getByRole('button', { name: /approve/i }))
+
+    expect(onApprove).toHaveBeenCalledWith({
+      lead: expect.objectContaining({ name: 'Come Back Later' }),
+      gender: 'F',
+    })
+  })
+
+  it('should count what is being kept for later, and not what is waiting', async () => {
+    renderBothStates()
+
+    await showMaybe()
+
+    expect(screen.getByText('1 kept for later')).toBeInTheDocument()
+    expect(screen.queryByText('1 waiting')).not.toBeInTheDocument()
+  })
+
+  it('should say in its own words when nothing is being kept for later', async () => {
+    renderQueue({ leads: [pending()] })
+
+    await showMaybe()
+
+    expect(screen.getByText('No applications are being kept for later.')).toBeInTheDocument()
+  })
+
+  it('should offer no route back to pending from any view', async () => {
+    renderBothStates()
+
+    await showMaybe()
+
+    expect(screen.queryByRole('button', { name: /pending/i })).not.toBeInTheDocument()
   })
 })

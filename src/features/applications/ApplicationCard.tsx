@@ -1,18 +1,20 @@
 import { ApplicationDecisionControls } from './ApplicationDecisionControls'
-import type { ApprovalDecision, DeclineDecision } from './decision'
+import type { ApprovalDecision, DeclineDecision, MaybeDecision } from './decision'
 import type { ReviewableApplication } from './leadsReview'
 import { PriorMemberNotice } from './PriorMemberNotice'
 import type { LeadDecisionState } from './useLeadDecisions'
 import { NoticeBanner } from '../../app/NoticeBanner'
-import { DATA_PANEL_CLASSES } from '../../theme/surfaces'
+import { WORK_PANEL_CLASSES } from '../../theme/surfaces'
 
 const FIELD_SEPARATOR = ' \u{00b7} '
 
-/* Opaque, not glass. This is the surface the organiser reads 256 times in a
-   sitting, so its contrast is a fixed 17.7:1 rather than a function of where
-   the card happens to fall on the gradient. */
+/* The deep brand panel, not white. This is the surface the organiser reads 256
+   times in a sitting, so what matters is that its contrast is still a fixed
+   number: the fill is deep enough that the gradient moves its hue and not its
+   luminance, and body text holds 15.2:1 at the lightest point the card can
+   land on, against 17.7:1 on the white it replaces. */
 const CARD_CLASSES = [
-  DATA_PANEL_CLASSES,
+  WORK_PANEL_CLASSES,
   'flex flex-col gap-3 px-4 py-3.5',
   'transition-[opacity,transform,box-shadow] duration-200 ease-brand',
   'hover:shadow-lift',
@@ -29,14 +31,17 @@ type ApplicationCardProps = {
   application: ReviewableApplication
   decisionState: LeadDecisionState
   onApprove: (decision: ApprovalDecision) => void
-  onDecline: ((decision: DeclineDecision) => void) | undefined
+  decisions: {
+    onDecline: ((decision: DeclineDecision) => void) | undefined
+    onMarkMaybe: ((decision: MaybeDecision) => void) | undefined
+  }
 }
 
 export const ApplicationCard = ({
   application,
   decisionState,
   onApprove,
-  onDecline,
+  decisions,
 }: ApplicationCardProps) => {
   const { lead, priorMember } = application
   const isNamedByEmail = lead.name === undefined
@@ -54,7 +59,7 @@ export const ApplicationCard = ({
           {contextLine !== '' && <p className="text-xs text-ink-muted">{contextLine}</p>}
           <p className="text-xs text-ink-muted">
             {lead.linkedIn === undefined ? (
-              <span className="font-semibold text-warning-ink">No LinkedIn</span>
+              <span className="font-semibold text-warning-on-panel">No LinkedIn</span>
             ) : (
               <a
                 className="font-semibold text-accent underline underline-offset-2"
@@ -78,7 +83,7 @@ export const ApplicationCard = ({
           lead={lead}
           isSaving={decisionState.isSaving}
           onApprove={onApprove}
-          onDecline={onDecline}
+          decisions={decisions}
         />
       </div>
 

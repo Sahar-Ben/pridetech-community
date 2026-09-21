@@ -11,9 +11,16 @@ export const FIELD_CONTROL_CLASSES = [
    only thing saying where the control is, so it is held at 3:1 on both themes. */
 export const FIELD_BORDER_CLASSES = 'border-edge focus:border-accent'
 
-export const INVALID_FIELD_BORDER_CLASSES = 'border-danger-edge focus:border-danger-edge'
+/* `danger-on-panel`, not `danger-edge`: the edge colour is tuned to sit on a
+   notice's own light surface, and on the deep panel it fell to 2.0:1 against
+   the field it was supposed to be outlining. This pair is 8.0:1 on white and
+   8.1:1 on the deep panel. */
+export const INVALID_FIELD_BORDER_CLASSES =
+  'border-danger-on-panel focus:border-danger-on-panel'
 
 export const READ_ONLY_FIELD_CONTROL_CLASSES =
   'w-full rounded-xl border border-hairline bg-surface-sunken px-3 py-2 text-sm text-ink-muted'
 
-export const FIELD_ERROR_CLASSES = 'text-xs font-semibold text-danger-ink'
+/* `danger-on-panel` rather than `danger-ink`: this sentence is written straight
+   onto whatever panel the field is on, and the deep panel re-points it. */
+export const FIELD_ERROR_CLASSES = 'text-xs font-semibold text-danger-on-panel'

@@ -1,6 +1,7 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { SidebarNav } from './SidebarNav'
 import type { Section } from './section'
+import type { WorkspaceAccount } from './workspaceAccount'
 import { SHELL_BUTTON_CLASSES } from '../theme/controls'
 
 const BURGER_GLYPH = '\u{2630}'
@@ -20,10 +21,16 @@ const SCRIM_CLASSES = [
 type AppShellProps = {
   activeSection: Section
   onSelectSection: (section: Section) => void
+  account: WorkspaceAccount
   children: ReactNode
 }
 
-export const AppShell = ({ activeSection, onSelectSection, children }: AppShellProps) => {
+export const AppShell = ({
+  activeSection,
+  onSelectSection,
+  account,
+  children,
+}: AppShellProps) => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const burgerRef = useRef<HTMLButtonElement>(null)
   const navRef = useRef<HTMLElement>(null)
@@ -90,6 +97,7 @@ export const AppShell = ({ activeSection, onSelectSection, children }: AppShellP
       )}
 
       <SidebarNav
+        account={account}
         activeSection={activeSection}
         isOpen={isDrawerOpen}
         onSelectSection={selectSection}

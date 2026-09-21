@@ -39,7 +39,7 @@ const SAVE_BUTTON_CLASSES = `${PRIMARY_BUTTON_CLASSES} ${COMPACT_BUTTON_SIZE_CLA
 
 const CANCEL_BUTTON_CLASSES = `${SECONDARY_BUTTON_CLASSES} ${COMPACT_BUTTON_SIZE_CLASSES}`
 
-const WARNING_CLASSES = 'text-xs font-semibold text-warning-ink'
+const WARNING_CLASSES = 'text-xs font-semibold text-warning-on-panel'
 
 type MemberEditFormProps = {
   member: Member
