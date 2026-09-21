@@ -193,6 +193,13 @@ event, knowing who to prioritise inviting is what the spreadsheet cannot answer 
    company/title rows, retire the `Meetup` column and the 1st–4th meetup tabs, dedupe headers.
 3. **Backfill** LinkedIn, phone, city and interests onto existing members by matching `Leads`
    on email.
+4. **Backfill `Status`.** `Status` was added to `Leads` by hand and is blank for every historical
+   row, so on first connection the review queue showed 1,080 applications rather than the few
+   hundred actually waiting — every existing member appeared as pending. Cross-reference `Leads`
+   against `Members` by email, let the organiser inspect the matches, then write `Approved` into
+   those `Status` cells in one bulk write. Afterwards the queue reads `Status` directly and the
+   cross-reference remains only as a safety net, catching an existing member who applies again
+   on a row whose `Status` is blank.
 4. **Register** the existing events and their Responses sheets. Four files are duplicates —
    `GAGA 1st Event RSVP` ×2 (identical rows), `5th Meetup RSVP` ×2, and `Singles #1 RSVP` vs
    `Singles #1 RSVP - NEW`. Registering the wrong copy would double-count or lose people, so the
@@ -222,3 +229,5 @@ mapping), and it is useful the day it ships. The event side only pays off at the
 | Google Apps Script web app | Poor dev experience, dated UI toolkit, and "published on GitHub" degrades to a copy of a script. |
 | Attendance written back into each event sheet | Turns the core stat into a read per event, and races Google Forms. |
 | Inferring gender from first names | Guesswork, and in this community guesswork that would be wrong about exactly the people it most matters to be right about. |
+| An `Is member` column on `Leads` | `Status` already means this — `Approved` is "is a member". A second column recording the same fact drifts the moment someone becomes an ex-member or reapplies. The real problem was never a missing column but ~773 blank `Status` cells, which a one-time backfill fixes. |
+| Filtering the queue against `Members` forever | Correct as a safety net, wrong as the primary mechanism: it leaves the sheet permanently wrong and only correct when viewed through the app. Backfill `Status`, then read it. |

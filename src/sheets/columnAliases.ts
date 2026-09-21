@@ -14,6 +14,11 @@ export const COLUMN_ALIASES = {
   city: ['city', 'which city do you currently live in?'],
   interests: ['interests', 'please select your areas of interest (you can choose multiple)'],
   status: ['status'],
+  gender: ['gender'],
+  removalReason: ['removal reason'],
+  approvedAt: ['approved at'],
+  previousRemovalReason: ['previous removal reason'],
+  rejoinedAt: ['rejoined at'],
   // "Arrived to the bus" (Playtika) records shuttle passengers, not attendance — matching is exact, never substring.
   arrived: ['arrived'],
 } as const satisfies Record<string, readonly string[]>

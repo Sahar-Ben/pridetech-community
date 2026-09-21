@@ -10,3 +10,5 @@ export type ApprovalDecision = {
 export type DeclineDecision = {
   lead: Lead
 }
+
+export type DecisionKind = 'approve' | 'decline'

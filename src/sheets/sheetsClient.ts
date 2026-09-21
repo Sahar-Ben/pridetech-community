@@ -2,10 +2,35 @@ import { SheetsRequestError } from './sheetsRequestError'
 
 const SHEETS_API_BASE = 'https://sheets.googleapis.com/v4/spreadsheets'
 
+/* Google re-parses a USER_ENTERED value exactly as if a person had typed it into
+   the cell: a leading `=` becomes a formula, a leading `+` becomes arithmetic,
+   `0501234567` loses its zero, and `03/05/2024` is read in the spreadsheet's own
+   locale. That is right for a value a person just chose and wrong for a value
+   this app read back out of a cell, so the caller states which it has. */
+export type ValueInputOption = 'RAW' | 'USER_ENTERED'
+
+export type CellWrite = {
+  range: string
+  value: string
+}
+
 export type SheetsClient = {
+  spreadsheetId: string
   readRange: (options: { range: string }) => Promise<string[][]>
-  appendRow: (options: { range: string; values: readonly string[] }) => Promise<void>
-  updateCell: (options: { range: string; value: string }) => Promise<void>
+  appendRow: (options: {
+    range: string
+    values: readonly string[]
+    valueInputOption: ValueInputOption
+  }) => Promise<void>
+  updateCell: (options: {
+    range: string
+    value: string
+    valueInputOption: ValueInputOption
+  }) => Promise<void>
+  updateCells: (options: {
+    writes: readonly CellWrite[]
+    valueInputOption: ValueInputOption
+  }) => Promise<void>
 }
 
 export type CreateSheetsClient = (options: {
@@ -24,7 +49,6 @@ const readErrorDetail = async (response: Response): Promise<string> => {
    UNFORMATTED_VALUE the same cells come back as JSON numbers and serial-number dates,
    which every downstream trim() would throw on while the types kept claiming string. */
 const READ_QUERY = 'valueRenderOption=FORMATTED_VALUE'
-const WRITE_QUERY = 'valueInputOption=USER_ENTERED'
 
 const toCellText = (cell: unknown): string => {
   if (cell === null || cell === undefined) {
@@ -32,6 +56,9 @@ const toCellText = (cell: unknown): string => {
   }
   return String(cell)
 }
+
+const describeRanges = (writes: readonly CellWrite[]): string =>
+  writes.map((write) => write.range).join(', ')
 
 export const createSheetsClient = ({
   spreadsheetId,
@@ -72,6 +99,8 @@ export const createSheetsClient = ({
   }
 
   return {
+    spreadsheetId,
+
     readRange: async ({ range }) => {
       const body = await request({
         range,
@@ -85,21 +114,40 @@ export const createSheetsClient = ({
       return values.map((row) => row.map(toCellText))
     },
 
-    appendRow: async ({ range, values }) => {
+    appendRow: async ({ range, values, valueInputOption }) => {
       await request({
         range,
         method: 'POST',
-        path: `/values/${encodeURIComponent(range)}:append?${WRITE_QUERY}&insertDataOption=INSERT_ROWS`,
+        path: `/values/${encodeURIComponent(range)}:append?valueInputOption=${valueInputOption}&insertDataOption=INSERT_ROWS`,
         body: { values: [values] },
       })
     },
 
-    updateCell: async ({ range, value }) => {
+    updateCell: async ({ range, value, valueInputOption }) => {
       await request({
         range,
         method: 'PUT',
-        path: `/values/${encodeURIComponent(range)}?${WRITE_QUERY}`,
+        path: `/values/${encodeURIComponent(range)}?valueInputOption=${valueInputOption}`,
         body: { values: [[value]] },
+      })
+    },
+
+    /* Several disjoint cells in one request, so a set of related edits cannot
+       stop halfway and leave a row that is half the old person and half the new
+       one. Each cell is addressed on its own rather than as a span, which is
+       what keeps the cells between them from being written back at all. */
+    updateCells: async ({ writes, valueInputOption }) => {
+      if (writes.length === 0) {
+        return
+      }
+      await request({
+        range: describeRanges(writes),
+        method: 'POST',
+        path: '/values:batchUpdate',
+        body: {
+          valueInputOption,
+          data: writes.map(({ range, value }) => ({ range, values: [[value]] })),
+        },
       })
     },
   }

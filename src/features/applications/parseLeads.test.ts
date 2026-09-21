@@ -18,8 +18,25 @@ const HEADER_ROW = [
 const dataRow = (cells: readonly string[]): string[] => [...cells]
 
 describe('parseLeads', () => {
+  it('should carry the submission stamp, which is what tells one application from another', () => {
+    const { leads } = parseLeads({
+      rows: [
+        HEADER_ROW,
+        dataRow(['3/8/2025 14:25:20', 'Dana Maman', '', '', '', 'dana@example.com']),
+      ],
+    })
+
+    expect(leads[0]?.timestamp).toBe('3/8/2025 14:25:20')
+  })
+
+  it('should report no submission stamp rather than invent one when the column is absent', () => {
+    const { leads } = parseLeads({ rows: [['Name', 'E-Mail'], ['Dana', 'dana@example.com']] })
+
+    expect(leads[0]?.timestamp).toBeUndefined()
+  })
+
   it('should parse a complete row into a lead', () => {
-    const [lead] = parseLeads({
+    const { leads } = parseLeads({
       rows: [
         HEADER_ROW,
         dataRow([
@@ -37,9 +54,11 @@ describe('parseLeads', () => {
         ]),
       ],
     })
+    const [lead] = leads
 
     expect(lead).toEqual({
       rowNumber: 2,
+      timestamp: '3/8/2025 14:25:20',
       name: 'Noa Feldman',
       jobTitle: 'Director of Marketing',
       company: 'Meadowlark Labs',
@@ -53,21 +72,22 @@ describe('parseLeads', () => {
   })
 
   it('should lowercase the email so matching is case-insensitive', () => {
-    const [lead] = parseLeads({
+    const { leads } = parseLeads({
       rows: [HEADER_ROW, dataRow(['t', 'A', 'B', 'C', 'D', 'MiXeD@Example.COM', '', '', '', '', ''])],
     })
+    const [lead] = leads
 
     expect(lead?.email).toBe('mixed@example.com')
   })
 
   it('should treat an empty Status cell as pending', () => {
-    const [lead] = parseLeads({ rows: [HEADER_ROW, dataRow(['t', 'A', '', '', '', 'a@b.com'])] })
+    const [lead] = parseLeads({ rows: [HEADER_ROW, dataRow(['t', 'A', '', '', '', 'a@b.com'])] }).leads
 
     expect(lead?.status).toBe('pending')
   })
 
   it('should read Approved and Declined statuses', () => {
-    const leads = parseLeads({
+    const { leads } = parseLeads({
       rows: [
         HEADER_ROW,
         dataRow(['t', 'A', '', '', '', 'a@b.com', '', '', '', '', 'Approved']),
@@ -79,7 +99,7 @@ describe('parseLeads', () => {
   })
 
   it('should give each lead its 1-based sheet row number so writes target the right row', () => {
-    const leads = parseLeads({
+    const { leads } = parseLeads({
       rows: [
         HEADER_ROW,
         dataRow(['t', 'A', '', '', '', 'a@b.com']),
@@ -91,7 +111,7 @@ describe('parseLeads', () => {
   })
 
   it('should keep the row number of a skipped row, so later rows still point at their own row', () => {
-    const leads = parseLeads({
+    const { leads } = parseLeads({
       rows: [
         HEADER_ROW,
         dataRow(['t', 'Nameless', '', '', '', '']),
@@ -103,15 +123,39 @@ describe('parseLeads', () => {
   })
 
   it('should skip rows with no email, since they cannot be matched or contacted', () => {
-    expect(parseLeads({ rows: [HEADER_ROW, dataRow(['t', 'Nameless', '', '', '', ''])] })).toEqual([])
+    expect(parseLeads({ rows: [HEADER_ROW, dataRow(['t', 'Nameless', '', '', '', ''])] }).leads).toEqual(
+      [],
+    )
   })
 
   it('should return an empty list when the sheet has only a header row', () => {
-    expect(parseLeads({ rows: [HEADER_ROW] })).toEqual([])
+    expect(parseLeads({ rows: [HEADER_ROW] }).leads).toEqual([])
   })
 
   it('should return an empty list when the sheet is completely empty', () => {
-    expect(parseLeads({ rows: [] })).toEqual([])
+    expect(parseLeads({ rows: [] }).leads).toEqual([])
+  })
+
+  it('should report the rows it dropped for having no email, so they can be found in the sheet', () => {
+    const parsed = parseLeads({
+      rows: [
+        HEADER_ROW,
+        dataRow(['t', 'Nameless', '', '', '', '']),
+        dataRow(['t', 'B', '', '', '', 'b@b.com']),
+        dataRow(['t', 'Also nameless', '', '', '', '\u{200b}']),
+      ],
+    })
+
+    expect(parsed.rowsWithoutEmail).toEqual([
+      { rowNumber: 2, name: 'Nameless' },
+      { rowNumber: 4, name: 'Also nameless' },
+    ])
+  })
+
+  it('should not report a blank spacer row as an application that forgot its email', () => {
+    const parsed = parseLeads({ rows: [HEADER_ROW, dataRow([]), dataRow(['', '', '', '', '', ''])] })
+
+    expect(parsed.rowsWithoutEmail).toEqual([])
   })
 
   it('should throw when the sheet has no email column at all, rather than silently returning nothing', () => {

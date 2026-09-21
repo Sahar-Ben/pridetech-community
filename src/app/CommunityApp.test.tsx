@@ -118,7 +118,7 @@ describe('CommunityApp', () => {
     expect(screen.getByRole('button', { name: /sign in with google/i })).toBeInTheDocument()
   })
 
-  it('should not retry a read in a loop once the session has expired', async () => {
+  it('should not retry a read in a loop once the session has expired, on either tab', async () => {
     window.localStorage.setItem('pridetech.spreadsheetId', 'remembered-sheet')
     const readRange = vi
       .fn()
@@ -133,7 +133,10 @@ describe('CommunityApp', () => {
       expect(screen.getByRole('alert')).toHaveTextContent(/session expired/i)
     })
 
-    expect(readRange).toHaveBeenCalledTimes(1)
+    const rangesRead = readRange.mock.calls.map(([options]) =>
+      String((options as { range: string }).range),
+    )
+    expect(rangesRead).toEqual(['Leads!A1:Z', 'Members!A1:Z'])
   })
 
   it('should return to the sign-in screen when the reviewer signs out', async () => {

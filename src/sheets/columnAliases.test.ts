@@ -33,6 +33,9 @@ const realSheetWordings: ReadonlyArray<[keyof typeof COLUMN_ALIASES, readonly st
   ['city', ['City', 'Which city do you currently live in?']],
   ['interests', ['Interests', 'Please select your areas of interest (you can choose multiple)']],
   ['status', ['Status']],
+  ['gender', ['Gender']],
+  ['removalReason', ['Removal reason']],
+  ['approvedAt', ['Approved at']],
   ['arrived', ['Arrived']],
 ]
 

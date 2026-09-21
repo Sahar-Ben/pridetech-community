@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { loadLeads } from './loadLeads'
-import type { Lead } from './lead'
+import type { LeadsReview } from './leadsReview'
+import { loadLeadsReview } from './loadLeadsReview'
 import { describeError } from '../../errors/describeError'
 import type { SheetsClient } from '../../sheets/sheetsClient'
 import { isExpiredSessionError } from '../../sheets/sheetsRequestError'
 
-const READ_FAILED_MESSAGE = 'The Leads tab could not be read.'
+const READ_FAILED_MESSAGE = 'The Leads and Members tabs could not be read.'
 
 export type LeadsState =
   | { status: 'loading' }
-  | { status: 'ready'; leads: readonly Lead[] }
+  | { status: 'ready'; review: LeadsReview }
   | { status: 'failed'; message: string }
 
 export type LeadsResource = {
@@ -24,8 +24,9 @@ type FinishedRead = {
 }
 
 /* `sheetsClient` identity is the reload trigger: a new client means a new
-   spreadsheet or a new token, and the tab is read again. Callers must memoise it,
-   or every render starts another read of all 1,000-odd rows. */
+   spreadsheet or a new token, and both tabs are read again. Callers must memoise
+   it, or every render starts another read of all 1,000-odd rows. The review is
+   built once here, off the render path, so the queue never refilters per render. */
 export const useLeads = ({
   sheetsClient,
   onSessionExpired,
@@ -48,10 +49,10 @@ export const useLeads = ({
   useEffect(() => {
     let isCurrent = true
 
-    loadLeads({ sheetsClient })
-      .then((leads) => {
+    loadLeadsReview({ sheetsClient })
+      .then((review) => {
         if (isCurrent) {
-          setFinishedRead({ sheetsClient, reloadCount, state: { status: 'ready', leads } })
+          setFinishedRead({ sheetsClient, reloadCount, state: { status: 'ready', review } })
         }
       })
       .catch((error: unknown) => {
