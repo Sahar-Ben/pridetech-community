@@ -4,11 +4,15 @@ import { EventsRegistryNotice } from './EventsRegistryNotice'
 import { EventsRegistrySetupScreen } from './EventsRegistrySetupScreen'
 import { EventsWorkspace } from './EventsWorkspace'
 import { toIsoDateString } from './eventDate'
+import type { AttachedResponseSheet } from './parseAttachedSheets'
 import type { EventsScreenData } from './readEventsScreen'
 import type { ResponseSheetAccess } from './responseSheetAccess'
 import { useEventRegistrySetup } from './useEventRegistrySetup'
+import { useEventRegistrants } from './useEventRegistrants'
 import { useEventRegistryWriter } from './useEventRegistryWriter'
 import type { SheetsClient } from '../../sheets/sheetsClient'
+
+const NO_ATTACHED_SHEETS: readonly AttachedResponseSheet[] = []
 
 type EventsSectionBodyProps = {
   data: EventsScreenData
@@ -27,6 +31,11 @@ export const EventsSectionBody = ({
 }: EventsSectionBodyProps) => {
   const setup = useEventRegistrySetup({ sheetsClient, onSessionExpired, onSetUp: onReload })
   const writer = useEventRegistryWriter({ sheetsClient, onSessionExpired, onWritten: onReload })
+  const registrants = useEventRegistrants({
+    access: responseSheetAccess,
+    attachedSheets: data.kind === 'ready' ? data.registry.attachedSheets : NO_ATTACHED_SHEETS,
+    onSessionExpired,
+  })
 
   if (data.kind === 'blocked') {
     return <EventsRegistryBlockedNotice onRetry={onReload} plans={data.plans} />
@@ -54,7 +63,9 @@ export const EventsSectionBody = ({
         attachedSheets={data.registry.attachedSheets}
         events={data.registry.events}
         members={data.members}
-        registrants={[]}
+        onReloadRegistrants={registrants.reload}
+        onRequestRegistrants={registrants.request}
+        registrantLoads={registrants.loads}
         responseSheetAccess={responseSheetAccess}
         today={toIsoDateString(new Date())}
         writer={writer}

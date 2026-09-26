@@ -1,16 +1,12 @@
 import { useId } from 'react'
 import { EventRow } from './EventRow'
-import { describeAttendanceForListing } from './eventAttendanceText'
-import { selectEventRegistrants } from './eventRegistrants'
-import { summariseEventAttendance } from './eventAttendance'
 import type { CommunityEvent } from './communityEvent'
-import type { Registrant } from './registrant'
 import { EMPTY_STATE_CLASSES } from '../../theme/surfaces'
 
 type EventListGroupProps = {
   title: string
   events: readonly CommunityEvent[]
-  registrants: readonly Registrant[]
+  describeAttendance: (event: CommunityEvent) => string
   emptyMessage: string
   onOpenEvent: (event: CommunityEvent) => void
   onEditEvent: (event: CommunityEvent) => void
@@ -20,21 +16,13 @@ type EventListGroupProps = {
 export const EventListGroup = ({
   title,
   events,
-  registrants,
+  describeAttendance,
   emptyMessage,
   onOpenEvent,
   onEditEvent,
   onArchiveEvent,
 }: EventListGroupProps) => {
   const headingId = useId()
-
-  const describeEvent = (event: CommunityEvent): string =>
-    describeAttendanceForListing(
-      summariseEventAttendance({
-        registrants: selectEventRegistrants({ registrants, eventId: event.id }),
-        isClosedOut: event.isClosedOut,
-      }),
-    )
 
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-2">
@@ -50,7 +38,7 @@ export const EventListGroup = ({
         <ul className="flex flex-col gap-2">
           {events.map((event) => (
             <EventRow
-              attendanceText={describeEvent(event)}
+              attendanceText={describeAttendance(event)}
               event={event}
               key={event.id}
               onArchive={onArchiveEvent}

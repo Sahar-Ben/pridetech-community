@@ -74,4 +74,27 @@ describe('createResponseSheetAccess, reading the picked file', () => {
       await access.readHeaderRow({ spreadsheetId: 'responses-1', sheetName: 'Sheet2' }),
     ).toEqual([])
   })
+
+  it('should read every row of a tab, header included, as far as column Z', async () => {
+    const readRange = vi.fn(
+      async () =>
+        await Promise.resolve([
+          ['Timestamp', 'Name'],
+          ['9/1/2026 10:00:00', 'Dana Sorkin'],
+        ]),
+    )
+    const access = createResponseSheetAccess({
+      pickSpreadsheet: createFakeSpreadsheetPicker(['responses-1']),
+      accessToken: 'token-1',
+      createClient: (options) => ({ ...createClient(options), readRange }),
+    })
+
+    expect(
+      await access.readRows({ spreadsheetId: 'responses-1', sheetName: 'Form Responses 1' }),
+    ).toEqual([
+      ['Timestamp', 'Name'],
+      ['9/1/2026 10:00:00', 'Dana Sorkin'],
+    ])
+    expect(readRange).toHaveBeenCalledWith({ range: "'Form Responses 1'!A1:Z" })
+  })
 })

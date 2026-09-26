@@ -18,4 +18,8 @@ export type ResponseSheetAccess = {
     spreadsheetId: string
     sheetName: string
   }) => Promise<readonly string[]>
+  readRows: (options: {
+    spreadsheetId: string
+    sheetName: string
+  }) => Promise<readonly (readonly string[])[]>
 }

@@ -24,3 +24,14 @@ export const describeAttendanceForEvent = (summary: EventAttendanceSummary): str
     `${summary.waitlistCount} on the waitlist`,
     ...(summary.noShowCount === undefined ? [] : [describeNoShows(summary.noShowCount)]),
   ])
+
+/* An event nobody has opened yet has not had its sheets read, and "0
+   registered" would be a claim about a sheet the app has not looked at. */
+export const describeUnreadRegistrantsForListing = ({
+  hasAttachedSheet,
+}: {
+  hasAttachedSheet: boolean
+}): string =>
+  hasAttachedSheet
+    ? 'Open the event to read its registrants'
+    : 'No response sheet attached yet'

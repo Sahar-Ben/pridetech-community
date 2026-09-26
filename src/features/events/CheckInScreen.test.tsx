@@ -1,8 +1,9 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { buildEvent, buildRegistrant } from '../../testing/eventFactory'
 import {
+  buildRegistrantLoads,
   createFakeEventRegistryWriter,
   createFakeResponseSheetAccess,
 } from '../../testing/eventsRegistryFactory'
@@ -54,7 +55,9 @@ const openCheckIn = async ({
       attachedSheets={[]}
       events={[event]}
       members={members}
-      registrants={registrants}
+      onReloadRegistrants={vi.fn()}
+      onRequestRegistrants={vi.fn()}
+      registrantLoads={buildRegistrantLoads(registrants)}
       responseSheetAccess={createFakeResponseSheetAccess()}
       today={TODAY}
       writer={createFakeEventRegistryWriter()}
@@ -429,13 +432,13 @@ describe('CheckInScreen adding a member who never filled the form', () => {
     expect(within(danaRow).getByText('Member')).toBeInTheDocument()
   })
 
-  it('should say plainly that the community list here is invented', async () => {
+  it('should say the search reads the Members tab and the walk-in is not saved', async () => {
     await openCheckIn()
 
     await searchCommunity('dana')
 
-    expect(screen.getByText(/invented sample members/i)).toBeInTheDocument()
-    expect(screen.getByText(/does not read your google sheet/i)).toBeInTheDocument()
+    expect(screen.getByText(/searches your members tab/i)).toBeInTheDocument()
+    expect(screen.getByText(/not saved to the google sheet yet/i)).toBeInTheDocument()
   })
 })
 

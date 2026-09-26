@@ -149,15 +149,13 @@ describe('CommunityWorkspace', () => {
     expect(screen.getByRole('heading', { name: 'Dana Sorkin' })).toBeInTheDocument()
   })
 
-  it('should open an event onto a registrant list nothing has been read into yet', async () => {
+  it('should open an event with no response sheet onto a note saying to attach one', async () => {
     renderWorkspace()
 
     await userEvent.click(screen.getByRole('button', { name: 'Events' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Pride Month Panel' }))
 
-    expect(
-      screen.getByText(/nothing has been read from a response sheet for this event/i),
-    ).toBeInTheDocument()
+    expect(screen.getByText(/no response sheet is attached yet/i)).toBeInTheDocument()
   })
 
   it('should warn that the check-in screen records nothing', async () => {
@@ -179,15 +177,13 @@ describe('CommunityWorkspace', () => {
     expect(screen.queryByText(/every event below is invented/i)).not.toBeInTheDocument()
   })
 
-  it('should still say the people at an event are not read from the spreadsheet', async () => {
+  it('should still say check-ins are not recorded anywhere', async () => {
     renderWorkspace()
 
     await userEvent.click(screen.getByRole('button', { name: 'Events' }))
     await screen.findByRole('heading', { name: 'Pride Month Panel' })
 
-    expect(
-      screen.getByText(/registrants, check-in and attendance are not built yet/i),
-    ).toBeInTheDocument()
+    expect(screen.getByText(/check-ins are not recorded yet/i)).toBeInTheDocument()
   })
 
   it('should not call the Members section sample data, now that it reads the sheet', async () => {

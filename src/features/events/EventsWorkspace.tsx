@@ -1,9 +1,14 @@
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { CheckInScreen } from './CheckInScreen'
 import { EventDetail } from './EventDetail'
 import { EventForm } from './EventForm'
 import { EventsList } from './EventsList'
 import { addWalkInRegistrant, toggleRegistrantCheckIn } from './checkIn'
+import { summariseEventAttendance } from './eventAttendance'
+import {
+  describeAttendanceForListing,
+  describeUnreadRegistrantsForListing,
+} from './eventAttendanceText'
 import { EMPTY_EVENT_DRAFT, toEventDraft, applyDraftToEvent, type EventDraft } from './eventDraft'
 import { groupEventsForListing } from './eventSchedule'
 import { selectEventRegistrants } from './eventRegistrants'
@@ -14,6 +19,7 @@ import type { EventRegistryWriter } from './eventRegistryWriter'
 import type { Member } from '../members/member'
 import type { Registrant } from './registrant'
 import type { ResponseSheetAccess } from './responseSheetAccess'
+import type { EventRegistrantsLoad } from './useEventRegistrants'
 import type { WalkInFields } from './walkInValidation'
 
 type EventsView =
@@ -26,7 +32,9 @@ type EventsView =
 type EventsWorkspaceProps = {
   events: readonly CommunityEvent[]
   attachedSheets: readonly AttachedResponseSheet[]
-  registrants: readonly Registrant[]
+  registrantLoads: ReadonlyMap<string, EventRegistrantsLoad>
+  onRequestRegistrants: (eventId: string) => void
+  onReloadRegistrants: (eventId: string) => void
   members: readonly Member[]
   today: string
   writer: EventRegistryWriter
@@ -38,23 +46,64 @@ type EventsWorkspaceProps = {
    number is something only the sheet knows and a guessed one is how a later
    edit lands on somebody else's event.
 
-   The walk-ins are held here, and they are the exception that has to be said
-   out loud on screen: nothing writes them anywhere. */
+   Registrants are read from the response sheets by the section and handed in
+   per event. The check-ins and walk-ins are held here, on top of them, and
+   they are the exception that has to be said out loud on screen: nothing
+   writes them anywhere yet. They are kept apart from what was read, so a
+   re-read of a sheet brings in new registrations without undoing a tap. */
 export const EventsWorkspace = ({
   events,
   attachedSheets,
-  registrants: loadedRegistrants,
+  registrantLoads,
+  onRequestRegistrants,
+  onReloadRegistrants,
   members,
   today,
   writer,
   responseSheetAccess,
 }: EventsWorkspaceProps) => {
-  const [registrants, setRegistrants] = useState(loadedRegistrants)
+  const [checkInsAtDoor, setCheckInsAtDoor] = useState<ReadonlyMap<string, string | undefined>>(
+    new Map(),
+  )
+  const [walkIns, setWalkIns] = useState<readonly Registrant[]>([])
   const [change, setChange] = useState<EventChange | undefined>(undefined)
   const [view, setView] = useState<EventsView>({ kind: 'list' })
   const nextWalkInNumber = useRef(1)
 
+  const registrants = useMemo(
+    () => [
+      ...[...registrantLoads.values()].flatMap((load) =>
+        (load.read?.registrants ?? []).map((registrant) =>
+          checkInsAtDoor.has(registrant.id)
+            ? { ...registrant, checkedInAt: checkInsAtDoor.get(registrant.id) }
+            : registrant,
+        ),
+      ),
+      ...walkIns,
+    ],
+    [checkInsAtDoor, registrantLoads, walkIns],
+  )
+
   const openList = () => setView({ kind: 'list' })
+
+  const openEventView = ({ kind, eventId }: { kind: 'detail' | 'check-in'; eventId: string }) => {
+    onRequestRegistrants(eventId)
+    setView({ kind, eventId })
+  }
+
+  const describeListedAttendance = (event: CommunityEvent): string => {
+    if (registrantLoads.get(event.id)?.read === undefined) {
+      return describeUnreadRegistrantsForListing({
+        hasAttachedSheet: attachedSheets.some((sheet) => sheet.eventId === event.id),
+      })
+    }
+    return describeAttendanceForListing(
+      summariseEventAttendance({
+        registrants: selectEventRegistrants({ registrants, eventId: event.id }),
+        isClosedOut: event.isClosedOut,
+      }),
+    )
+  }
 
   const archiveListedEvent = async (event: CommunityEvent): Promise<void> => {
     await writer.saveEvent({ originalEvent: event, updatedEvent: { ...event, isArchived: true } })
@@ -97,21 +146,31 @@ export const EventsWorkspace = ({
   }
 
   const toggleCheckIn = (registrantId: string) => {
-    setRegistrants((currentRegistrants) =>
-      toggleRegistrantCheckIn({
-        registrants: currentRegistrants,
+    const person = registrants.find((registrant) => registrant.id === registrantId)
+    if (person === undefined) {
+      return
+    }
+    const checkedInAt = new Date().toISOString()
+    if (person.isWalkIn) {
+      setWalkIns((currentWalkIns) =>
+        toggleRegistrantCheckIn({ registrants: currentWalkIns, registrantId, checkedInAt }),
+      )
+      return
+    }
+    setCheckInsAtDoor((current) =>
+      new Map(current).set(
         registrantId,
-        checkedInAt: new Date().toISOString(),
-      }),
+        person.checkedInAt === undefined ? checkedInAt : undefined,
+      ),
     )
   }
 
   const addWalkIn = ({ eventId, walkIn }: { eventId: string; walkIn: WalkInFields }) => {
     const id = `walk-in-local-${nextWalkInNumber.current}`
     nextWalkInNumber.current += 1
-    setRegistrants((currentRegistrants) =>
+    setWalkIns((currentWalkIns) =>
       addWalkInRegistrant({
-        registrants: currentRegistrants,
+        registrants: currentWalkIns,
         walkIn: {
           id,
           eventId,
@@ -161,7 +220,9 @@ export const EventsWorkspace = ({
         }
         onBack={openList}
         onCloseOut={async () => await closeOutEvent(openEvent)}
-        onOpenCheckIn={() => setView({ kind: 'check-in', eventId: openEvent.id })}
+        onOpenCheckIn={() => openEventView({ kind: 'check-in', eventId: openEvent.id })}
+        onReloadRegistrants={() => onReloadRegistrants(openEvent.id)}
+        registrantLoad={registrantLoads.get(openEvent.id)}
         registrants={selectEventRegistrants({ registrants, eventId: openEvent.id })}
         responseSheetAccess={responseSheetAccess}
       />
@@ -174,7 +235,7 @@ export const EventsWorkspace = ({
         event={openEvent}
         members={members}
         onAddWalkIn={(walkIn) => addWalkIn({ eventId: openEvent.id, walkIn })}
-        onBack={() => setView({ kind: 'detail', eventId: openEvent.id })}
+        onBack={() => openEventView({ kind: 'detail', eventId: openEvent.id })}
         onToggleCheckIn={toggleCheckIn}
         registrants={selectEventRegistrants({ registrants, eventId: openEvent.id })}
       />
@@ -184,11 +245,11 @@ export const EventsWorkspace = ({
   return (
     <EventsList
       change={change}
+      describeAttendance={describeListedAttendance}
       onAddEvent={() => setView({ kind: 'add' })}
       onArchiveEvent={archiveListedEvent}
       onEditEvent={(event) => setView({ kind: 'edit', eventId: event.id })}
-      onOpenEvent={(event) => setView({ kind: 'detail', eventId: event.id })}
-      registrants={registrants}
+      onOpenEvent={(event) => openEventView({ kind: 'detail', eventId: event.id })}
       schedule={groupEventsForListing({ events, today })}
     />
   )

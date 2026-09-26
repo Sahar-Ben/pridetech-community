@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { EventsSection } from './EventsSection'
@@ -14,6 +14,7 @@ import { createFakeResponseSheetAccess } from '../../testing/eventsRegistryFacto
 import { createFakeSheet, type FakeSheet } from '../../testing/fakeSheet'
 import { MEMBERS_HEADER_ROW, memberRow } from '../../testing/sheetsClientFactory'
 import type { ResponseSheetAccess } from './responseSheetAccess'
+import { SheetsRequestError } from '../../sheets/sheetsRequestError'
 
 const MEMBERS_TAB = {
   Members: [MEMBERS_HEADER_ROW, memberRow({ name: 'Dana Sorkin', mail: 'dana@example.com' })],
@@ -181,12 +182,10 @@ describe('EventsSection, where the registry is ready', () => {
     expect(await screen.findByRole('heading', { name: 'Pride Month Panel' })).toBeInTheDocument()
   })
 
-  it('should say plainly that the people at those events are not read yet', async () => {
+  it('should say plainly that check-ins at those events are not recorded yet', async () => {
     renderSection({ sheet: buildSheet(readyTabs()) })
 
-    expect(
-      await screen.findByText(/registrants, check-in and attendance are not built yet/i),
-    ).toBeInTheDocument()
+    expect(await screen.findByText(/check-ins are not recorded yet/i)).toBeInTheDocument()
   })
 
   it('should report a row that carries no event id rather than drop it quietly', async () => {
@@ -374,5 +373,181 @@ describe('EventsSection, attaching a response sheet', () => {
     expect(
       await screen.findByRole('button', { name: /attach a response sheet/i }),
     ).toBeInTheDocument()
+  })
+})
+
+const ATTACHED_PANEL_SHEET = [
+  'evt-1',
+  'responses-1',
+  'Form Responses 1',
+  'main',
+  '{"timestamp":"A","name":"B","email":"C","company":"D","jobTitle":null}',
+]
+
+const RESPONSE_ROWS = [
+  ['Timestamp', 'Name', 'Email', 'Company'],
+  ['9/1/2026 10:00:00', 'Dana Sorkin', 'DANA@example.com', 'Quillon Cloud'],
+  ['9/2/2026 11:00:00', 'Avi Levi', 'avi@example.com', 'Fennimore Labs'],
+  ['9/3/2026 12:00:00', 'Dana Sorkin', 'dana@example.com', 'Quillon Cloud'],
+]
+
+const accessWithResponses = (overrides: Partial<ResponseSheetAccess> = {}) =>
+  createFakeResponseSheetAccess({
+    readRows: vi.fn(async () => await Promise.resolve(RESPONSE_ROWS)),
+    ...overrides,
+  })
+
+const openPridePanel = async () => {
+  await userEvent.click(await screen.findByRole('button', { name: 'Pride Month Panel' }))
+}
+
+const registrantNames = async (): Promise<readonly string[]> => {
+  const table = await screen.findByRole('table', { name: /registrants/i })
+  return within(table)
+    .getAllByRole('row')
+    .slice(1)
+    .map((row) => within(row).getAllByRole('cell')[0]?.textContent ?? '')
+}
+
+describe('EventsSection, reading who registered', () => {
+  it('should not read any response sheet until an event is opened', async () => {
+    const access = accessWithResponses()
+    renderSection({
+      sheet: buildSheet(readyTabs({ attachedRows: [ATTACHED_PANEL_SHEET] })),
+      access,
+    })
+
+    expect(await screen.findByText(/open the event to read its registrants/i)).toBeInTheDocument()
+    expect(access.readRows).not.toHaveBeenCalled()
+  })
+
+  it('should list the people on the attached response sheet when the event is opened', async () => {
+    const access = accessWithResponses()
+    renderSection({
+      sheet: buildSheet(readyTabs({ attachedRows: [ATTACHED_PANEL_SHEET] })),
+      access,
+    })
+
+    await openPridePanel()
+
+    expect(await registrantNames()).toEqual(['Avi Levi', 'Dana Sorkin'])
+    expect(access.readRows).toHaveBeenCalledWith({
+      spreadsheetId: 'responses-1',
+      sheetName: 'Form Responses 1',
+    })
+  })
+
+  it('should count somebody who submitted twice once, and say so', async () => {
+    renderSection({
+      sheet: buildSheet(readyTabs({ attachedRows: [ATTACHED_PANEL_SHEET] })),
+      access: accessWithResponses(),
+    })
+
+    await openPridePanel()
+
+    expect(await screen.findByText(/2 registered/)).toBeInTheDocument()
+    expect(screen.getByText(/1 repeat submission/i)).toBeInTheDocument()
+  })
+
+  it('should mark a registrant whose email is on the Members tab as a member', async () => {
+    renderSection({
+      sheet: buildSheet(readyTabs({ attachedRows: [ATTACHED_PANEL_SHEET] })),
+      access: accessWithResponses(),
+    })
+
+    await openPridePanel()
+
+    const table = await screen.findByRole('table', { name: /registrants/i })
+    const danaRow = within(table).getByText('Dana Sorkin').closest('tr')
+    expect(danaRow).not.toBeNull()
+    expect(within(danaRow as HTMLElement).getByText(/member/i)).toBeInTheDocument()
+  })
+
+  it('should keep the list on the events listing once the event has been read', async () => {
+    renderSection({
+      sheet: buildSheet(readyTabs({ attachedRows: [ATTACHED_PANEL_SHEET] })),
+      access: accessWithResponses(),
+    })
+
+    await openPridePanel()
+    await registrantNames()
+    await userEvent.click(screen.getByRole('button', { name: /back to events/i }))
+
+    expect(await screen.findByText(/2 registered/)).toBeInTheDocument()
+  })
+
+  it('should read the sheet again when asked, for registrations that arrived since', async () => {
+    const access = accessWithResponses()
+    renderSection({
+      sheet: buildSheet(readyTabs({ attachedRows: [ATTACHED_PANEL_SHEET] })),
+      access,
+    })
+    await openPridePanel()
+    await registrantNames()
+
+    await userEvent.click(screen.getByRole('button', { name: /read the response sheets again/i }))
+
+    await waitFor(() => expect(access.readRows).toHaveBeenCalledTimes(2))
+  })
+
+  it('should offer to give access to a sheet this organiser cannot open', async () => {
+    const readRows = vi
+      .fn()
+      .mockRejectedValueOnce(new SheetsRequestError({ range: 'A1:Z', status: 403, detail: 'denied' }))
+      .mockResolvedValue(RESPONSE_ROWS)
+    const access = accessWithResponses({
+      readRows,
+      pickSpreadsheet: vi.fn(
+        async () => await Promise.resolve({ spreadsheetId: 'responses-1', name: 'Pride RSVP' }),
+      ),
+    })
+    renderSection({
+      sheet: buildSheet(readyTabs({ attachedRows: [ATTACHED_PANEL_SHEET] })),
+      access,
+    })
+    await openPridePanel()
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: /give access to "form responses 1"/i }),
+    )
+
+    expect(await registrantNames()).toEqual(['Avi Levi', 'Dana Sorkin'])
+  })
+
+  it('should refuse a different file picked to give access, and read nothing', async () => {
+    const readRows = vi
+      .fn()
+      .mockRejectedValue(new SheetsRequestError({ range: 'A1:Z', status: 403, detail: 'denied' }))
+    const access = accessWithResponses({
+      readRows,
+      pickSpreadsheet: vi.fn(
+        async () => await Promise.resolve({ spreadsheetId: 'other-file', name: 'Something else' }),
+      ),
+    })
+    renderSection({
+      sheet: buildSheet(readyTabs({ attachedRows: [ATTACHED_PANEL_SHEET] })),
+      access,
+    })
+    await openPridePanel()
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: /give access to "form responses 1"/i }),
+    )
+
+    expect(await screen.findByText(/that is a different file/i)).toBeInTheDocument()
+    expect(readRows).toHaveBeenCalledTimes(1)
+  })
+
+  it('should read the registrants of a sheet as soon as it is attached', async () => {
+    const access = accessWithResponses({
+      readHeaderRow: vi.fn(async () => await Promise.resolve(RESPONSE_ROWS[0] ?? [])),
+    })
+    renderSection({ sheet: buildSheet(readyTabs()), access })
+
+    await openPridePanel()
+    await userEvent.click(await screen.findByRole('button', { name: /attach a response sheet/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /attach this sheet/i }))
+
+    expect(await registrantNames()).toEqual(['Avi Levi', 'Dana Sorkin'])
   })
 })
