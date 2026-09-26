@@ -27,8 +27,8 @@ describe('resolveRegistrantLink', () => {
     })
   })
 
-  it('should say a registrant with no email cannot be matched, rather than guessing by name', () => {
-    const registrant = buildRegistrant({ name: 'Dana Sorkin', email: undefined })
+  it('should say a registrant with no email and no member of that name cannot be matched', () => {
+    const registrant = buildRegistrant({ name: 'Ronit Amsalem', email: undefined })
 
     expect(resolveRegistrantLink({ registrant, members, eventRegistrants: [] })).toEqual({
       kind: 'no-email',
@@ -78,5 +78,40 @@ describe('resolveRegistrantLink', () => {
       kind: 'guest',
       hostName: 'unknown.host@example.com',
     })
+  })
+})
+
+describe('resolveRegistrantLink, by name for a sheet with no email', () => {
+  const members = [
+    buildMember({ rowNumber: 2, name: 'Dana Sorkin', mail: 'dana@example.com' }),
+    buildMember({ rowNumber: 3, name: 'Noa Levi', mail: 'noa.one@example.com' }),
+    buildMember({ rowNumber: 4, name: 'Noa Levi', mail: 'noa.two@example.com' }),
+    buildMember({ rowNumber: 5, name: 'Avi', mail: 'avi@example.com' }),
+  ]
+  const resolve = (name: string) =>
+    resolveRegistrantLink({
+      registrant: buildRegistrant({ name, email: undefined }),
+      members,
+      eventRegistrants: [],
+    })
+
+  it('should match exactly one member with the same full name, whatever its case and spacing', () => {
+    expect(resolve('  dana   SORKIN ')).toEqual({
+      kind: 'member-by-name',
+      memberName: 'Dana Sorkin',
+      rowNumber: 2,
+    })
+  })
+
+  it('should not match a name two members share', () => {
+    expect(resolve('Noa Levi')).toEqual({ kind: 'no-email' })
+  })
+
+  it('should not match a first name alone, even when only one member has it', () => {
+    expect(resolve('Avi')).toEqual({ kind: 'no-email' })
+  })
+
+  it('should not match part of a name', () => {
+    expect(resolve('Dana')).toEqual({ kind: 'no-email' })
   })
 })

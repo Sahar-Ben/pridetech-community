@@ -14,6 +14,9 @@ export const RegistrantLinkNote = ({ link }: RegistrantLinkNoteProps) => {
   if (link.kind === 'member') {
     return <span className={NEUTRAL_CLASSES}>Member</span>
   }
+  if (link.kind === 'member-by-name') {
+    return <span className={NEUTRAL_CLASSES}>Member (matched by name)</span>
+  }
   if (link.kind === 'guest') {
     return <span className={NEUTRAL_CLASSES}>Guest of {link.hostName}</span>
   }
