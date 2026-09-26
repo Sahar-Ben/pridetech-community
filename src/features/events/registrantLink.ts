@@ -4,13 +4,38 @@ import type { Registrant } from './registrant'
 
 /* What the app is entitled to say about who a registrant is. `no-email` is
    kept apart from `unmatched` on purpose: the five earliest response sheets
-   never asked for an email, so there is nothing to match on and matching by
-   name would be a guess dressed up as a fact. */
+   never asked for an email, so there is nothing to match on.
+
+   Those rows are matched by name only when exactly one member carries exactly
+   that full name, and the match says it was made by name, since a name is
+   weaker evidence than an address. A first name alone, or a name two members
+   share, stays `no-email`: guessing there links the wrong person. */
 export type RegistrantLink =
   | { kind: 'member'; memberName: string; rowNumber: number }
+  | { kind: 'member-by-name'; memberName: string; rowNumber: number }
   | { kind: 'guest'; hostName: string }
   | { kind: 'no-email' }
   | { kind: 'unmatched' }
+
+const invisibleFormatting = /[\u{00ad}\u{200b}\u{200e}\u{200f}\u{2060}\u{feff}]/gu
+
+const toComparableName = (name: string): string =>
+  name.normalize('NFC').replace(invisibleFormatting, '').trim().replace(/\s+/g, ' ').toLowerCase()
+
+const findMemberByName = ({
+  name,
+  members,
+}: {
+  name: string
+  members: readonly Member[]
+}): Member | undefined => {
+  const wanted = toComparableName(name)
+  if (!wanted.includes(' ')) {
+    return undefined
+  }
+  const matches = members.filter((member) => toComparableName(member.name) === wanted)
+  return matches.length === 1 ? matches[0] : undefined
+}
 
 const findHostName = ({
   guestOfEmail,
@@ -47,7 +72,10 @@ export const resolveRegistrantLink = ({
     return { kind: 'guest', hostName: findHostName({ guestOfEmail, members, eventRegistrants }) }
   }
   if (email === undefined) {
-    return { kind: 'no-email' }
+    const namedMember = findMemberByName({ name: registrant.name, members })
+    return namedMember === undefined
+      ? { kind: 'no-email' }
+      : { kind: 'member-by-name', memberName: namedMember.name, rowNumber: namedMember.rowNumber }
   }
 
   const matchedMember = members.find((member) => doesEmailMatch({ left: member.mail, right: email }))
