@@ -97,6 +97,10 @@ function fillPastEventEmails() {
       return
     }
     const eventId = eventRow[columnOf(eventRows[0], 'Event ID')]
+    if (!attachedRows.some((attached, index) => index > 0 && attached[attachedCol('Event ID')] === eventId)) {
+      report.push(`${eventName}: no RSVP sheet is attached to it. Run importPreviewedEvents first.`)
+      return
+    }
 
     attachedRows.forEach((attached, attachedIndex) => {
       if (attachedIndex === 0 || attached[attachedCol('Event ID')] !== eventId) {
@@ -143,5 +147,5 @@ function fillPastEventEmails() {
     })
   })
 
-  Logger.log(report.join('\n'))
+  Logger.log(report.length > 0 ? report.join('\n') : 'Nothing to fill.')
 }
