@@ -1,8 +1,9 @@
 import { StatTile } from './StatTile'
 import type { Overview } from './buildOverview'
-import { GLASS_PANEL_CLASSES } from '../../theme/surfaces'
 
-const PANEL_CLASSES = `${GLASS_PANEL_CLASSES} animate-rise flex flex-wrap gap-x-10 gap-y-5 px-5 py-4`
+/* Four equal columns rather than a wrapping row, so no number drops onto a
+   second line on its own and every tile is the width of every other. */
+const GRID_CLASSES = 'animate-rise grid grid-cols-2 gap-4 sm:grid-cols-4'
 
 type OverviewStatsProps = {
   overview: Overview
@@ -13,7 +14,7 @@ type OverviewStatsProps = {
    spellings of a company name are on the sheet, and `Google` and `Google
    Israel` are two of those whether or not they are two employers. */
 export const OverviewStats = ({ overview }: OverviewStatsProps) => (
-  <dl className={PANEL_CLASSES}>
+  <dl className={GRID_CLASSES}>
     <StatTile label="Active members" value={overview.memberCount} />
     <StatTile label="Ex-members" note="Not counted in any chart below" value={overview.exMemberCount} />
     <StatTile
@@ -22,7 +23,8 @@ export const OverviewStats = ({ overview }: OverviewStatsProps) => (
       value={overview.companies.distinctCompanyCount}
     />
     <StatTile
-      label="Members with no company recorded"
+      label="No company"
+      note="Members with the Company cell empty"
       value={overview.companies.membersWithoutCompanyCount}
     />
   </dl>
