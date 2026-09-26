@@ -319,6 +319,15 @@ describe('EventsWorkspace event detail', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Pride Panel' }))
   }
 
+  it('should open an event from its Open button as well as its name', async () => {
+    const { onRequestRegistrants } = renderEvents({ events: [pridePanel] })
+
+    await userEvent.click(screen.getByRole('button', { name: 'Open Pride Panel' }))
+
+    expect(onRequestRegistrants).toHaveBeenCalledWith('a')
+    expect(screen.getByRole('button', { name: /back to events/i })).toBeInTheDocument()
+  })
+
   it('should ask for the registrants of the event that was opened', async () => {
     const { onRequestRegistrants } = renderEvents({ events: [pridePanel] })
 
