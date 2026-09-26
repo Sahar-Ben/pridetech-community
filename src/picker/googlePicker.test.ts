@@ -14,6 +14,8 @@ const stubGooglePicker = () => {
     oauthTokens: [] as string[],
     developerKeys: [] as string[],
     appIds: [] as string[],
+    features: [] as string[],
+    titles: [] as string[],
   }
   let pickerCallback: ((response: GooglePickerResponse) => void) | undefined
 
@@ -31,7 +33,14 @@ const stubGooglePicker = () => {
       calls.appIds.push(appId)
       return builder
     },
-    setTitle: () => builder,
+    setTitle: (title) => {
+      calls.titles.push(title)
+      return builder
+    },
+    enableFeature: (feature) => {
+      calls.features.push(feature)
+      return builder
+    },
     setCallback: (callback) => {
       pickerCallback = callback
       return builder
@@ -55,6 +64,7 @@ const stubGooglePicker = () => {
       } as unknown as new (viewId: string) => object,
       ViewId: { SPREADSHEETS: SPREADSHEETS_VIEW_ID },
       Action: { PICKED, CANCEL },
+      Feature: { MULTISELECT_ENABLED: 'multiselect' },
     },
   }
 
@@ -70,12 +80,18 @@ const stubGooglePicker = () => {
 
 const openPicker = (callbacks: {
   onPicked?: (spreadsheet: PickedSpreadsheet) => void
+  onPickedAll?: (spreadsheets: readonly PickedSpreadsheet[]) => void
   onCancelled?: () => void
   onError?: (message: string) => void
+  allowMultiple?: boolean
+  title?: string
 }) => {
   const pickSpreadsheet = createGoogleSpreadsheetPicker({ apiKey: 'api-key', appId: 'app-id' })
   pickSpreadsheet({
     accessToken: 'token-1',
+    allowMultiple: callbacks.allowMultiple,
+    title: callbacks.title,
+    onPickedAll: callbacks.onPickedAll,
     onPicked: callbacks.onPicked ?? vi.fn(),
     onCancelled: callbacks.onCancelled ?? vi.fn(),
     onError: callbacks.onError ?? vi.fn(),
@@ -124,6 +140,29 @@ describe('createGoogleSpreadsheetPicker', () => {
       spreadsheetId: 'spreadsheet-1',
       name: 'PrideTech WRITE TEST',
     })
+  })
+
+  it('should let several files be selected when asked, and report them all', () => {
+    const picker = stubGooglePicker()
+    const onPickedAll = vi.fn()
+
+    openPicker({ allowMultiple: true, onPickedAll, title: 'Select every RSVP sheet' })
+    picker.respond({ action: PICKED, docs: [{ id: 'sheet-1' }, { id: 'sheet-2', name: 'GAGA' }] })
+
+    expect(picker.calls.features).toEqual(['multiselect'])
+    expect(picker.calls.titles).toEqual(['Select every RSVP sheet'])
+    expect(onPickedAll).toHaveBeenCalledWith([
+      { spreadsheetId: 'sheet-1', name: undefined },
+      { spreadsheetId: 'sheet-2', name: 'GAGA' },
+    ])
+  })
+
+  it('should not allow several files unless asked', () => {
+    const picker = stubGooglePicker()
+
+    openPicker({})
+
+    expect(picker.calls.features).toEqual([])
   })
 
   it('should report a cancelled picker', () => {

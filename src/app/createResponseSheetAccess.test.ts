@@ -46,6 +46,29 @@ describe('createResponseSheetAccess, picking', () => {
   })
 })
 
+describe('createResponseSheetAccess, picking several', () => {
+  it('should hand back every file picked in one go', async () => {
+    const access = buildAccess(({ onPickedAll, allowMultiple }) => {
+      expect(allowMultiple).toBe(true)
+      onPickedAll?.([
+        { spreadsheetId: 'sheet-1', name: 'GAGA RSVP' },
+        { spreadsheetId: 'sheet-2', name: 'Playtika RSVP' },
+      ])
+    })
+
+    expect(await access.pickSpreadsheets()).toEqual([
+      { spreadsheetId: 'sheet-1', name: 'GAGA RSVP' },
+      { spreadsheetId: 'sheet-2', name: 'Playtika RSVP' },
+    ])
+  })
+
+  it('should answer with none when the picker was closed', async () => {
+    const access = buildAccess(createFakeSpreadsheetPicker([]))
+
+    expect(await access.pickSpreadsheets()).toEqual([])
+  })
+})
+
 describe('createResponseSheetAccess, reading the picked file', () => {
   it('should list the tabs of the picked spreadsheet', async () => {
     const access = buildAccess(createFakeSpreadsheetPicker(['responses-1']))

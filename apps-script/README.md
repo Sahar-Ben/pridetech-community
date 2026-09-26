@@ -50,6 +50,37 @@ creates folders there as you.
   yourself, and the script made this one, not the app. Each other organiser
   does the same once per event.
 
+## `migratePastEvents.gs`
+
+A one-off import of the events that happened before the app. Each folder in the
+shared Events folder becomes an event, and its RSVP sheet(s) are attached with
+their columns mapped. It needs `createEventForms.gs` in the same project.
+
+1. In the Apps Script editor, add a file named `migratePastEvents`, paste in
+   `migratePastEvents.gs` and save.
+2. Choose **`previewPastEvents`** in the function dropdown and click **Run**
+   (allow the permissions if asked). It writes a **Migration preview** tab and
+   changes nothing else.
+3. Check the preview tab, one row per RSVP spreadsheet:
+   - **Event name / Date** come from the folder name. Fix any that are wrong;
+     a folder with no date needs one typed in as `YYYY-MM-DD`.
+   - **Include**: set it to `No` for anything that should not come in. Where a
+     folder has two main sheets (a copy), the one with more responses is set to
+     `Yes` and the other to `No`. Check that it picked the right one.
+   - **Warnings** says what to look at: no email column, a possible copy, and
+     so on.
+   - **Role** is `waiting list` when the file or tab name mentions waiting;
+     otherwise `main`.
+4. Choose **`importPreviewedEvents`** and click **Run**. It adds the events and
+   their sheets, and marks each row `Imported`. Running it again imports
+   nothing twice.
+5. In the app, on the **Events** page, click **Give access to event sheets** and
+   select all the RSVP sheets in one go (hold Shift or Ctrl/Cmd). The app can
+   only read files you have picked yourself.
+
+Imported events are marked with a note that attendance was not recorded, and
+they are never closed out, so nobody on them is counted as a no-show.
+
 ## `duplicateApplicationEmail.gs`
 
 When someone submits the membership form with an email address the community

@@ -36,6 +36,7 @@ export type GooglePickerBuilder = {
   setDeveloperKey: (apiKey: string) => GooglePickerBuilder
   setAppId: (appId: string) => GooglePickerBuilder
   setTitle: (title: string) => GooglePickerBuilder
+  enableFeature?: (feature: string) => GooglePickerBuilder
   setCallback: (callback: (response: GooglePickerResponse) => void) => GooglePickerBuilder
   build: () => { setVisible: (isVisible: boolean) => void }
 }
@@ -45,6 +46,7 @@ export type GooglePickerNamespace = {
   DocsView: new (viewId: string) => object
   ViewId: { SPREADSHEETS: string }
   Action: { PICKED: string; CANCEL: string }
+  Feature?: { MULTISELECT_ENABLED: string }
 }
 
 export type GoogleGlobal = {

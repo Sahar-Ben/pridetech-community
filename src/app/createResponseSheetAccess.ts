@@ -41,6 +41,39 @@ const toPickPromise =
       })
     })
 
+const MANY_PICKER_TITLE = 'Select every event RSVP sheet (hold Shift or Ctrl to select several)'
+
+const toPickManyPromise =
+  ({
+    pickSpreadsheet,
+    accessToken,
+  }: {
+    pickSpreadsheet: PickSpreadsheet
+    accessToken: string
+  }): (() => Promise<readonly PickedResponseSpreadsheet[]>) =>
+  async () =>
+    await new Promise<readonly PickedResponseSpreadsheet[]>((resolve, reject) => {
+      pickSpreadsheet({
+        accessToken,
+        title: MANY_PICKER_TITLE,
+        allowMultiple: true,
+        onPicked: (spreadsheet) => {
+          resolve([{ spreadsheetId: spreadsheet.spreadsheetId, name: spreadsheet.name }])
+        },
+        onPickedAll: (spreadsheets) => {
+          resolve(
+            spreadsheets.map(({ spreadsheetId, name }) => ({ spreadsheetId, name })),
+          )
+        },
+        onCancelled: () => {
+          resolve([])
+        },
+        onError: (message) => {
+          reject(new Error(message))
+        },
+      })
+    })
+
 export const createResponseSheetAccess = ({
   pickSpreadsheet,
   accessToken,
@@ -55,6 +88,8 @@ export const createResponseSheetAccess = ({
 
   return {
     pickSpreadsheet: toPickPromise({ pickSpreadsheet, accessToken }),
+
+    pickSpreadsheets: toPickManyPromise({ pickSpreadsheet, accessToken }),
 
     readTabNames: async ({ spreadsheetId }) => await clientFor(spreadsheetId).readTabNames(),
 
