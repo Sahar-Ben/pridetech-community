@@ -7,6 +7,7 @@ import { SheetsRequestError } from '../../sheets/sheetsRequestError'
 import { createFakeSheet } from '../../testing/fakeSheet'
 import {
   LEADS_HEADER_ROW,
+  LEADS_HEADER_ROW_WITH_REASON,
   leadRow,
   MEMBERS_HEADER_ROW,
   memberRow,
@@ -45,11 +46,17 @@ const dana = (overrides: Partial<Lead> = {}): Lead => ({
   ...overrides,
 })
 
-const buildSheet = ({ members = [MEMBERS_HEADER_ROW] }: { members?: readonly (readonly string[])[] } = {}) =>
+const buildSheet = ({
+  members = [MEMBERS_HEADER_ROW],
+  leadsHeader = LEADS_HEADER_ROW,
+}: {
+  members?: readonly (readonly string[])[]
+  leadsHeader?: readonly string[]
+} = {}) =>
   createFakeSheet({
     tabs: {
       Leads: [
-        LEADS_HEADER_ROW,
+        leadsHeader,
         leadRow({ name: 'Noa Feldman', email: 'noa@example.com' }),
         leadRow({ name: 'Dana Maman', email: 'dana@example.com' }),
       ],
@@ -140,7 +147,7 @@ describe('useLeadDecisions', () => {
     act(() => {
       result.current.approve({ lead: dana(), gender: 'F' })
       result.current.approve({ lead: dana(), gender: 'F' })
-      result.current.decline({ lead: dana() })
+      result.current.decline({ lead: dana(), reason: undefined })
     })
 
     await act(async () => {
@@ -231,7 +238,7 @@ describe('useLeadDecisions', () => {
     const { result } = renderDecisions({ sheetsClient: sheet.client })
 
     act(() => {
-      result.current.decline({ lead: dana() })
+      result.current.decline({ lead: dana(), reason: undefined })
     })
 
     await waitFor(() => {
@@ -241,8 +248,40 @@ describe('useLeadDecisions', () => {
         kind: 'update',
         range: 'Leads!K3',
         values: ['Declined'],
-        valueInputOption: 'USER_ENTERED',
+        valueInputOption: 'RAW',
       }])
+  })
+
+  it('should write the reviewer reason beside the status when they gave one', async () => {
+    const sheet = buildSheet({ leadsHeader: LEADS_HEADER_ROW_WITH_REASON })
+    const { result } = renderDecisions({ sheetsClient: sheet.client })
+
+    act(() => {
+      result.current.decline({ lead: dana(), reason: 'Not in Tech' })
+    })
+
+    await waitFor(() => {
+      expect(result.current.decidedRowNumbers.has(DANA_ROW_NUMBER)).toBe(true)
+    })
+    expect(sheet.writes).toEqual([
+      { kind: 'update', range: 'Leads!K3', values: ['Declined'], valueInputOption: 'RAW' },
+      { kind: 'update', range: 'Leads!L3', values: ['Not in Tech'], valueInputOption: 'RAW' },
+    ])
+  })
+
+  it('should leave the application in the queue when the reason has nowhere to go', async () => {
+    const sheet = buildSheet()
+    const { result } = renderDecisions({ sheetsClient: sheet.client })
+
+    act(() => {
+      result.current.decline({ lead: dana(), reason: 'Not in Tech' })
+    })
+
+    await waitFor(() => {
+      expect(result.current.stateFor(DANA_ROW_NUMBER).errorMessage).toMatch(/Reason column/i)
+    })
+    expect(result.current.decidedRowNumbers.has(DANA_ROW_NUMBER)).toBe(false)
+    expect(sheet.writes).toEqual([])
   })
 
   it('should keep an application for later through the same protected path', async () => {
@@ -250,7 +289,7 @@ describe('useLeadDecisions', () => {
     const { result } = renderDecisions({ sheetsClient: sheet.client })
 
     act(() => {
-      result.current.markMaybe({ lead: dana() })
+      result.current.markMaybe({ lead: dana(), reason: undefined })
     })
 
     await waitFor(() => {
@@ -260,7 +299,7 @@ describe('useLeadDecisions', () => {
         kind: 'update',
         range: 'Leads!K3',
         values: ['Maybe in the future'],
-        valueInputOption: 'USER_ENTERED',
+        valueInputOption: 'RAW',
       }])
   })
 
@@ -290,7 +329,7 @@ describe('useLeadDecisions', () => {
     const { result } = renderDecisions({ sheetsClient: sheet.client })
 
     act(() => {
-      result.current.decline({ lead: dana() })
+      result.current.decline({ lead: dana(), reason: undefined })
     })
     await waitFor(() => {
       expect(result.current.decidedRowNumbers.has(DANA_ROW_NUMBER)).toBe(true)
@@ -412,7 +451,7 @@ describe('useLeadDecisions, when a fresh read lands while a decision is still be
     })
 
     act(() => {
-      result.current.decline({ lead: dana() })
+      result.current.decline({ lead: dana(), reason: undefined })
     })
     await waitFor(() => {
       expect(result.current.decidedRowNumbers.has(DANA_ROW_NUMBER)).toBe(true)

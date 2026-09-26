@@ -30,8 +30,8 @@ const toStatusKey = (status: string | undefined): string =>
    blank on every member who joined before the column existed: blank records
    that nobody has been back to fill it in, never that somebody left. The only
    writer of `Ex-member` is this app, and it writes it the moment somebody is
-   removed, so an explicit value other than Active \u{2014} an ex-member, or a
-   spelling nobody recognises \u{2014} is the only thing on this sheet that says
+   removed, so an explicit value other than Active — an ex-member, or a
+   spelling nobody recognises — is the only thing on this sheet that says
    departed. Reading blank as departed put all 787 existing members back in the
    review queue, each one captioned as an ex-member coming back. */
 export const isActiveMemberMatch = (member: MemberMatch): boolean => {
@@ -105,7 +105,7 @@ const countRowsWithoutEmail = ({
   dataRows.filter((row) => readCell({ row, column: emailColumn }) === undefined).length
 
 /* Every row is kept, not the first one. The same address is on the Members tab
-   more than once \u{2014} an ex-member and the row somebody re-entered them on \u{2014}
+   more than once — an ex-member and the row somebody re-entered them on —
    and a write that asked only the first of them whether it was Active would
    reactivate an ex-member who is already Active further down, leaving one person
    on two Active rows and halving every attendance figure drawn from the address. */
@@ -125,7 +125,7 @@ const groupByEmail = (
 /* First-row-wins, matching `buildHeaderMap`: when the same person was entered
    twice, the excluded application should point at the row they have had longest.
    This is for showing a reviewer a row to go and look at, never for deciding
-   what to write \u{2014} a write reads `matchesByEmail` and refuses the ambiguity. */
+   what to write — a write reads `matchesByEmail` and refuses the ambiguity. */
 const firstOfEach = (
   matchesByEmail: ReadonlyMap<string, readonly MemberMatch[]>,
 ): ReadonlyMap<string, MemberMatch> =>

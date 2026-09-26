@@ -31,8 +31,8 @@ const EMPTY_BREAKDOWN: CompanyBreakdown = {
   membersNotShownCount: 0,
 }
 
-/* Percentages are allocated over the whole community \u{2014} the ten shown, the
-   members at every other company, and the members with no company \u{2014} and only
+/* Percentages are allocated over the whole community — the ten shown, the
+   members at every other company, and the members with no company — and only
    then sliced down to what the chart draws. Allocating over the ten alone would
    report a company of 40 people as a third of the community. */
 export const buildCompanyBreakdown = (members: readonly Member[]): CompanyBreakdown => {

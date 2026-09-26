@@ -1,5 +1,7 @@
-import { useId, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import type { ApprovalDecision, DeclineDecision, Gender, MaybeDecision } from './decision'
+import { DecisionReasonDialog } from './DecisionReasonDialog'
+import type { ReasonedDecisionKind } from './decisionReason'
 import type { Lead } from './lead'
 import {
   COMPACT_BUTTON_SIZE_CLASSES,
@@ -38,8 +40,8 @@ type ApplicationDecisionControlsProps = {
   isSaving: boolean
   onApprove: (decision: ApprovalDecision) => void
   decisions: {
-    onDecline: ((decision: DeclineDecision) => void) | undefined
-    onMarkMaybe: ((decision: MaybeDecision) => void) | undefined
+    onDecline: ((decision: DeclineDecision) => Promise<void>) | undefined
+    onMarkMaybe: ((decision: MaybeDecision) => Promise<void>) | undefined
   }
 }
 
@@ -52,6 +54,35 @@ export const ApplicationDecisionControls = ({
   const { onDecline, onMarkMaybe } = decisions
   const genderSelectId = useId()
   const [gender, setGender] = useState<Gender>('unknown')
+  const [pendingKind, setPendingKind] = useState<ReasonedDecisionKind | undefined>(undefined)
+  const declineButtonRef = useRef<HTMLButtonElement>(null)
+  const maybeButtonRef = useRef<HTMLButtonElement>(null)
+
+  const closeDialog = (): void => {
+    const trigger = pendingKind === 'decline' ? declineButtonRef : maybeButtonRef
+    setPendingKind(undefined)
+    trigger.current?.focus()
+  }
+
+  /* Awaited rather than fired and forgotten, so the dialog stays up for as long
+     as the write is in the air and comes down once the sheet has answered,
+     whichever way it answered. A refusal is on the card underneath by then, and
+     a dialog still covering it would be hiding the one thing the reviewer needs
+     to read. */
+  const takeDecision = async ({
+    kind,
+    reason,
+  }: {
+    kind: ReasonedDecisionKind
+    reason: string | undefined
+  }): Promise<void> => {
+    if (kind === 'decline') {
+      await onDecline?.({ lead, reason })
+    } else {
+      await onMarkMaybe?.({ lead, reason })
+    }
+    closeDialog()
+  }
 
   return (
     <div className={CONTROL_ROW_CLASSES}>
@@ -88,8 +119,9 @@ export const ApplicationDecisionControls = ({
         <button
           className={SECONDARY_DECISION_BUTTON_CLASSES}
           disabled={isSaving}
+          ref={maybeButtonRef}
           type="button"
-          onClick={() => onMarkMaybe({ lead })}
+          onClick={() => setPendingKind('maybe')}
         >
           Maybe
         </button>
@@ -98,11 +130,22 @@ export const ApplicationDecisionControls = ({
         <button
           className={SECONDARY_DECISION_BUTTON_CLASSES}
           disabled={isSaving}
+          ref={declineButtonRef}
           type="button"
-          onClick={() => onDecline({ lead })}
+          onClick={() => setPendingKind('decline')}
         >
           Decline
         </button>
+      )}
+
+      {pendingKind !== undefined && (
+        <DecisionReasonDialog
+          applicantName={lead.name ?? lead.email}
+          isSaving={isSaving}
+          kind={pendingKind}
+          onCancel={closeDialog}
+          onSubmit={(reason) => takeDecision({ kind: pendingKind, reason })}
+        />
       )}
     </div>
   )

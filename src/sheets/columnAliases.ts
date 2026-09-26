@@ -17,6 +17,12 @@ export const COLUMN_ALIASES = {
   notes: ['notes'],
   informedForMembership: ['informed for membership'],
   status: ['status'],
+  /* One column holds the reason a reviewer declined somebody and the reason they
+     kept somebody for later, and the Status cell beside it is what says which of
+     the two happened. It was headed "Declined reason" first, which read as a lie
+     on every Maybe row; the older wordings stay here because a copy of the sheet
+     may still carry one. */
+  decisionReason: ['reason', 'declined reason', 'decline reason', 'decision reason'],
   gender: ['gender'],
   removalReason: ['removal reason'],
   approvedAt: ['approved at'],

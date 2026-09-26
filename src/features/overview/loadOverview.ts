@@ -12,7 +12,7 @@ import type { SheetsClient } from '../../sheets/sheetsClient'
 
 /* Both tabs, and either failing fails the dashboard. The Members tab alone
    would still draw four of the five charts, with every member banded as having
-   no application \u{2014} a tenure chart that is entirely "unknown" and looks like a
+   no application — a tenure chart that is entirely "unknown" and looks like a
    finding rather than a failed read. */
 export const loadOverview = async ({
   sheetsClient,

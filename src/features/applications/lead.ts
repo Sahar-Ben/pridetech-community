@@ -2,7 +2,7 @@ export type LeadStatus = 'pending' | 'approved' | 'declined' | 'maybe'
 
 /* The exact words this app writes into the Status column, and the spellings
    `parseLeads` reads back canonically. Pending is absent on purpose: it is the
-   blank cell, and nothing here ever writes one back \u{2014} a blank says nobody
+   blank cell, and nothing here ever writes one back — a blank says nobody
    has looked at this person yet, and manufacturing one would hide a decision
    that was taken. */
 export const RECORDED_LEAD_STATUS = {

@@ -123,7 +123,7 @@ const finishApprovalOfActiveMember = async ({
 /* The Members tab is written first and the lead's Status second, and the order
    is the whole design. There is no transaction here: if the status went first
    and the member write then failed, the applicant would be marked approved and
-   appear in no member list \u{2014} invisible in both places, with nothing anywhere to
+   appear in no member list — invisible in both places, with nothing anywhere to
    say a person had been lost. This way round the worst case is a member row you
    can see, next to an application still sitting in the queue. */
 export const approveLead = async ({

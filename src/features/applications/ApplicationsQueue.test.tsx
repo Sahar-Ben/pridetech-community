@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { ApplicationsQueue } from './ApplicationsQueue'
@@ -137,8 +137,76 @@ describe('ApplicationsQueue', () => {
     renderQueue({ decisions: stubDecisions({ decline: onDecline }) })
 
     await userEvent.click(screen.getByRole('button', { name: /decline/i }))
+    await userEvent.click(screen.getByRole('button', { name: /skip/i }))
 
-    expect(onDecline).toHaveBeenCalledWith({ lead: expect.objectContaining({ name: 'Dana Maman' }) })
+    expect(onDecline).toHaveBeenCalledWith({
+      lead: expect.objectContaining({ name: 'Dana Maman' }),
+      reason: undefined,
+    })
+  })
+
+  it('should ask for a reason rather than declining the moment the button is pressed', async () => {
+    const onDecline = vi.fn()
+    renderQueue({ decisions: stubDecisions({ decline: onDecline }) })
+
+    await userEvent.click(screen.getByRole('button', { name: /decline/i }))
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(onDecline).not.toHaveBeenCalled()
+  })
+
+  it('should decline with the reason the reviewer applied', async () => {
+    const onDecline = vi.fn()
+    renderQueue({ decisions: stubDecisions({ decline: onDecline }) })
+
+    await userEvent.click(screen.getByRole('button', { name: /decline/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Not in Tech' }))
+    await userEvent.click(screen.getByRole('button', { name: /apply/i }))
+
+    expect(onDecline).toHaveBeenCalledWith({
+      lead: expect.objectContaining({ name: 'Dana Maman' }),
+      reason: 'Not in Tech',
+    })
+  })
+
+  it('should leave the application undecided when the reviewer presses Escape', async () => {
+    const onDecline = vi.fn()
+    renderQueue({ decisions: stubDecisions({ decline: onDecline }) })
+
+    await userEvent.click(screen.getByRole('button', { name: /decline/i }))
+    await userEvent.keyboard('{Escape}')
+
+    expect(onDecline).not.toHaveBeenCalled()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 3, name: 'Dana Maman' })).toBeInTheDocument()
+  })
+
+  it('should give focus back to the button the reviewer opened the dialog from', async () => {
+    renderQueue()
+
+    await userEvent.click(screen.getByRole('button', { name: /decline/i }))
+    await userEvent.keyboard('{Escape}')
+
+    expect(screen.getByRole('button', { name: /decline/i })).toHaveFocus()
+  })
+
+  it('should give focus back to Maybe when that is the button the dialog was opened from', async () => {
+    renderQueue()
+
+    await userEvent.click(screen.getByRole('button', { name: /^maybe$/i }))
+    await userEvent.keyboard('{Escape}')
+
+    expect(screen.getByRole('button', { name: /^maybe$/i })).toHaveFocus()
+  })
+
+  it('should approve without asking for a reason, since nobody has to explain a yes', async () => {
+    const onApprove = vi.fn()
+    renderQueue({ decisions: stubDecisions({ approve: onApprove }) })
+
+    await userEvent.click(screen.getByRole('button', { name: /approve/i }))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(onApprove).toHaveBeenCalled()
   })
 
   it('should identify a nameless applicant by their email instead of an empty heading', () => {
@@ -539,11 +607,11 @@ describe('ApplicationsQueue, filtering by status', () => {
     })
 
   const showDeclined = async () => {
-    await userEvent.selectOptions(screen.getByLabelText(/status/i), 'Declined')
+    await userEvent.click(screen.getByRole('tab', { name: /^declined/i }))
   }
 
   const showPending = async () => {
-    await userEvent.selectOptions(screen.getByLabelText(/status/i), 'Pending')
+    await userEvent.click(screen.getByRole('tab', { name: /^pending/i }))
   }
 
   const renderBothStates = (decisions = stubDecisions()) =>
@@ -603,6 +671,35 @@ describe('ApplicationsQueue, filtering by status', () => {
     expect(screen.getByText('1 waiting')).toBeInTheDocument()
   })
 
+  it('should carry how many applications each filter holds on the filter itself', () => {
+    renderBothStates()
+
+    expect(screen.getByRole('tab', { name: /^pending/i })).toHaveTextContent(/pending\s*1/i)
+    expect(screen.getByRole('tab', { name: /^maybe/i })).toHaveTextContent(/maybe\s*0/i)
+    expect(screen.getByRole('tab', { name: /^declined/i })).toHaveTextContent(/declined\s*1/i)
+  })
+
+  it('should say which filter is showing, so it is not colour alone that says it', async () => {
+    renderBothStates()
+
+    expect(screen.getByRole('tab', { name: /^pending/i })).toHaveAttribute('aria-selected', 'true')
+
+    await showDeclined()
+
+    expect(screen.getByRole('tab', { name: /^declined/i })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: /^pending/i })).toHaveAttribute('aria-selected', 'false')
+  })
+
+  it('should move between the filters with the arrow keys', async () => {
+    renderBothStates()
+
+    await userEvent.click(screen.getByRole('tab', { name: /^pending/i }))
+    await userEvent.keyboard('{ArrowRight}{ArrowRight}')
+
+    expect(screen.getByRole('heading', { level: 3, name: 'Turned Away' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /^declined/i })).toHaveFocus()
+  })
+
   it('should count the declined applications under Declined', async () => {
     renderBothStates()
 
@@ -649,7 +746,7 @@ describe('ApplicationsQueue, applications kept for later', () => {
     })
 
   const showMaybe = async () => {
-    await userEvent.selectOptions(screen.getByLabelText(/status/i), 'Maybe')
+    await userEvent.click(screen.getByRole('tab', { name: /^maybe/i }))
   }
 
   const renderBothStates = (decisions = stubDecisions()) =>
@@ -659,10 +756,36 @@ describe('ApplicationsQueue, applications kept for later', () => {
     const onMarkMaybe = vi.fn()
     renderQueue({ decisions: stubDecisions({ markMaybe: onMarkMaybe }), leads: [pending()] })
 
-    await userEvent.click(screen.getByRole('button', { name: /maybe/i }))
+    await userEvent.click(screen.getByRole('button', { name: /^maybe$/i }))
+    await userEvent.click(screen.getByRole('button', { name: /skip/i }))
 
     expect(onMarkMaybe).toHaveBeenCalledWith({
       lead: expect.objectContaining({ name: 'Dana Maman' }),
+      reason: undefined,
+    })
+  })
+
+  it('should ask why an application is being kept, not why it is being turned away', async () => {
+    const onMarkMaybe = vi.fn()
+    renderQueue({ decisions: stubDecisions({ markMaybe: onMarkMaybe }), leads: [pending()] })
+
+    await userEvent.click(screen.getByRole('button', { name: /^maybe$/i }))
+
+    expect(within(screen.getByRole('dialog')).getByRole('heading')).toHaveTextContent(/later/i)
+    expect(screen.queryByRole('button', { name: 'Not in Tech' })).not.toBeInTheDocument()
+  })
+
+  it('should keep an application for later with the reason the reviewer applied', async () => {
+    const onMarkMaybe = vi.fn()
+    renderQueue({ decisions: stubDecisions({ markMaybe: onMarkMaybe }), leads: [pending()] })
+
+    await userEvent.click(screen.getByRole('button', { name: /^maybe$/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Needs a second opinion' }))
+    await userEvent.click(screen.getByRole('button', { name: /apply/i }))
+
+    expect(onMarkMaybe).toHaveBeenCalledWith({
+      lead: expect.objectContaining({ name: 'Dana Maman' }),
+      reason: 'Needs a second opinion',
     })
   })
 

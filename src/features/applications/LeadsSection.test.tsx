@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { LeadsSection } from './LeadsSection'
@@ -8,6 +8,7 @@ import { createFakeSheet, type FakeSheet } from '../../testing/fakeSheet'
 import {
   createFakeSheetsClient,
   LEADS_HEADER_ROW,
+  LEADS_HEADER_ROW_WITH_REASON,
   leadRow,
   MEMBERS_HEADER_ROW,
   memberRow,
@@ -17,11 +18,15 @@ const NOA_STATUS_CELL = 'Leads!K2'
 
 const sheetWithTwoPendingLeads = ({
   members = [MEMBERS_HEADER_ROW],
-}: { members?: readonly (readonly string[])[] } = {}): FakeSheet =>
+  leadsHeader = LEADS_HEADER_ROW,
+}: {
+  members?: readonly (readonly string[])[]
+  leadsHeader?: readonly string[]
+} = {}): FakeSheet =>
   createFakeSheet({
     tabs: {
       Leads: [
-        LEADS_HEADER_ROW,
+        leadsHeader,
         leadRow({ name: 'Noa Feldman', email: 'noa@example.com' }),
         leadRow({ name: 'Ariel Cohen', email: 'ariel@example.com' }),
       ],
@@ -48,6 +53,17 @@ const cardFor = (name: string): HTMLElement => {
 
 const decide = async ({ applicant, action }: { applicant: string; action: RegExp }) => {
   await userEvent.click(within(cardFor(applicant)).getByRole('button', { name: action }))
+}
+
+/* Declining and keeping for later both go through the reason dialog now, so an
+   end-to-end test has to answer it the way a reviewer would. */
+const skipTheReason = async () => {
+  await userEvent.click(screen.getByRole('button', { name: /skip/i }))
+}
+
+const applyTheReason = async (reason: string) => {
+  await userEvent.type(screen.getByLabelText(/reason/i), reason)
+  await userEvent.click(screen.getByRole('button', { name: /apply/i }))
 }
 
 const memberCell = ({ row, heading }: { row: readonly string[]; heading: string }): string =>
@@ -296,6 +312,7 @@ describe('LeadsSection, declining an application', () => {
     await screen.findByText('Noa Feldman')
 
     await decide({ applicant: 'Noa Feldman', action: /decline/i })
+    await skipTheReason()
 
     await waitFor(() => {
       expect(sheet.rowsOf('Leads')[1]?.[10]).toBe('Declined')
@@ -305,7 +322,7 @@ describe('LeadsSection, declining an application', () => {
         kind: 'update',
         range: NOA_STATUS_CELL,
         values: ['Declined'],
-        valueInputOption: 'USER_ENTERED',
+        valueInputOption: 'RAW',
       },
     ])
     expect(sheet.rowsOf('Members')).toEqual([MEMBERS_HEADER_ROW])
@@ -317,9 +334,80 @@ describe('LeadsSection, declining an application', () => {
     await screen.findByText('Noa Feldman')
 
     await decide({ applicant: 'Noa Feldman', action: /decline/i })
+    await skipTheReason()
 
     await waitFor(() => {
       expect(screen.queryByRole('heading', { level: 3, name: 'Noa Feldman' })).not.toBeInTheDocument()
+    })
+  })
+
+  it('should write the reason the reviewer applied beside the status', async () => {
+    const sheet = sheetWithTwoPendingLeads({ leadsHeader: LEADS_HEADER_ROW_WITH_REASON })
+    renderSection({ sheetsClient: sheet.client })
+    await screen.findByText('Noa Feldman')
+
+    await decide({ applicant: 'Noa Feldman', action: /decline/i })
+    await applyTheReason('Not in Tech')
+
+    await waitFor(() => {
+      expect(sheet.rowsOf('Leads')[1]?.[11]).toBe('Not in Tech')
+    })
+    expect(sheet.rowsOf('Leads')[1]?.[10]).toBe('Declined')
+  })
+
+  it('should leave the application in the queue, undecided, when the reviewer cancels', async () => {
+    const sheet = sheetWithTwoPendingLeads()
+    renderSection({ sheetsClient: sheet.client })
+    await screen.findByText('Noa Feldman')
+
+    await decide({ applicant: 'Noa Feldman', action: /decline/i })
+    await userEvent.keyboard('{Escape}')
+
+    expect(screen.getByRole('heading', { level: 3, name: 'Noa Feldman' })).toBeInTheDocument()
+    expect(sheet.writes).toEqual([])
+  })
+
+  it('should keep the card with the reason it could not be written, when the tab has no Reason column', async () => {
+    const sheet = sheetWithTwoPendingLeads()
+    renderSection({ sheetsClient: sheet.client })
+    await screen.findByText('Noa Feldman')
+
+    await decide({ applicant: 'Noa Feldman', action: /decline/i })
+    await applyTheReason('Not in Tech')
+
+    expect(await within(cardFor('Noa Feldman')).findByRole('alert')).toHaveTextContent(
+      /Reason column/i,
+    )
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(sheet.writes).toEqual([])
+  })
+
+  it('should keep the dialog up, saying so, until the sheet has taken the decision', async () => {
+    const sheet = sheetWithTwoPendingLeads({ leadsHeader: LEADS_HEADER_ROW_WITH_REASON })
+    let releaseTheWrite = () => {}
+    const gatedClient: SheetsClient = {
+      ...sheet.client,
+      updateCells: async (options) => {
+        await new Promise<void>((resolve) => {
+          releaseTheWrite = resolve
+        })
+        await sheet.client.updateCells(options)
+      },
+    }
+    renderSection({ sheetsClient: gatedClient })
+    await screen.findByText('Noa Feldman')
+
+    await decide({ applicant: 'Noa Feldman', action: /decline/i })
+    await applyTheReason('Not in Tech')
+
+    expect(screen.getByRole('status')).toHaveTextContent(/saving/i)
+
+    await act(async () => {
+      releaseTheWrite()
+    })
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     })
   })
 })
@@ -515,7 +603,7 @@ describe('LeadsSection, the declined applications', () => {
     })
 
   const showDeclined = async () => {
-    await userEvent.selectOptions(await screen.findByLabelText(/status/i), 'Declined')
+    await userEvent.click(await screen.findByRole('tab', { name: /^declined/i }))
   }
 
   it('should keep a declined application out of the queue but list it under Declined', async () => {

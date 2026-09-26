@@ -15,5 +15,6 @@ export const markLeadMaybe = async ({
   await writeLeadStatus({
     sheetsClient,
     lead: decision.lead,
+    reason: decision.reason,
     status: RECORDED_LEAD_STATUS.maybe,
   })

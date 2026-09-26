@@ -10,9 +10,15 @@ import type { SheetsClient } from '../../sheets/sheetsClient'
 /* The cell's current contents come back with its address because the caller has
    to tell an application nobody has decided from one that was decided already,
    and reading it a second time would be reading a different moment. */
+/* `reasonRange` is absent when the tab carries no Reason column at all, which is
+   a sheet the reviewer can still decide applications on — it is only a reason
+   they cannot record. What that costs them is the caller's to decide, because
+   only the caller knows whether a reason was given; refusing here would refuse
+   every approval too, and approving has never had a reason to write. */
 export type LeadStatusCell = {
   range: string
   recordedStatus: string | undefined
+  reasonRange: string | undefined
 }
 
 const describeApplicant = (lead: Lead): string =>
@@ -23,9 +29,12 @@ const describeApplicant = (lead: Lead): string =>
    status written to a stale row number marks the wrong person approved, in a
    sheet where nothing would ever show that it happened. So the row is read back
    and checked against the application being decided, immediately before the
-   write, and the Status column is taken from the header read in the same breath:
-   the Leads tab is a live Form response sheet, and Google inserts a column every
-   time a question is added to the form.
+   write, and both the Status and the Reason column are taken from the header
+   read in the same breath: the Leads tab is a live Form response sheet, and
+   Google inserts a column every time a question is added to the form. Both
+   columns come out of this one check because they are written together — a
+   second lookup for the reason would be a second moment, and the row could have
+   moved between them.
 
    The address alone does not identify the row. 69 addresses on this tab are on
    more than one application, which is why `duplicateApplicants` exists: with a
@@ -81,6 +90,8 @@ export const locateLeadStatusCell = async ({
     )
   }
 
+  const reasonColumn = findColumn({ headerMap, aliases: COLUMN_ALIASES.decisionReason })
+
   const currentRow = leadRows[0] ?? []
   const currentEmail = readCell({ row: currentRow, column: emailColumn })
   const currentTimestamp = readCell({ row: currentRow, column: timestampColumn })
@@ -102,5 +113,13 @@ export const locateLeadStatusCell = async ({
       rowNumber: lead.rowNumber,
     }),
     recordedStatus: readCell({ row: currentRow, column: statusColumn }),
+    reasonRange:
+      reasonColumn === undefined
+        ? undefined
+        : buildCellRange({
+            tabName: LEADS_TAB_NAME,
+            columnIndex: reasonColumn,
+            rowNumber: lead.rowNumber,
+          }),
   }
 }

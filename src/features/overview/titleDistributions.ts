@@ -48,7 +48,7 @@ const tallyBy = ({
   }))
 }
 
-/* Disciplines are nominal \u{2014} nothing about Product comes before Engineering \u{2014}
+/* Disciplines are nominal — nothing about Product comes before Engineering —
    so they are ordered by size, which is the comparison the chart is for. The
    two "we could not read this" buckets are pinned last by `sortTalliesByCount`
    however large they grow, because they are not disciplines. */

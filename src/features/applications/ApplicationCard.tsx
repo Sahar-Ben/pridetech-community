@@ -32,8 +32,8 @@ type ApplicationCardProps = {
   decisionState: LeadDecisionState
   onApprove: (decision: ApprovalDecision) => void
   decisions: {
-    onDecline: ((decision: DeclineDecision) => void) | undefined
-    onMarkMaybe: ((decision: MaybeDecision) => void) | undefined
+    onDecline: ((decision: DeclineDecision) => Promise<void>) | undefined
+    onMarkMaybe: ((decision: MaybeDecision) => Promise<void>) | undefined
   }
 }
 

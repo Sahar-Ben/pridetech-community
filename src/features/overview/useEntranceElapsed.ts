@@ -8,8 +8,8 @@ import { doesViewerPreferReducedMotion } from './prefersReducedMotion'
    by an effect: a viewer who has asked for reduced motion is handed the end
    state on the first paint, not a frame later.
 
-   The clock itself starts once, so a re-render \u{2014} a hover, a tooltip, a parent
-   settling \u{2014} cannot restart it. */
+   The clock itself starts once, so a re-render — a hover, a tooltip, a parent
+   settling — cannot restart it. */
 export const useEntranceElapsed = (totalMs: number): number => {
   const [isAnimated] = useState(
     () => !doesViewerPreferReducedMotion() && typeof requestAnimationFrame === 'function',

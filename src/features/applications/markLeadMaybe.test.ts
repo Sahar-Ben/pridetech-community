@@ -4,6 +4,7 @@ import { markLeadMaybe } from './markLeadMaybe'
 import { createFakeSheet } from '../../testing/fakeSheet'
 import {
   LEADS_HEADER_ROW,
+  LEADS_HEADER_ROW_WITH_REASON,
   leadRow,
   MEMBERS_HEADER_ROW,
   memberRow,
@@ -40,22 +41,64 @@ describe('markLeadMaybe', () => {
   it('should write the full phrase into the Status cell of that application own row', async () => {
     const sheet = sheetWith()
 
-    await markLeadMaybe({ sheetsClient: sheet.client, decision: { lead: dana() } })
+    await markLeadMaybe({ sheetsClient: sheet.client, decision: { lead: dana(), reason: undefined } })
 
     expect(sheet.writes).toEqual([
       {
         kind: 'update',
         range: 'Leads!K3',
         values: ['Maybe in the future'],
-        valueInputOption: 'USER_ENTERED',
+        valueInputOption: 'RAW',
       },
     ])
+  })
+
+  it('should write the reason for keeping somebody for later into the same Reason column', async () => {
+    const sheet = sheetWith({
+      leads: [
+        LEADS_HEADER_ROW_WITH_REASON,
+        leadRow({ name: 'Noa Feldman', email: 'noa@example.com' }),
+        leadRow({ name: 'Dana Maman', email: 'dana@example.com' }),
+      ],
+    })
+
+    await markLeadMaybe({
+      sheetsClient: sheet.client,
+      decision: { lead: dana(), reason: 'Strong, no room in this cohort' },
+    })
+
+    expect(sheet.writes).toEqual([
+      {
+        kind: 'update',
+        range: 'Leads!K3',
+        values: ['Maybe in the future'],
+        valueInputOption: 'RAW',
+      },
+      {
+        kind: 'update',
+        range: 'Leads!L3',
+        values: ['Strong, no room in this cohort'],
+        valueInputOption: 'RAW',
+      },
+    ])
+  })
+
+  it('should refuse the whole decision when there is no Reason column to hold the reason', async () => {
+    const sheet = sheetWith()
+
+    await expect(
+      markLeadMaybe({
+        sheetsClient: sheet.client,
+        decision: { lead: dana(), reason: 'Strong, no room in this cohort' },
+      }),
+    ).rejects.toThrow(/Reason column/i)
+    expect(sheet.writes).toEqual([])
   })
 
   it('should add nobody to the Members tab', async () => {
     const sheet = sheetWith()
 
-    await markLeadMaybe({ sheetsClient: sheet.client, decision: { lead: dana() } })
+    await markLeadMaybe({ sheetsClient: sheet.client, decision: { lead: dana(), reason: undefined } })
 
     expect(sheet.rowsOf('Members')).toEqual([MEMBERS_HEADER_ROW])
   })
@@ -68,7 +111,7 @@ describe('markLeadMaybe', () => {
     })
     const sheet = sheetWith({ members: [MEMBERS_HEADER_ROW, existingRow] })
 
-    await markLeadMaybe({ sheetsClient: sheet.client, decision: { lead: dana() } })
+    await markLeadMaybe({ sheetsClient: sheet.client, decision: { lead: dana(), reason: undefined } })
 
     expect(sheet.rowsOf('Members')).toEqual([MEMBERS_HEADER_ROW, existingRow])
   })
@@ -79,7 +122,7 @@ describe('markLeadMaybe', () => {
     })
 
     await expect(
-      markLeadMaybe({ sheetsClient: sheet.client, decision: { lead: dana() } }),
+      markLeadMaybe({ sheetsClient: sheet.client, decision: { lead: dana(), reason: undefined } }),
     ).rejects.toThrow()
     expect(sheet.writes).toEqual([])
   })

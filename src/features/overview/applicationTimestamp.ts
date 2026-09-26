@@ -37,7 +37,7 @@ const toParts = (timestamp: string): DateParts | undefined => {
 /* Month-first, because that is what the Google Form writes into this
    spreadsheet: `3/8/2025 14:25:20` is the 8th of March. The sheet's locale is
    the only thing that decides this, and it is not recorded anywhere in the
-   sheet itself \u{2014} so a tenure figure is no better than that assumption, and
+   sheet itself — so a tenure figure is no better than that assumption, and
    `Date.parse` is avoided precisely because it would make the same guess
    silently and differently per browser. */
 export const toApplicationDate = (timestamp: string | undefined): Date | undefined => {

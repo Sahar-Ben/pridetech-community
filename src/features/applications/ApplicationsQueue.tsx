@@ -1,15 +1,16 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { ApplicationCard } from './ApplicationCard'
 import {
   isDecliningOffered,
   isMaybeOffered,
   selectApplicationsInView,
+  toViewChipId,
   type LeadView,
 } from './leadViews'
 import type { LeadsReview } from './leadsReview'
 import { LeadsDataQualityNotes } from './LeadsDataQualityNotes'
 import { describeApplicationsCount, describeEmptyView } from './leadsReviewText'
-import { LeadsFilterBar } from './LeadsFilterBar'
+import { LeadsFilterChips } from './LeadsFilterChips'
 import type { LeadDecisions } from './useLeadDecisions'
 import { COMPACT_BUTTON_SIZE_CLASSES, SHELL_BUTTON_CLASSES } from '../../theme/controls'
 import { EMPTY_STATE_CLASSES, SHELL_SECTION_TITLE_CLASSES } from '../../theme/surfaces'
@@ -42,6 +43,8 @@ export const ApplicationsQueue = ({
   onReload,
 }: ApplicationsQueueProps) => {
   const [view, setView] = useState<LeadView>('Pending')
+  const baseId = useId()
+  const panelId = `${baseId}-list`
   const applications = selectApplicationsInView({ review, view })
   const countLine = describeApplicationsCount({ view, counts: review.counts })
   const cardDecisions = {
@@ -68,25 +71,33 @@ export const ApplicationsQueue = ({
 
       <LeadsDataQualityNotes review={review} spreadsheetId={spreadsheetId} />
 
-      <LeadsFilterBar onViewChange={setView} view={view} />
+      <LeadsFilterChips
+        baseId={baseId}
+        counts={review.counts}
+        onViewChange={setView}
+        panelId={panelId}
+        view={view}
+      />
 
-      {applications.length === 0 ? (
-        <p className={EMPTY_STATE_CLASSES}>{describeEmptyView({ view })}</p>
-      ) : (
-        /* One entrance animation on the list, not 256 of them: the cards are
-           the work, and a stagger across them would be a wait before it. */
-        <ul className="animate-rise flex flex-col gap-2.5">
-          {applications.map((application) => (
-            <ApplicationCard
-              key={application.lead.rowNumber}
-              application={application}
-              decisionState={decisions.stateFor(application.lead.rowNumber)}
-              onApprove={decisions.approve}
-              decisions={cardDecisions}
-            />
-          ))}
-        </ul>
-      )}
+      <div aria-labelledby={toViewChipId({ baseId, view })} id={panelId} role="tabpanel">
+        {applications.length === 0 ? (
+          <p className={EMPTY_STATE_CLASSES}>{describeEmptyView({ view })}</p>
+        ) : (
+          /* One entrance animation on the list, not 256 of them: the cards are
+             the work, and a stagger across them would be a wait before it. */
+          <ul className="animate-rise flex flex-col gap-2.5">
+            {applications.map((application) => (
+              <ApplicationCard
+                key={application.lead.rowNumber}
+                application={application}
+                decisionState={decisions.stateFor(application.lead.rowNumber)}
+                onApprove={decisions.approve}
+                decisions={cardDecisions}
+              />
+            ))}
+          </ul>
+        )}
+      </div>
     </section>
   )
 }

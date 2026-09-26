@@ -36,7 +36,7 @@ const toBucketKey = ({
 /* Derived rather than measured: `Approved at` is blank on every row of the
    Members tab, so a member's tenure is their earliest application on the Leads
    tab, matched on the address. Members added to the sheet by hand have no
-   application to match and are banded as such rather than dropped \u{2014} which is
+   application to match and are banded as such rather than dropped — which is
    also why the bands are left in time order instead of sorted by size: a
    reader follows them left to right as a timeline. */
 export const buildTenureDistribution = ({

@@ -36,7 +36,7 @@ export const toTenureBucketKey = ({
   }
   const completedYears = completedYearsBetween({ appliedAt, asOf })
   /* An application stamped after today is a mistyped cell, and the honest thing
-     to say about it is that we cannot date this member \u{2014} not that they are
+     to say about it is that we cannot date this member — not that they are
      the community's newest. */
   if (completedYears < 0) {
     return UNKNOWN_TENURE_BUCKET.key

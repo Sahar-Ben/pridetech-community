@@ -43,7 +43,7 @@ const bySheetRow = <T extends { rowNumber: number }>(earlier: T, later: T): numb
 /* An active member row is not a prior record to bring back, so it is not offered
    as one: the notice promises a reactivation, and approving against an active row
    writes no member row at all. A declined applicant whose address is on an active
-   row is still listed \u{2014} the refusal that meets them names the row \u{2014} because
+   row is still listed — the refusal that meets them names the row — because
    dropping them would leave a decision nobody could revisit. */
 const priorMemberOf = ({
   lead,
@@ -95,7 +95,7 @@ export const buildLeadsReview = ({
 
   /* Declined rows are the one decided state the app offers a way back from, so
      they are carried whole rather than counted: approving one of them is the
-     reason to open the list at all. Approved rows are not, and must not be \u{2014}
+     reason to open the list at all. Approved rows are not, and must not be —
      824 of them would turn a work queue into a browser of the Members tab. */
   const applicationsWithStatus = (status: LeadStatus): readonly ReviewableApplication[] =>
     parsedLeads.leads

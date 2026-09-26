@@ -72,8 +72,8 @@ export const describeApplicationsCount = ({
 }): string | undefined => DESCRIBE_COUNT[view](counts)
 
 /* Each view names itself when it is empty. All three are legitimately empty
-   \u{2014} a queue that has been worked through, a sheet nobody has been declined
-   on, a reviewer who decides everything as they read it \u{2014} and a shared
+   — a queue that has been worked through, a sheet nobody has been declined
+   on, a reviewer who decides everything as they read it — and a shared
    "nothing here" would leave them unable to tell which they were looking at. */
 const EMPTY_VIEW_SENTENCES: Readonly<Record<LeadView, string>> = {
   Pending: 'No applications waiting for review.',

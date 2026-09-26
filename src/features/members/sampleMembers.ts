@@ -5,7 +5,7 @@ import type { Member } from './member'
    phone, city, LinkedIn, interests, shirt size and notes are blank far more
    often than not.
 
-   The members directory no longer uses any of this \u{2014} it reads the real
+   The members directory no longer uses any of this — it reads the real
    Members tab. What is left is the cast the Events section is populated with,
    and it lives here only because Events imports it from here. Delete it with
    the last of the invented Events screens. */

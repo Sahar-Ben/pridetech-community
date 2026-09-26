@@ -35,6 +35,7 @@ const realSheetWordings: ReadonlyArray<[keyof typeof COLUMN_ALIASES, readonly st
   ['status', ['Status']],
   ['gender', ['Gender']],
   ['removalReason', ['Removal reason']],
+  ['decisionReason', ['Reason', 'Declined reason', 'Decline reason', 'Decision reason']],
   ['approvedAt', ['Approved at']],
   ['arrived', ['Arrived']],
 ]

@@ -1,5 +1,5 @@
 /* One hue for the bars, because a bar chart of one series encodes magnitude in
-   length and has no identity left to say with colour \u{2014} colouring each bar
+   length and has no identity left to say with colour — colouring each bar
    differently would spend the only free channel restating the bar's length.
    The gradient runs base to a lighter step of that same hue, per bar rather
    than across the track, so it reads as depth and carries no value of its own.
@@ -23,7 +23,7 @@ export const LEGEND_SWATCH_CLASSES = ['bg-chart-1', 'bg-chart-2', 'bg-chart-3'] 
 /* Text never wears the series colour: a label in the fill's own hue is either
    illegible or a second, silent encoding. Identity comes from the mark beside
    the words. A value written on top of a fill is the documented exception, and
-   `--ui-chart-on-fill` is the one ink allowed there \u{2014} held above 4.5:1
+   `--ui-chart-on-fill` is the one ink allowed there — held above 4.5:1
    against both ends of both gradients.
 
    On the brand panel the ink is white. The dimmed white used for category

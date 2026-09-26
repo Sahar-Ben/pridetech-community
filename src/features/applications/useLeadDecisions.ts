@@ -19,12 +19,18 @@ export type LeadDecisionState = {
   errorMessage: string | undefined
 }
 
+/* The two decisions that are taken through a dialog answer when the sheet has
+   answered, whichever way it answered: a refusal is recorded against the row
+   rather than thrown, so awaiting one of these says the attempt is over and
+   nothing more. That is what the dialog needs in order to stay up while the
+   write is in the air and come down once it is not. Approving has no dialog
+   waiting on it and keeps its own shape. */
 export type LeadDecisions = {
   decidedRowNumbers: ReadonlySet<number>
   stateFor: (rowNumber: number) => LeadDecisionState
   approve: (decision: ApprovalDecision) => void
-  decline: (decision: DeclineDecision) => void
-  markMaybe: (decision: MaybeDecision) => void
+  decline: (decision: DeclineDecision) => Promise<void>
+  markMaybe: (decision: MaybeDecision) => Promise<void>
   forgetDecisions: () => void
 }
 
@@ -59,7 +65,7 @@ const withoutError = ({
    here is fire-and-forget: an application leaves the queue only after the sheet
    has confirmed both writes, and a failure leaves the card exactly where it was
    with the reason on it. Removing the card first and hoping would produce the
-   one outcome nobody could recover from \u{2014} an applicant who is in no queue, in
+   one outcome nobody could recover from — an applicant who is in no queue, in
    no member list, and in nobody's memory. */
 export const useLeadDecisions = ({
   sheetsClient,
@@ -97,10 +103,10 @@ export const useLeadDecisions = ({
       kind: DecisionKind
       lead: Lead
       toSheet: () => Promise<void>
-    }): void => {
+    }): Promise<void> => {
       const { rowNumber } = lead
       if (rowNumbersInFlight.current.has(rowNumber)) {
-        return
+        return Promise.resolve()
       }
       const startedForGeneration = readGeneration.current
       rowNumbersInFlight.current.add(rowNumber)
@@ -117,7 +123,7 @@ export const useLeadDecisions = ({
 
       const isStillTheSameRead = (): boolean => readGeneration.current === startedForGeneration
 
-      toSheet()
+      return toSheet()
         .then(() => {
           finish()
           if (!isStillTheSameRead()) {
@@ -165,24 +171,22 @@ export const useLeadDecisions = ({
   )
 
   const decline = useCallback(
-    (decision: DeclineDecision): void => {
-      write({
+    async (decision: DeclineDecision): Promise<void> =>
+      await write({
         kind: 'decline',
         lead: decision.lead,
         toSheet: async () => await declineLead({ sheetsClient, decision }),
-      })
-    },
+      }),
     [sheetsClient, write],
   )
 
   const markMaybe = useCallback(
-    (decision: MaybeDecision): void => {
-      write({
+    async (decision: MaybeDecision): Promise<void> =>
+      await write({
         kind: 'maybe',
         lead: decision.lead,
         toSheet: async () => await markLeadMaybe({ sheetsClient, decision }),
-      })
-    },
+      }),
     [sheetsClient, write],
   )
 

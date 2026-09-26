@@ -1,8 +1,8 @@
 import { allocateWholePercentages } from './wholePercentages'
 
 /* `isUnknown` is the whole point of this shape. Every chart on the overview has
-   a bucket meaning "the sheet does not say" \u{2014} a blank gender, a member with no
-   application to date from, a title no rule recognised \u{2014} and each of them is
+   a bucket meaning "the sheet does not say" — a blank gender, a member with no
+   application to date from, a title no rule recognised — and each of them is
    carried through to the screen as its own share instead of quietly leaving the
    denominator. A distribution that drops what it could not read is a lie told
    with real numbers. */

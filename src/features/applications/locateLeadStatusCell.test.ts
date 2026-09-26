@@ -220,6 +220,71 @@ describe('locateLeadStatusCell', () => {
     expect(statusCell.recordedStatus).toBe('Approved')
   })
 
+  it('should address the Reason cell beside the Status cell, from the same header read', async () => {
+    const sheet = createFakeSheet({
+      tabs: {
+        Leads: [
+          [...LEADS_HEADER_ROW, 'Reason'],
+          leadRow({ name: 'Noa Feldman', email: 'noa@example.com' }),
+          danaRow,
+        ],
+      },
+    })
+
+    expect(
+      (await locateLeadStatusCell({ sheetsClient: sheet.client, lead: lead() })).reasonRange,
+    ).toBe('Leads!L3')
+  })
+
+  it('should find the Reason column under the wording the sheet was first built with', async () => {
+    const sheet = createFakeSheet({
+      tabs: {
+        Leads: [
+          [...LEADS_HEADER_ROW, 'Declined reason'],
+          leadRow({ name: 'Noa Feldman', email: 'noa@example.com' }),
+          danaRow,
+        ],
+      },
+    })
+
+    expect(
+      (await locateLeadStatusCell({ sheetsClient: sheet.client, lead: lead() })).reasonRange,
+    ).toBe('Leads!L3')
+  })
+
+  it('should find the Reason column wherever it sits rather than beside Status', async () => {
+    const sheet = createFakeSheet({
+      tabs: {
+        Leads: [
+          ['Reason', 'E-Mail', 'Timestamp', 'Status'],
+          ['', 'noa@example.com', '3/8/2025 14:25:20', ''],
+          ['', 'dana@example.com', '3/8/2025 14:25:20', ''],
+        ],
+      },
+    })
+
+    const statusCell = await locateLeadStatusCell({ sheetsClient: sheet.client, lead: lead() })
+
+    expect(statusCell.reasonRange).toBe('Leads!A3')
+    expect(statusCell.range).toBe('Leads!D3')
+  })
+
+  it('should leave the reason unaddressed, rather than guess a column, when the tab has no Reason column', async () => {
+    const sheet = createFakeSheet({ tabs: leadsTab([danaRow]) })
+
+    expect(
+      (await locateLeadStatusCell({ sheetsClient: sheet.client, lead: lead() })).reasonRange,
+    ).toBeUndefined()
+  })
+
+  it('should still address the Status cell when the tab has no Reason column', async () => {
+    const sheet = createFakeSheet({ tabs: leadsTab([danaRow]) })
+
+    expect((await locateLeadStatusCell({ sheetsClient: sheet.client, lead: lead() })).range).toBe(
+      'Leads!K3',
+    )
+  })
+
   it('should read the header and the one row, not the whole tab', async () => {
     const readRanges: string[] = []
     const sheet = createFakeSheet({

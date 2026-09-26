@@ -1,9 +1,10 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { declineLead } from './declineLead'
 import type { Lead } from './lead'
 import { createFakeSheet } from '../../testing/fakeSheet'
 import {
   LEADS_HEADER_ROW,
+  LEADS_HEADER_ROW_WITH_REASON,
   leadRow,
   MEMBERS_HEADER_ROW,
   memberRow,
@@ -40,15 +41,103 @@ describe('declineLead', () => {
   it('should write Declined into the Status cell of that application own row', async () => {
     const sheet = sheetWith()
 
-    await declineLead({ sheetsClient: sheet.client, decision: { lead: dana() } })
+    await declineLead({ sheetsClient: sheet.client, decision: { lead: dana(), reason: undefined } })
 
-    expect(sheet.writes).toEqual([{ kind: 'update', range: 'Leads!K3', values: ['Declined'], valueInputOption: 'USER_ENTERED' }])
+    expect(sheet.writes).toEqual([
+      { kind: 'update', range: 'Leads!K3', values: ['Declined'], valueInputOption: 'RAW' },
+    ])
+  })
+
+  it('should write the reason beside the status, in the one request the status goes in', async () => {
+    const sheet = sheetWith({
+      leads: [
+        LEADS_HEADER_ROW_WITH_REASON,
+        leadRow({ name: 'Noa Feldman', email: 'noa@example.com' }),
+        leadRow({ name: 'Dana Maman', email: 'dana@example.com' }),
+      ],
+    })
+
+    await declineLead({
+      sheetsClient: sheet.client,
+      decision: { lead: dana(), reason: 'Not in Tech' },
+    })
+
+    expect(vi.mocked(sheet.client.updateCells).mock.calls).toEqual([
+      [
+        {
+          writes: [
+            { range: 'Leads!K3', value: 'Declined' },
+            { range: 'Leads!L3', value: 'Not in Tech' },
+          ],
+          valueInputOption: 'RAW',
+        },
+      ],
+    ])
+  })
+
+  it('should leave the reason cell alone when the reviewer skipped the reason', async () => {
+    const sheet = sheetWith({
+      leads: [
+        LEADS_HEADER_ROW_WITH_REASON,
+        leadRow({ name: 'Noa Feldman', email: 'noa@example.com' }),
+        leadRow({ name: 'Dana Maman', email: 'dana@example.com' }),
+      ],
+    })
+
+    await declineLead({
+      sheetsClient: sheet.client,
+      decision: { lead: dana(), reason: undefined },
+    })
+
+    expect(sheet.writes.map((write) => write.range)).toEqual(['Leads!K3'])
+  })
+
+  it('should store a reason that begins with = as the text the reviewer typed', async () => {
+    const sheet = sheetWith({
+      leads: [
+        LEADS_HEADER_ROW_WITH_REASON,
+        leadRow({ name: 'Noa Feldman', email: 'noa@example.com' }),
+        leadRow({ name: 'Dana Maman', email: 'dana@example.com' }),
+      ],
+    })
+
+    await declineLead({
+      sheetsClient: sheet.client,
+      decision: { lead: dana(), reason: '=SUM(A:A)' },
+    })
+
+    expect(sheet.rowsOf('Leads')[2]?.[11]).toBe('=SUM(A:A)')
+    /* The option is asserted as well as the stored text because the fake can
+       model what Google does to a number or a date, and cannot model what it
+       does to a formula: under USER_ENTERED the reviewer's sentence would come
+       back as whatever the formula evaluated to. */
+    expect(sheet.writes.map((write) => write.valueInputOption)).toEqual(['RAW', 'RAW'])
+  })
+
+  it('should refuse the whole decision when there is no Reason column to hold the reason', async () => {
+    const sheet = sheetWith()
+
+    await expect(
+      declineLead({ sheetsClient: sheet.client, decision: { lead: dana(), reason: 'Not in Tech' } }),
+    ).rejects.toThrow(/Reason column/i)
+    expect(sheet.writes).toEqual([])
+  })
+
+  it('should still decline when there is no Reason column and no reason was given', async () => {
+    const sheet = sheetWith()
+
+    await declineLead({
+      sheetsClient: sheet.client,
+      decision: { lead: dana(), reason: undefined },
+    })
+
+    expect(sheet.rowsOf('Leads')[2]?.[10]).toBe('Declined')
   })
 
   it('should add nobody to the Members tab', async () => {
     const sheet = sheetWith()
 
-    await declineLead({ sheetsClient: sheet.client, decision: { lead: dana() } })
+    await declineLead({ sheetsClient: sheet.client, decision: { lead: dana(), reason: undefined } })
 
     expect(sheet.rowsOf('Members')).toEqual([MEMBERS_HEADER_ROW])
   })
@@ -61,7 +150,7 @@ describe('declineLead', () => {
       ],
     })
 
-    await declineLead({ sheetsClient: sheet.client, decision: { lead: dana() } })
+    await declineLead({ sheetsClient: sheet.client, decision: { lead: dana(), reason: undefined } })
 
     expect(sheet.writes.map((write) => write.range)).toEqual(['Leads!K3'])
   })
@@ -75,7 +164,7 @@ describe('declineLead', () => {
     })
     const sheet = sheetWith({ members: [MEMBERS_HEADER_ROW, existing] })
 
-    await declineLead({ sheetsClient: sheet.client, decision: { lead: dana() } })
+    await declineLead({ sheetsClient: sheet.client, decision: { lead: dana(), reason: undefined } })
 
     expect(sheet.rowsOf('Members')[1]).toEqual(existing)
   })
@@ -89,7 +178,7 @@ describe('declineLead', () => {
       ],
     })
 
-    await declineLead({ sheetsClient: sheet.client, decision: { lead: dana() } })
+    await declineLead({ sheetsClient: sheet.client, decision: { lead: dana(), reason: undefined } })
 
     expect(sheet.writes.map((write) => write.range)).toEqual(['Leads!A3'])
   })
@@ -105,7 +194,7 @@ describe('declineLead', () => {
     })
 
     await expect(
-      declineLead({ sheetsClient: sheet.client, decision: { lead: dana() } }),
+      declineLead({ sheetsClient: sheet.client, decision: { lead: dana(), reason: undefined } }),
     ).rejects.toThrow(/changed/i)
     expect(sheet.writes).toEqual([])
   })
@@ -124,7 +213,7 @@ describe('declineLead', () => {
       onRead: (range) => readRanges.push(range),
     })
 
-    await declineLead({ sheetsClient: sheet.client, decision: { lead: dana() } })
+    await declineLead({ sheetsClient: sheet.client, decision: { lead: dana(), reason: undefined } })
 
     expect(readRanges.filter((range) => range.startsWith('Members'))).toEqual([])
   })

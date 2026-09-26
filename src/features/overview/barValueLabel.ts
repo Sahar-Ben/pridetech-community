@@ -35,7 +35,7 @@ const widthOf = (text: string): number => text.length * CHARACTER_WIDTH
 
 /* Every bar is labelled, which is a deliberate departure from labelling
    selectively: that rule is about dense forms where a number per point becomes
-   noise, and a ranking of ten rows is the opposite case \u{2014} the number at the
+   noise, and a ranking of ten rows is the opposite case — the number at the
    end of the bar is what the reader came for.
 
    Inside the bar when it fits, outside when it does not, and the two positions

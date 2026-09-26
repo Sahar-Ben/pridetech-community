@@ -95,8 +95,8 @@ export const toPieSlices = ({
 }
 
 /* Bars are measured against the largest count rather than against the total, so
-   the chart fills its track and the comparison the reader is making \u{2014} this
-   category against that one \u{2014} uses the whole width available for it.
+   the chart fills its track and the comparison the reader is making — this
+   category against that one — uses the whole width available for it.
    `minimumLength` keeps a count of one from drawing as nothing at all beside a
    count of a thousand; a count of zero still draws nothing, because it is. */
 export const toBarLengths = ({
