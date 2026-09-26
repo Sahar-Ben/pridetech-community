@@ -4,6 +4,11 @@ const FORBIDDEN_STATUS = 403
 export class SheetsRequestError extends Error {
   readonly status: number
 
+  /* `range` is an A1 range for every request that reads or writes values, and a
+     short phrase naming what was asked for the two that address the spreadsheet
+     itself — its list of tabs, and the tabs being added to it. Those two have no
+     range to give, and this field is what the failure message is built from, so
+     the phrase is what a refused `addSheet` reports. */
   constructor({ range, status, detail }: { range: string; status: number; detail: string }) {
     super(`Sheets request for ${range} failed: ${status} ${detail}`)
     this.name = 'SheetsRequestError'

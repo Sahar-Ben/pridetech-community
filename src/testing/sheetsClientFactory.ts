@@ -1,5 +1,9 @@
 import { vi } from 'vitest'
-import { MEMBERS_RANGE } from '../features/applications/sheetTabs'
+import {
+  LEADS_TAB_NAME,
+  MEMBERS_RANGE,
+  MEMBERS_TAB_NAME,
+} from '../features/applications/sheetTabs'
 import type { SheetsClient } from '../sheets/sheetsClient'
 
 export const LEADS_HEADER_ROW = [
@@ -15,6 +19,11 @@ export const LEADS_HEADER_ROW = [
   'Please provide your shirt size (for potential swag)',
   'Status',
 ]
+
+/* The Reason column was added beside Status long after the form was built, and
+   most of these fixtures predate it: a test that needs a reason written says so
+   rather than every other test carrying a column it never reads. */
+export const LEADS_HEADER_ROW_WITH_REASON = [...LEADS_HEADER_ROW, 'Reason']
 
 export const MEMBERS_HEADER_ROW = [
   'Name',
@@ -101,11 +110,13 @@ export const createFakeSheetsClient = ({
   rows = [LEADS_HEADER_ROW],
   memberRows = [MEMBERS_HEADER_ROW],
   readRange,
+  tabNames = [LEADS_TAB_NAME, MEMBERS_TAB_NAME],
 }: {
   spreadsheetId?: string
   rows?: readonly string[][]
   memberRows?: readonly string[][]
   readRange?: SheetsClient['readRange']
+  tabNames?: readonly string[]
 } = {}): SheetsClient => ({
   spreadsheetId,
   readRange:
@@ -118,4 +129,6 @@ export const createFakeSheetsClient = ({
   appendRow: vi.fn().mockRejectedValue(new Error('this fake client is for reads only')),
   updateCell: vi.fn().mockRejectedValue(new Error('this fake client is for reads only')),
   updateCells: vi.fn().mockRejectedValue(new Error('this fake client is for reads only')),
+  readTabNames: vi.fn().mockResolvedValue([...tabNames]),
+  addTabs: vi.fn().mockRejectedValue(new Error('this fake client is for reads only')),
 })

@@ -1,409 +1,378 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
-import { buildEvent, buildRegistrant } from '../../testing/eventFactory'
-import { buildMember } from '../../testing/memberFactory'
+import { describe, expect, it, vi } from 'vitest'
 import { EventsSection } from './EventsSection'
-import type { CommunityEvent } from './communityEvent'
-import type { Registrant } from './registrant'
+import {
+  ATTENDANCE_HEADINGS,
+  ATTENDANCE_TAB_NAME,
+  EVENTS_HEADINGS,
+  EVENTS_TAB_NAME,
+  EVENT_SHEETS_HEADINGS,
+  EVENT_SHEETS_TAB_NAME,
+} from './eventRegistryTabs'
+import { createFakeResponseSheetAccess } from '../../testing/eventsRegistryFactory'
+import { createFakeSheet, type FakeSheet } from '../../testing/fakeSheet'
+import { MEMBERS_HEADER_ROW, memberRow } from '../../testing/sheetsClientFactory'
+import type { ResponseSheetAccess } from './responseSheetAccess'
 
-const TODAY = '2026-09-19'
+const MEMBERS_TAB = {
+  Members: [MEMBERS_HEADER_ROW, memberRow({ name: 'Dana Sorkin', mail: 'dana@example.com' })],
+}
 
-const dana = buildMember({ rowNumber: 2, name: 'Dana Sorkin', mail: 'dana.sorkin@example.com' })
+const PRIDE_PANEL_ROW = [
+  'evt-1',
+  'Pride Month Panel',
+  '2026-06-24',
+  'Quillon Cloud',
+  'Quillon Cloud auditorium, Herzliya',
+  '',
+  'Yes',
+  'No',
+  'No',
+  '',
+]
 
-const renderEvents = ({
-  events,
-  registrants = [],
+const buildSheet = (tabs: Readonly<Record<string, readonly (readonly string[])[]>>): FakeSheet =>
+  createFakeSheet({ tabs: { ...MEMBERS_TAB, ...tabs } })
+
+const readyTabs = ({
+  eventRows = [PRIDE_PANEL_ROW],
+  attachedRows = [],
 }: {
-  events: readonly CommunityEvent[]
-  registrants?: readonly Registrant[]
-}) =>
-  render(<EventsSection events={events} members={[dana]} registrants={registrants} today={TODAY} />)
+  eventRows?: readonly (readonly string[])[]
+  attachedRows?: readonly (readonly string[])[]
+} = {}) => ({
+  [EVENTS_TAB_NAME]: [[...EVENTS_HEADINGS], ...eventRows],
+  [EVENT_SHEETS_TAB_NAME]: [[...EVENT_SHEETS_HEADINGS], ...attachedRows],
+  [ATTENDANCE_TAB_NAME]: [[...ATTENDANCE_HEADINGS]],
+})
 
-const eventNamesIn = (groupName: RegExp): readonly (string | null)[] =>
-  within(screen.getByRole('region', { name: groupName }))
-    .getAllByRole('heading', { level: 4 })
-    .map((heading) => heading.textContent)
+const EMPTY_TABS = {
+  [EVENTS_TAB_NAME]: [],
+  [EVENT_SHEETS_TAB_NAME]: [],
+  [ATTENDANCE_TAB_NAME]: [],
+}
 
-describe('EventsSection listing', () => {
-  const everyEvent = [
-    buildEvent({ id: 'd', name: 'Opening Meetup', date: '2025-05-14' }),
-    buildEvent({ id: 'b', name: 'Winter Social', date: '2026-12-02' }),
-    buildEvent({ id: 'c', name: 'Pride Panel', date: '2026-06-24' }),
-    buildEvent({ id: 'a', name: 'Autumn Mixer', date: '2026-09-24' }),
-  ]
+const renderSection = ({
+  sheet,
+  access = createFakeResponseSheetAccess(),
+}: {
+  sheet: FakeSheet
+  access?: ResponseSheetAccess
+}) => {
+  render(
+    <EventsSection
+      onSessionExpired={vi.fn()}
+      responseSheetAccess={access}
+      sheetsClient={sheet.client}
+    />,
+  )
+  return sheet
+}
 
-  it('should list upcoming events soonest first', () => {
-    renderEvents({ events: everyEvent })
+describe('EventsSection, where the spreadsheet has never held an event', () => {
+  it('should offer to add the three tabs rather than add them on load', async () => {
+    const sheet = renderSection({ sheet: buildSheet({}) })
 
-    expect(eventNamesIn(/upcoming/i)).toEqual(['Autumn Mixer', 'Winter Social'])
+    expect(await screen.findByText(/this will add 3 tabs/i)).toBeInTheDocument()
+    expect(sheet.tabNames()).toEqual(['Members'])
   })
 
-  it('should list past events most recent first', () => {
-    renderEvents({ events: everyEvent })
+  it('should say what each tab will hold before it is added', async () => {
+    renderSection({ sheet: buildSheet({}) })
 
-    expect(eventNamesIn(/past/i)).toEqual(['Pride Panel', 'Opening Meetup'])
+    expect(await screen.findByText(/one row per event/i)).toBeInTheDocument()
+    expect(screen.getByText(/one row per response sheet attached to an event/i)).toBeInTheDocument()
+    expect(screen.getByText(/one row per person per event/i)).toBeInTheDocument()
   })
 
-  it('should show the date and location of each event', () => {
-    renderEvents({
-      events: [
-        buildEvent({ date: '2026-09-24', host: 'Fennimore Labs', location: 'Wharf 6, Tel Aviv' }),
-      ],
-    })
+  it('should suggest trying it on a copy first', async () => {
+    renderSection({ sheet: buildSheet({}) })
 
-    expect(screen.getByText(/24 Sep 2026/)).toHaveTextContent('Wharf 6, Tel Aviv')
+    expect(await screen.findByText(/on a copy first/i)).toBeInTheDocument()
   })
 
-  it('should name the company hosting an event', () => {
-    renderEvents({ events: [buildEvent({ host: 'Fennimore Labs' })] })
+  it('should add the tabs with their headings once the organiser confirms', async () => {
+    const sheet = renderSection({ sheet: buildSheet({}) })
 
-    expect(screen.getByText(/hosted by fennimore labs/i)).toBeInTheDocument()
+    await userEvent.click(await screen.findByRole('button', { name: /set up the tabs/i }))
+
+    expect(sheet.rowsOf(EVENTS_TAB_NAME)[0]).toEqual([...EVENTS_HEADINGS])
+    expect(sheet.rowsOf(EVENT_SHEETS_TAB_NAME)[0]).toEqual([...EVENT_SHEETS_HEADINGS])
+    expect(sheet.rowsOf(ATTENDANCE_TAB_NAME)[0]).toEqual([...ATTENDANCE_HEADINGS])
   })
 
-  it('should say nothing about a host for an event no company hosts', () => {
-    renderEvents({ events: [buildEvent({ host: undefined })] })
+  it('should show the empty events list once the tabs are there', async () => {
+    renderSection({ sheet: buildSheet({}) })
 
-    expect(screen.queryByText(/hosted by/i)).not.toBeInTheDocument()
+    await userEvent.click(await screen.findByRole('button', { name: /set up the tabs/i }))
+
+    expect(await screen.findByText(/no events yet/i)).toBeInTheDocument()
   })
 
-  it('should show how many people have registered for an event', () => {
-    renderEvents({
-      events: [buildEvent({ id: 'a' })],
-      registrants: [
-        buildRegistrant({ id: 'r1', eventId: 'a' }),
-        buildRegistrant({ id: 'r2', eventId: 'a' }),
-        buildRegistrant({ id: 'r3', eventId: 'a', registration: 'waitlist' }),
-      ],
-    })
+  it('should say what was refused when Google will not add the tabs', async () => {
+    const sheet = buildSheet({})
+    sheet.client.addTabs = vi.fn().mockRejectedValue(new Error('Caller lacks permission'))
+    renderSection({ sheet })
 
-    expect(screen.getByText(/2 registered/)).toHaveTextContent('1 on the waitlist')
-  })
+    await userEvent.click(await screen.findByRole('button', { name: /set up the tabs/i }))
 
-  it('should tell the organiser when there are no events at all', () => {
-    renderEvents({ events: [] })
-
-    expect(screen.getByText(/no events yet/i)).toBeInTheDocument()
+    expect(await screen.findByText(/nothing was added/i)).toBeInTheDocument()
   })
 })
 
-describe('EventsSection archiving', () => {
-  it('should take an archived event out of the listing', async () => {
-    renderEvents({ events: [buildEvent({ id: 'a', name: 'Winter Mixer', date: '2026-12-02' })] })
+describe('EventsSection, where the organiser made the tabs by hand and left them empty', () => {
+  it('should say the tabs are already there rather than offer to add them', async () => {
+    renderSection({ sheet: buildSheet(EMPTY_TABS) })
 
-    await userEvent.click(screen.getByRole('button', { name: 'Archive Winter Mixer' }))
-
-    expect(screen.queryByRole('heading', { name: 'Winter Mixer' })).not.toBeInTheDocument()
+    expect(await screen.findByText(/already there and empty/i)).toBeInTheDocument()
+    expect(screen.queryByText(/this will add/i)).not.toBeInTheDocument()
   })
 
-  it('should say the attendance was kept, since archiving is not deleting', async () => {
-    renderEvents({
-      events: [buildEvent({ id: 'a', name: 'Winter Mixer' })],
-      registrants: [buildRegistrant({ id: 'r1', eventId: 'a' })],
-    })
+  it('should write the heading rows without creating the tabs again', async () => {
+    const sheet = renderSection({ sheet: buildSheet(EMPTY_TABS) })
 
-    await userEvent.click(screen.getByRole('button', { name: 'Archive Winter Mixer' }))
+    await userEvent.click(await screen.findByRole('button', { name: /set up the tabs/i }))
 
-    expect(screen.getByText(/attendance is kept/i)).toBeInTheDocument()
+    expect(sheet.client.addTabs).not.toHaveBeenCalled()
+    expect(sheet.rowsOf(EVENTS_TAB_NAME)[0]).toEqual([...EVENTS_HEADINGS])
   })
 
-  it('should warn that archiving stayed in this browser', async () => {
-    renderEvents({ events: [buildEvent({ id: 'a', name: 'Winter Mixer' })] })
+  it('should treat a tab holding only blank cells as empty', async () => {
+    const sheet = buildSheet({ ...EMPTY_TABS, [EVENTS_TAB_NAME]: [['', '  ']] })
+    renderSection({ sheet })
 
-    await userEvent.click(screen.getByRole('button', { name: 'Archive Winter Mixer' }))
+    await userEvent.click(await screen.findByRole('button', { name: /set up the tabs/i }))
 
-    expect(screen.getByText(/saved in this browser only/i)).toBeInTheDocument()
+    expect(sheet.rowsOf(EVENTS_TAB_NAME)[0]).toEqual([...EVENTS_HEADINGS])
   })
 })
 
-describe('EventsSection adding and editing', () => {
-  it('should add an event to the listing', async () => {
-    renderEvents({ events: [] })
-
-    await userEvent.click(screen.getByRole('button', { name: /add event/i }))
-    await userEvent.type(screen.getByLabelText(/^name/i), 'Board Games Night')
-    await userEvent.type(screen.getByLabelText(/^date/i), '2026-10-15')
-    await userEvent.type(screen.getByLabelText(/^location/i), 'Pell and Quarry, Haifa')
-    await userEvent.click(screen.getByRole('button', { name: /^save event$/i }))
-
-    expect(screen.getByRole('heading', { name: 'Board Games Night' })).toBeInTheDocument()
-  })
-
-  it('should refuse an event with no date rather than filing it under the wrong list', async () => {
-    renderEvents({ events: [] })
-
-    await userEvent.click(screen.getByRole('button', { name: /add event/i }))
-    await userEvent.type(screen.getByLabelText(/^name/i), 'Board Games Night')
-    await userEvent.type(screen.getByLabelText(/^location/i), 'Pell and Quarry, Haifa')
-    await userEvent.click(screen.getByRole('button', { name: /^save event$/i }))
-
-    expect(screen.getByText(/an event needs a date/i)).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'Board Games Night' })).not.toBeInTheDocument()
-  })
-
-  it('should rename an event that was edited', async () => {
-    renderEvents({ events: [buildEvent({ id: 'a', name: 'Autumn Mixer', date: '2026-09-24' })] })
-
-    await userEvent.click(screen.getByRole('button', { name: 'Edit Autumn Mixer' }))
-    await userEvent.clear(screen.getByLabelText(/^name/i))
-    await userEvent.type(screen.getByLabelText(/^name/i), 'Autumn Hiring Mixer')
-    await userEvent.click(screen.getByRole('button', { name: /^save event$/i }))
-
-    expect(screen.getByRole('heading', { name: 'Autumn Hiring Mixer' })).toBeInTheDocument()
-  })
-
-  it('should warn that an edit stayed in this browser', async () => {
-    renderEvents({ events: [buildEvent({ id: 'a', name: 'Autumn Mixer', date: '2026-09-24' })] })
-
-    await userEvent.click(screen.getByRole('button', { name: 'Edit Autumn Mixer' }))
-    await userEvent.click(screen.getByRole('button', { name: /^save event$/i }))
-
-    expect(screen.getByText(/saved in this browser only/i)).toBeInTheDocument()
-  })
-})
-
-describe('EventsSection door policy', () => {
-  it('should start a new event members only, since almost every event is', async () => {
-    renderEvents({ events: [] })
-
-    await userEvent.click(screen.getByRole('button', { name: /add event/i }))
-
-    expect(screen.getByLabelText(/members only/i)).toBeChecked()
-  })
-
-  it('should let the organiser open an evening to non-members', async () => {
-    renderEvents({ events: [] })
-
-    await userEvent.click(screen.getByRole('button', { name: /add event/i }))
-    await userEvent.type(screen.getByLabelText(/^name/i), 'Singles Night')
-    await userEvent.type(screen.getByLabelText(/^date/i), '2026-10-15')
-    await userEvent.type(screen.getByLabelText(/^location/i), 'The Copper Room, Tel Aviv')
-    await userEvent.click(screen.getByLabelText(/members only/i))
-    await userEvent.click(screen.getByRole('button', { name: /^save event$/i }))
-    await userEvent.click(screen.getByRole('button', { name: 'Singles Night' }))
-
-    expect(screen.getByText(/open to non-members/i)).toBeInTheDocument()
-  })
-
-  it('should open the edit form on the policy the event already has', async () => {
-    renderEvents({ events: [buildEvent({ id: 'a', name: 'Autumn Mixer', isMembersOnly: true })] })
-
-    await userEvent.click(screen.getByRole('button', { name: 'Edit Autumn Mixer' }))
-
-    expect(screen.getByLabelText(/members only/i)).toBeChecked()
-  })
-
-  it('should say on the event page that an event is members only', async () => {
-    renderEvents({ events: [buildEvent({ id: 'a', name: 'Autumn Mixer', isMembersOnly: true })] })
-
-    await userEvent.click(screen.getByRole('button', { name: 'Autumn Mixer' }))
-
-    expect(screen.getByText(/members only/i)).toBeInTheDocument()
-  })
-})
-
-describe('EventsSection event detail', () => {
-  const pridePanel = buildEvent({ id: 'a', name: 'Pride Panel', date: '2026-06-24' })
-
-  const openPridePanel = async () => {
-    await userEvent.click(screen.getByRole('button', { name: 'Pride Panel' }))
+describe('EventsSection, where a tab of that name holds something else', () => {
+  const guestList = {
+    ...EMPTY_TABS,
+    [EVENTS_TAB_NAME]: [
+      ['Event', 'When'],
+      ['Opening night', '16.4.25'],
+    ],
   }
 
-  it('should list the registrants of the event that was opened', async () => {
-    renderEvents({
-      events: [pridePanel, buildEvent({ id: 'b', name: 'Other', date: '2026-06-01' })],
-      registrants: [
-        buildRegistrant({ id: 'r1', eventId: 'a', name: 'Ronit Amsalem' }),
-        buildRegistrant({ id: 'r2', eventId: 'b', name: 'Somebody Else' }),
-      ],
-    })
+  it('should name the heading that is missing rather than offer to rewrite the row', async () => {
+    renderSection({ sheet: buildSheet(guestList) })
 
-    await openPridePanel()
-
-    const registrants = within(screen.getByRole('table', { name: /registrants/i }))
-    expect(registrants.getByText('Ronit Amsalem')).toBeInTheDocument()
-    expect(registrants.queryByText('Somebody Else')).not.toBeInTheDocument()
+    expect(await screen.findByText(/no column headed Event ID/i)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /set up the tabs/i })).not.toBeInTheDocument()
   })
 
-  it('should show the email, company and status of a registrant', async () => {
-    renderEvents({
-      events: [pridePanel],
-      registrants: [
-        buildRegistrant({
-          id: 'r1',
-          eventId: 'a',
-          name: 'Ronit Amsalem',
-          email: 'ronit.amsalem@example.com',
-          company: 'Halberd Analytics',
-        }),
-      ],
-    })
+  it('should leave every cell of that tab exactly as it was', async () => {
+    const sheet = renderSection({ sheet: buildSheet(guestList) })
 
-    await openPridePanel()
+    await screen.findByText(/cannot be set up/i)
 
-    expect(screen.getByText('ronit.amsalem@example.com')).toBeInTheDocument()
-    expect(screen.getByText('Halberd Analytics')).toBeInTheDocument()
-    expect(screen.getByText('Registered')).toBeInTheDocument()
+    expect(sheet.writes).toEqual([])
+    expect(sheet.rowsOf(EVENTS_TAB_NAME)[1]).toEqual(['Opening night', '16.4.25'])
+  })
+})
+
+describe('EventsSection, where the registry is ready', () => {
+  it('should list the events read from the Events tab', async () => {
+    renderSection({ sheet: buildSheet(readyTabs()) })
+
+    expect(await screen.findByRole('heading', { name: 'Pride Month Panel' })).toBeInTheDocument()
   })
 
-  it('should summarise registered, checked in and waitlist', async () => {
-    renderEvents({
-      events: [pridePanel],
-      registrants: [
-        buildRegistrant({ id: 'r1', eventId: 'a', checkedInAt: '2026-06-24T18:00:00.000Z' }),
-        buildRegistrant({ id: 'r2', eventId: 'a' }),
-        buildRegistrant({ id: 'r3', eventId: 'a', registration: 'waitlist' }),
-      ],
-    })
+  it('should say plainly that the people at those events are not read yet', async () => {
+    renderSection({ sheet: buildSheet(readyTabs()) })
 
-    await openPridePanel()
-
-    const summary = screen.getByText(/2 registered/)
-    expect(summary).toHaveTextContent('1 checked in')
-    expect(summary).toHaveTextContent('1 on the waitlist')
+    expect(
+      await screen.findByText(/registrants, check-in and attendance are not built yet/i),
+    ).toBeInTheDocument()
   })
 
-  it('should call nobody a no-show while the event has not been closed out', async () => {
-    renderEvents({
-      events: [pridePanel],
-      registrants: [buildRegistrant({ id: 'r1', eventId: 'a', name: 'Ronit Amsalem' })],
+  it('should report a row that carries no event id rather than drop it quietly', async () => {
+    renderSection({
+      sheet: buildSheet(readyTabs({ eventRows: [PRIDE_PANEL_ROW, ['', 'Nameless evening']] })),
     })
 
-    await openPridePanel()
-
-    expect(screen.queryByText(/no-show/i)).not.toBeInTheDocument()
+    expect(await screen.findByText(/1 row in the Events tabs needs a look/i)).toBeInTheDocument()
   })
 
-  it('should report no-shows once the event has been closed out', async () => {
-    renderEvents({
-      events: [buildEvent({ id: 'a', name: 'Pride Panel', date: '2026-06-24', isClosedOut: true })],
-      registrants: [
-        buildRegistrant({ id: 'r1', eventId: 'a', checkedInAt: '2026-06-24T18:00:00.000Z' }),
-        buildRegistrant({ id: 'r2', eventId: 'a' }),
-      ],
+  it('should write a new event to the Events tab and list it', async () => {
+    const sheet = renderSection({ sheet: buildSheet(readyTabs({ eventRows: [] })) })
+
+    await userEvent.click(await screen.findByRole('button', { name: /add event/i }))
+    await userEvent.type(screen.getByLabelText(/^name/i), 'Board Games Night')
+    await userEvent.type(screen.getByLabelText(/^date/i), '2026-10-15')
+    await userEvent.type(screen.getByLabelText(/^location/i), 'Pell and Quarry, Haifa')
+    await userEvent.click(screen.getByRole('button', { name: /^save event$/i }))
+
+    expect(await screen.findByRole('heading', { name: 'Board Games Night' })).toBeInTheDocument()
+    expect(sheet.rowsOf(EVENTS_TAB_NAME)[1]?.[1]).toBe('Board Games Night')
+  })
+
+  it('should give the new event an id of its own, never its row number', async () => {
+    const sheet = renderSection({ sheet: buildSheet(readyTabs({ eventRows: [] })) })
+
+    await userEvent.click(await screen.findByRole('button', { name: /add event/i }))
+    await userEvent.type(screen.getByLabelText(/^name/i), 'Board Games Night')
+    await userEvent.type(screen.getByLabelText(/^date/i), '2026-10-15')
+    await userEvent.type(screen.getByLabelText(/^location/i), 'Pell and Quarry, Haifa')
+    await userEvent.click(screen.getByRole('button', { name: /^save event$/i }))
+
+    await screen.findByRole('heading', { name: 'Board Games Night' })
+
+    expect(sheet.rowsOf(EVENTS_TAB_NAME)[1]?.[0]).toMatch(/^evt-/)
+  })
+
+  it('should take an archived event out of the listing without removing its row', async () => {
+    const sheet = renderSection({ sheet: buildSheet(readyTabs()) })
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Archive Pride Month Panel' }),
+    )
+
+    expect(await screen.findByText(/attendance is kept/i)).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Pride Month Panel' })).not.toBeInTheDocument()
+    expect(sheet.rowsOf(EVENTS_TAB_NAME)).toHaveLength(2)
+  })
+})
+
+describe('EventsSection, attaching a response sheet', () => {
+  const openPanel = async () => {
+    await userEvent.click(await screen.findByRole('button', { name: 'Pride Month Panel' }))
+    await userEvent.click(screen.getByRole('button', { name: /attach a response sheet/i }))
+  }
+
+  it('should record the sheet, its role and the mapping the organiser confirmed', async () => {
+    const sheet = renderSection({ sheet: buildSheet(readyTabs()) })
+
+    await openPanel()
+    await userEvent.click(await screen.findByRole('button', { name: /attach this sheet/i }))
+
+    expect(sheet.rowsOf(EVENT_SHEETS_TAB_NAME)[1]).toEqual([
+      'evt-1',
+      'responses-1',
+      'Form Responses 1',
+      'main',
+      '{"timestamp":"A","name":"B","email":"C","company":"D","jobTitle":null}',
+    ])
+  })
+
+  it('should attach a sheet whose timestamp column has a blank heading', async () => {
+    const sheet = buildSheet(readyTabs())
+    renderSection({
+      sheet,
+      access: createFakeResponseSheetAccess({
+        readHeaderRow: vi.fn(async () => await Promise.resolve(['', 'Name', 'E-Mail'])),
+      }),
     })
 
-    await openPridePanel()
+    await openPanel()
+    await userEvent.click(await screen.findByRole('button', { name: /attach this sheet/i }))
 
-    expect(screen.getByText('No-show')).toBeInTheDocument()
-    expect(screen.getByText(/2 registered/)).toHaveTextContent('1 no-show')
+    expect(sheet.rowsOf(EVENT_SHEETS_TAB_NAME)[1]?.[4]).toBe(
+      '{"timestamp":null,"name":"B","email":"C","company":null,"jobTitle":null}',
+    )
   })
 
-  it('should turn un-arrived registrants into no-shows only when the organiser closes the event out', async () => {
-    renderEvents({
-      events: [pridePanel],
-      registrants: [buildRegistrant({ id: 'r1', eventId: 'a', name: 'Ronit Amsalem' })],
+  it('should let the organiser name the column under a blank heading', async () => {
+    const sheet = buildSheet(readyTabs())
+    renderSection({
+      sheet,
+      access: createFakeResponseSheetAccess({
+        readHeaderRow: vi.fn(async () => await Promise.resolve(['', 'Name', 'E-Mail'])),
+      }),
     })
 
-    await openPridePanel()
-    await userEvent.click(screen.getByRole('button', { name: /close out attendance/i }))
+    await openPanel()
+    await userEvent.selectOptions(
+      await screen.findByLabelText(/timestamp column/i),
+      'A \u{2014} (no heading)',
+    )
+    await userEvent.click(screen.getByRole('button', { name: /attach this sheet/i }))
 
-    expect(screen.getByText('No-show')).toBeInTheDocument()
+    expect(sheet.rowsOf(EVENT_SHEETS_TAB_NAME)[1]?.[4]).toContain('"timestamp":"A"')
   })
 
-  it('should show a registrant whose sheet never captured an email without falling over', async () => {
-    renderEvents({
-      events: [pridePanel],
-      registrants: [
-        buildRegistrant({ id: 'r1', eventId: 'a', name: 'Tal Rimon', email: undefined }),
-      ],
+  it('should attach a sheet with no email column at all, and record that it has none', async () => {
+    const sheet = buildSheet(readyTabs())
+    renderSection({
+      sheet,
+      access: createFakeResponseSheetAccess({
+        readHeaderRow: vi.fn(
+          async () => await Promise.resolve(['Timestamp', 'Full Name', 'Your Company']),
+        ),
+      }),
     })
 
-    await openPridePanel()
+    await openPanel()
 
-    expect(screen.getByText('Tal Rimon')).toBeInTheDocument()
-    expect(screen.getByText(/no email on this sheet/i)).toBeInTheDocument()
+    expect(await screen.findByText(/this sheet has no email column/i)).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: /attach this sheet/i }))
+
+    expect(sheet.rowsOf(EVENT_SHEETS_TAB_NAME)[1]?.[4]).toContain('"email":null')
   })
 
-  it('should not claim a member match for a registrant with no email', async () => {
-    renderEvents({
-      events: [pridePanel],
-      registrants: [
-        buildRegistrant({ id: 'r1', eventId: 'a', name: 'Dana Sorkin', email: undefined }),
-      ],
+  it('should read the mapping back out of the registry it just wrote', async () => {
+    renderSection({
+      sheet: buildSheet(readyTabs()),
+      access: createFakeResponseSheetAccess({
+        readHeaderRow: vi.fn(
+          async () => await Promise.resolve(['Timestamp', 'Full Name', 'Your Company']),
+        ),
+      }),
     })
 
-    await openPridePanel()
+    await openPanel()
+    await userEvent.click(await screen.findByRole('button', { name: /attach this sheet/i }))
 
-    expect(screen.queryByText('Member')).not.toBeInTheDocument()
+    /* The panel is now showing the row it wrote, read back through the
+       registry rather than remembered from the form. */
+    expect(
+      await screen.findByText(/no email column: these people will have to be matched/i),
+    ).toBeInTheDocument()
   })
 
-  it('should mark a registrant who is a community member', async () => {
-    renderEvents({
-      events: [pridePanel],
-      registrants: [buildRegistrant({ id: 'r1', eventId: 'a', email: 'dana.sorkin@example.com' })],
+  it('should ask which tab holds the responses when the picked file has several', async () => {
+    renderSection({
+      sheet: buildSheet(readyTabs()),
+      access: createFakeResponseSheetAccess({
+        readTabNames: vi.fn(async () => await Promise.resolve(['Form Responses 1', 'Waiting'])),
+      }),
     })
 
-    await openPridePanel()
+    await openPanel()
 
-    expect(screen.getByText('Member')).toBeInTheDocument()
+    expect(await screen.findByText(/which tab of/i)).toBeInTheDocument()
   })
 
-  it('should show a plus-one as the guest of the member who brought them', async () => {
-    renderEvents({
-      events: [pridePanel],
-      registrants: [
-        buildRegistrant({
-          id: 'r1',
-          eventId: 'a',
-          name: 'Dana Sorkin',
-          email: 'dana.sorkin@example.com',
-        }),
-        buildRegistrant({
-          id: 'r2',
-          eventId: 'a',
-          name: 'Shira Bental',
-          email: 'shira.bental@example.com',
-          guestOfEmail: 'dana.sorkin@example.com',
-        }),
-      ],
+  it('should let one event carry a waiting list kept on its own sheet', async () => {
+    const sheet = buildSheet(readyTabs())
+    renderSection({ sheet })
+
+    await openPanel()
+    await userEvent.selectOptions(
+      await screen.findByLabelText(/what this sheet is/i),
+      'waiting list',
+    )
+    await userEvent.click(screen.getByRole('button', { name: /attach this sheet/i }))
+
+    expect(sheet.rowsOf(EVENT_SHEETS_TAB_NAME)[1]?.[3]).toBe('waiting list')
+  })
+
+  it('should stay where it was when the organiser closed the picker without choosing', async () => {
+    renderSection({
+      sheet: buildSheet(readyTabs()),
+      access: createFakeResponseSheetAccess({
+        pickSpreadsheet: vi.fn(async () => await Promise.resolve(undefined)),
+      }),
     })
 
-    await openPridePanel()
+    await openPanel()
 
-    expect(screen.getByText('Guest of Dana Sorkin')).toBeInTheDocument()
-    expect(screen.queryByText('Not matched to a member')).not.toBeInTheDocument()
-  })
-
-  it('should say plainly that an unmatched registrant is unmatched', async () => {
-    renderEvents({
-      events: [pridePanel],
-      registrants: [buildRegistrant({ id: 'r1', eventId: 'a', email: 'stranger@example.com' })],
-    })
-
-    await openPridePanel()
-
-    expect(screen.getByText('Not matched to a member')).toBeInTheDocument()
-  })
-
-  it('should say the reconcile flow is not built rather than offering a broken one', async () => {
-    renderEvents({
-      events: [pridePanel],
-      registrants: [buildRegistrant({ id: 'r1', eventId: 'a', email: 'stranger@example.com' })],
-    })
-
-    await openPridePanel()
-
-    expect(screen.getByText(/not built yet/i)).toBeInTheDocument()
-  })
-
-  it('should say the attendance shown was never recorded anywhere', async () => {
-    renderEvents({
-      events: [pridePanel],
-      registrants: [buildRegistrant({ id: 'r1', eventId: 'a', checkedInAt: '2026-06-24T18:00:00.000Z' })],
-    })
-
-    await openPridePanel()
-
-    expect(screen.getByText(/never been recorded anywhere/i)).toBeInTheDocument()
-  })
-
-  it('should go back to the listing', async () => {
-    renderEvents({ events: [pridePanel] })
-
-    await openPridePanel()
-    await userEvent.click(screen.getByRole('button', { name: /back to events/i }))
-
-    expect(screen.getByRole('region', { name: /past/i })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('button', { name: /attach a response sheet/i }),
+    ).toBeInTheDocument()
   })
 })

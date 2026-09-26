@@ -1,23 +1,30 @@
-import { useState } from 'react'
-import { LocalOnlySaveNotice } from '../members/LocalOnlySaveNotice'
 import { EventReconcileNotice } from './EventReconcileNotice'
 import { EventRegistrantsTable } from './EventRegistrantsTable'
+import { EventResponseSheetsPanel } from './EventResponseSheetsPanel'
 import { describeAttendanceForEvent } from './eventAttendanceText'
 import { formatEventDate } from './eventDate'
 import { summariseEventAttendance } from './eventAttendance'
+import { useAsyncAction } from './useAsyncAction'
+import { NoticeBanner } from '../../app/NoticeBanner'
 import {
   COMPACT_BUTTON_SIZE_CLASSES,
   PRIMARY_BUTTON_CLASSES,
   SECONDARY_BUTTON_CLASSES,
   TOUCH_BUTTON_SIZE_CLASSES,
 } from '../../theme/controls'
+import type { ResponseSheetAttachment } from './attachResponseSheet'
+import type { AttachedResponseSheet } from './parseAttachedSheets'
 import type { CommunityEvent } from './communityEvent'
 import type { Member } from '../members/member'
 import type { Registrant } from './registrant'
+import type { ResponseSheetAccess } from './responseSheetAccess'
 import { DATA_PANEL_CLASSES, RECORD_TITLE_CLASSES } from '../../theme/surfaces'
 
 const BACK_ARROW = '\u{2190}'
 const SEPARATOR = ' \u{00b7} '
+
+const CLOSE_OUT_FAILED_MESSAGE =
+  'The event was not closed out, and the Events tab was not changed.'
 
 const CHECK_IN_BUTTON_CLASSES = `${PRIMARY_BUTTON_CLASSES} ${TOUCH_BUTTON_SIZE_CLASSES}`
 
@@ -29,25 +36,32 @@ type EventDetailProps = {
   event: CommunityEvent
   registrants: readonly Registrant[]
   members: readonly Member[]
+  attachedSheets: readonly AttachedResponseSheet[]
+  responseSheetAccess: ResponseSheetAccess
+  onAttachSheet: (options: { attachment: ResponseSheetAttachment }) => Promise<void>
   onBack: () => void
   onOpenCheckIn: () => void
-  onCloseOut: () => void
+  onCloseOut: () => Promise<void>
 }
 
 export const EventDetail = ({
   event,
   registrants,
   members,
+  attachedSheets,
+  responseSheetAccess,
+  onAttachSheet,
   onBack,
   onOpenCheckIn,
   onCloseOut,
 }: EventDetailProps) => {
-  const [wasClosedOutLocally, setWasClosedOutLocally] = useState(false)
+  const closingOut = useAsyncAction({ fallbackMessage: CLOSE_OUT_FAILED_MESSAGE })
   const summary = summariseEventAttendance({ registrants, isClosedOut: event.isClosedOut })
 
   const closeOutEvent = () => {
-    onCloseOut()
-    setWasClosedOutLocally(true)
+    closingOut.run(async () => {
+      await onCloseOut()
+    })
   }
 
   return (
@@ -64,26 +78,27 @@ export const EventDetail = ({
           {SEPARATOR}
           {event.location}
         </p>
-        {event.host !== undefined && (
-          <p className="text-sm text-ink">Hosted by {event.host}</p>
-        )}
+        {event.host !== undefined && <p className="text-sm text-ink">Hosted by {event.host}</p>}
         <p className="text-sm text-ink">
           {event.isMembersOnly
             ? 'Members only. The door warns before admitting somebody who is not in the member list.'
             : 'Open to non-members.'}
         </p>
-        <p className="text-sm font-bold text-ink">
-          {describeAttendanceForEvent(summary)}
-        </p>
-        {/* The figures above are the ones that could be believed. They are
-            invented, and a check-in made in this app never leaves the tab. */}
+        <p className="text-sm font-bold text-ink">{describeAttendanceForEvent(summary)}</p>
+        {/* The event above is read from the sheet and the figures beside it are
+            not. That gap is the one somebody could act on at a door. */}
         <p className="text-xs font-semibold text-warning-ink">
-          Sample data: these registrants are invented, and the attendance shown here has never
-          been recorded anywhere. Check-ins made in this app are lost when the page reloads.
+          This event is read from your spreadsheet. Its registrants are not: no response sheet
+          has been read, the attendance shown here has never been recorded anywhere, and a
+          check-in made in this app is lost when the page reloads.
         </p>
       </div>
 
-      <div aria-live="polite">{wasClosedOutLocally && <LocalOnlySaveNotice />}</div>
+      <div aria-live="polite">
+        {closingOut.errorMessage !== undefined && (
+          <NoticeBanner role="alert" title={closingOut.errorMessage} tone="danger" />
+        )}
+      </div>
 
       <div className="flex flex-wrap items-center gap-3">
         {event.isClosedOut ? (
@@ -95,7 +110,12 @@ export const EventDetail = ({
             <button className={CHECK_IN_BUTTON_CLASSES} onClick={onOpenCheckIn} type="button">
               Check in at the door
             </button>
-            <button className={SECONDARY_ACTION_CLASSES} onClick={closeOutEvent} type="button">
+            <button
+              className={SECONDARY_ACTION_CLASSES}
+              disabled={closingOut.isRunning}
+              onClick={closeOutEvent}
+              type="button"
+            >
               Close out attendance
             </button>
             <p className="text-xs text-ink-muted">
@@ -104,6 +124,13 @@ export const EventDetail = ({
           </>
         )}
       </div>
+
+      <EventResponseSheetsPanel
+        access={responseSheetAccess}
+        attachedSheets={attachedSheets}
+        eventId={event.id}
+        onAttach={onAttachSheet}
+      />
 
       {registrants.length === 0 ? (
         <p className="rounded-xl border border-dashed border-edge px-4 py-10 text-center text-sm text-ink-muted">

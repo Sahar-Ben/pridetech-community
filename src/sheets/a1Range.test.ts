@@ -10,3 +10,11 @@ describe('buildCellRange', () => {
     expect(buildCellRange({ tabName: 'Leads', columnIndex: 26, rowNumber: 4 })).toBe('Leads!AA4')
   })
 })
+
+describe('buildCellRange, where the tab name is not a bare word', () => {
+  it('should quote a tab name holding a space, which A1 notation cannot read unquoted', () => {
+    expect(buildCellRange({ tabName: 'Event sheets', columnIndex: 1, rowNumber: 3 })).toBe(
+      "'Event sheets'!B3",
+    )
+  })
+})

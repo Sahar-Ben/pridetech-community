@@ -1,4 +1,5 @@
 import { toColumnLetter } from './columnLetter'
+import { toRangeTabName } from './rangeTabName'
 
 export const buildCellRange = ({
   tabName,
@@ -8,4 +9,4 @@ export const buildCellRange = ({
   tabName: string
   columnIndex: number
   rowNumber: number
-}): string => `${tabName}!${toColumnLetter(columnIndex)}${rowNumber}`
+}): string => `${toRangeTabName(tabName)}!${toColumnLetter(columnIndex)}${rowNumber}`

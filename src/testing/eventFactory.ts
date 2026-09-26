@@ -7,6 +7,7 @@ import type { Registrant } from '../features/events/registrant'
    starts open, so a test that says nothing about it gets no members-only
    warning to explain away. */
 export const buildEvent = (overrides: Partial<CommunityEvent> = {}): CommunityEvent => ({
+  rowNumber: 2,
   id: 'event-1',
   name: 'Sample Meetup',
   date: '2026-09-24',

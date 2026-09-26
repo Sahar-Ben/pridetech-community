@@ -2,8 +2,12 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { buildEvent, buildRegistrant } from '../../testing/eventFactory'
+import {
+  createFakeEventRegistryWriter,
+  createFakeResponseSheetAccess,
+} from '../../testing/eventsRegistryFactory'
 import { buildMember } from '../../testing/memberFactory'
-import { EventsSection } from './EventsSection'
+import { EventsWorkspace } from './EventsWorkspace'
 import type { CommunityEvent } from './communityEvent'
 import type { Member } from '../members/member'
 import type { Registrant } from './registrant'
@@ -46,7 +50,15 @@ const openCheckIn = async ({
   members?: readonly Member[]
 } = {}) => {
   render(
-    <EventsSection events={[event]} members={members} registrants={registrants} today={TODAY} />,
+    <EventsWorkspace
+      attachedSheets={[]}
+      events={[event]}
+      members={members}
+      registrants={registrants}
+      responseSheetAccess={createFakeResponseSheetAccess()}
+      today={TODAY}
+      writer={createFakeEventRegistryWriter()}
+    />,
   )
   await userEvent.click(screen.getByRole('button', { name: 'Autumn Mixer' }))
   await userEvent.click(screen.getByRole('button', { name: /check in at the door/i }))

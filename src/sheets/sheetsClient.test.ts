@@ -256,3 +256,90 @@ describe('createSheetsClient', () => {
     expect(isExpiredSessionError(error)).toBe(false)
   })
 })
+
+describe('createSheetsClient, where the spreadsheet structure itself is read or changed', () => {
+  it('should ask for the titles of the tabs the spreadsheet already has', async () => {
+    const fetchSpy = okFetch({
+      sheets: [{ properties: { title: 'Members' } }, { properties: { title: 'Event sheets' } }],
+    })
+    const client = createSheetsClient({
+      spreadsheetId: 'sheet-1',
+      getAccessToken: () => 't',
+      fetchImpl: fetchSpy,
+    })
+
+    expect(await client.readTabNames()).toEqual(['Members', 'Event sheets'])
+    expect(firstCallOf(fetchSpy).url).toBe(
+      'https://sheets.googleapis.com/v4/spreadsheets/sheet-1?fields=sheets.properties.title',
+    )
+  })
+
+  it('should read no tabs rather than throw when the spreadsheet answers without any', async () => {
+    const client = createSheetsClient({
+      spreadsheetId: 's',
+      getAccessToken: () => 't',
+      fetchImpl: okFetch({}),
+    })
+
+    expect(await client.readTabNames()).toEqual([])
+  })
+
+  it('should skip a tab the answer gives no title for rather than list an empty name', async () => {
+    const client = createSheetsClient({
+      spreadsheetId: 's',
+      getAccessToken: () => 't',
+      fetchImpl: okFetch({ sheets: [{ properties: {} }, { properties: { title: 'Events' } }] }),
+    })
+
+    expect(await client.readTabNames()).toEqual(['Events'])
+  })
+
+  it('should add every missing tab in one request, so the spreadsheet cannot end up half set up', async () => {
+    const fetchSpy = okFetch({})
+    const client = createSheetsClient({
+      spreadsheetId: 'sheet-1',
+      getAccessToken: () => 't',
+      fetchImpl: fetchSpy,
+    })
+
+    await client.addTabs({ tabNames: ['Events', 'Attendance'] })
+
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+    const { url, init } = firstCallOf(fetchSpy)
+    expect(url).toBe('https://sheets.googleapis.com/v4/spreadsheets/sheet-1:batchUpdate')
+    expect(init?.method).toBe('POST')
+    expect(JSON.parse(String(init?.body))).toEqual({
+      requests: [
+        { addSheet: { properties: { title: 'Events' } } },
+        { addSheet: { properties: { title: 'Attendance' } } },
+      ],
+    })
+  })
+
+  it('should not call Google at all when there is no tab to add', async () => {
+    const fetchSpy = okFetch({})
+    const client = createSheetsClient({
+      spreadsheetId: 's',
+      getAccessToken: () => 't',
+      fetchImpl: fetchSpy,
+    })
+
+    await client.addTabs({ tabNames: [] })
+
+    expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
+  it('should name the tabs it was refused, since adding one is the one call a picked-file grant can still refuse', async () => {
+    const client = createSheetsClient({
+      spreadsheetId: 's',
+      getAccessToken: () => 't',
+      fetchImpl: vi.fn<typeof fetch>().mockResolvedValue(
+        jsonResponse({ body: { error: { message: 'Caller lacks permission' } }, status: 403 }),
+      ),
+    })
+
+    await expect(client.addTabs({ tabNames: ['Events'] })).rejects.toThrow(
+      /Events.*403.*Caller lacks permission/,
+    )
+  })
+})

@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { WorkspaceHeader } from './WorkspaceHeader'
 import { WorkspaceSection } from './WorkspaceSection'
+import type { ResponseSheetAccess } from '../features/events/responseSheetAccess'
 import type { SheetsClient } from '../sheets/sheetsClient'
 import { AppShell } from '../shell/AppShell'
 import { DEFAULT_SECTION, type Section } from '../shell/section'
 
 type CommunityWorkspaceProps = {
   sheetsClient: SheetsClient
+  responseSheetAccess: ResponseSheetAccess
   spreadsheetName: string | undefined
   onSessionExpired: () => void
   onChangeSpreadsheet: () => void
@@ -15,6 +17,7 @@ type CommunityWorkspaceProps = {
 
 export const CommunityWorkspace = ({
   sheetsClient,
+  responseSheetAccess,
   spreadsheetName,
   onSessionExpired,
   onChangeSpreadsheet,
@@ -31,9 +34,10 @@ export const CommunityWorkspace = ({
     >
       <WorkspaceHeader />
       <WorkspaceSection
+        onSessionExpired={onSessionExpired}
+        responseSheetAccess={responseSheetAccess}
         section={activeSection}
         sheetsClient={sheetsClient}
-        onSessionExpired={onSessionExpired}
       />
     </AppShell>
   )

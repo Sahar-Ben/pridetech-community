@@ -4,20 +4,16 @@ import { EventDetail } from './EventDetail'
 import { EventForm } from './EventForm'
 import { EventsList } from './EventsList'
 import { addWalkInRegistrant, toggleRegistrantCheckIn } from './checkIn'
-import { appendEvent, archiveEvent, replaceEvent } from './eventUpdates'
-import {
-  applyDraftToEvent,
-  createEventFromDraft,
-  EMPTY_EVENT_DRAFT,
-  toEventDraft,
-  type EventDraft,
-} from './eventDraft'
+import { EMPTY_EVENT_DRAFT, toEventDraft, applyDraftToEvent, type EventDraft } from './eventDraft'
 import { groupEventsForListing } from './eventSchedule'
 import { selectEventRegistrants } from './eventRegistrants'
+import { selectSheetsForEvent, type AttachedResponseSheet } from './parseAttachedSheets'
 import type { CommunityEvent } from './communityEvent'
-import type { EventLocalChange } from './eventLocalChange'
+import type { EventChange } from './eventChangeText'
+import type { EventRegistryWriter } from './eventRegistryWriter'
 import type { Member } from '../members/member'
 import type { Registrant } from './registrant'
+import type { ResponseSheetAccess } from './responseSheetAccess'
 import type { WalkInFields } from './walkInValidation'
 
 type EventsView =
@@ -29,54 +25,75 @@ type EventsView =
 
 type EventsWorkspaceProps = {
   events: readonly CommunityEvent[]
+  attachedSheets: readonly AttachedResponseSheet[]
   registrants: readonly Registrant[]
   members: readonly Member[]
   today: string
+  writer: EventRegistryWriter
+  responseSheetAccess: ResponseSheetAccess
 }
 
+/* The events themselves are never held here. Every change goes to the sheet
+   and the section re-reads the registry afterwards, because an appended row's
+   number is something only the sheet knows and a guessed one is how a later
+   edit lands on somebody else's event.
+
+   The walk-ins are held here, and they are the exception that has to be said
+   out loud on screen: nothing writes them anywhere. */
 export const EventsWorkspace = ({
-  events: loadedEvents,
+  events,
+  attachedSheets,
   registrants: loadedRegistrants,
   members,
   today,
+  writer,
+  responseSheetAccess,
 }: EventsWorkspaceProps) => {
-  const [events, setEvents] = useState(loadedEvents)
   const [registrants, setRegistrants] = useState(loadedRegistrants)
-  const [localChange, setLocalChange] = useState<EventLocalChange | undefined>(undefined)
+  const [change, setChange] = useState<EventChange | undefined>(undefined)
   const [view, setView] = useState<EventsView>({ kind: 'list' })
-  const nextLocalNumber = useRef(1)
-
-  const takeLocalId = (prefix: string): string => {
-    const localId = `${prefix}-local-${nextLocalNumber.current}`
-    nextLocalNumber.current += 1
-    return localId
-  }
+  const nextWalkInNumber = useRef(1)
 
   const openList = () => setView({ kind: 'list' })
 
-  const archiveListedEvent = (event: CommunityEvent) => {
-    setEvents((currentEvents) => archiveEvent({ events: currentEvents, eventId: event.id }))
-    setLocalChange({ kind: 'event-archived', eventName: event.name })
+  const archiveListedEvent = async (event: CommunityEvent): Promise<void> => {
+    await writer.saveEvent({ originalEvent: event, updatedEvent: { ...event, isArchived: true } })
+    setChange({ kind: 'archived', eventName: event.name })
   }
 
-  const saveNewEvent = (draft: EventDraft) => {
-    const newEvent = createEventFromDraft({ id: takeLocalId('event'), draft })
-    setEvents((currentEvents) => appendEvent({ events: currentEvents, newEvent }))
-    setLocalChange({ kind: 'event-saved', eventName: newEvent.name })
+  const saveNewEvent = async (draft: EventDraft): Promise<void> => {
+    await writer.addEvent({ draft })
+    setChange({ kind: 'added', eventName: draft.name.trim() })
     openList()
   }
 
-  const saveEditedEvent = ({ event, draft }: { event: CommunityEvent; draft: EventDraft }) => {
+  const saveEditedEvent = async ({
+    event,
+    draft,
+  }: {
+    event: CommunityEvent
+    draft: EventDraft
+  }): Promise<void> => {
     const updatedEvent = applyDraftToEvent({ event, draft })
-    setEvents((currentEvents) => replaceEvent({ events: currentEvents, updatedEvent }))
-    setLocalChange({ kind: 'event-saved', eventName: updatedEvent.name })
+    await writer.saveEvent({ originalEvent: event, updatedEvent })
+    setChange({ kind: 'saved', eventName: updatedEvent.name })
     openList()
   }
 
-  const closeOutEvent = (event: CommunityEvent) => {
-    setEvents((currentEvents) =>
-      replaceEvent({ events: currentEvents, updatedEvent: { ...event, isClosedOut: true } }),
-    )
+  const closeOutEvent = async (event: CommunityEvent): Promise<void> => {
+    await writer.saveEvent({ originalEvent: event, updatedEvent: { ...event, isClosedOut: true } })
+    setChange({ kind: 'saved', eventName: event.name })
+  }
+
+  const attachSheetToEvent = async ({
+    event,
+    attachment,
+  }: {
+    event: CommunityEvent
+    attachment: Parameters<EventRegistryWriter['attachSheet']>[0]['attachment']
+  }): Promise<void> => {
+    await writer.attachSheet({ attachment })
+    setChange({ kind: 'sheet-attached', eventName: event.name })
   }
 
   const toggleCheckIn = (registrantId: string) => {
@@ -90,11 +107,13 @@ export const EventsWorkspace = ({
   }
 
   const addWalkIn = ({ eventId, walkIn }: { eventId: string; walkIn: WalkInFields }) => {
+    const id = `walk-in-local-${nextWalkInNumber.current}`
+    nextWalkInNumber.current += 1
     setRegistrants((currentRegistrants) =>
       addWalkInRegistrant({
         registrants: currentRegistrants,
         walkIn: {
-          id: takeLocalId('walk-in'),
+          id,
           eventId,
           name: walkIn.name,
           email: walkIn.email,
@@ -125,7 +144,7 @@ export const EventsWorkspace = ({
       <EventForm
         initialDraft={toEventDraft(openEvent)}
         onCancel={openList}
-        onSave={(draft) => saveEditedEvent({ event: openEvent, draft })}
+        onSave={async (draft) => await saveEditedEvent({ event: openEvent, draft })}
         title="Edit event"
       />
     )
@@ -134,12 +153,17 @@ export const EventsWorkspace = ({
   if (openEvent !== undefined && view.kind === 'detail') {
     return (
       <EventDetail
+        attachedSheets={selectSheetsForEvent({ sheets: attachedSheets, eventId: openEvent.id })}
         event={openEvent}
         members={members}
+        onAttachSheet={async ({ attachment }) =>
+          await attachSheetToEvent({ event: openEvent, attachment })
+        }
         onBack={openList}
-        onCloseOut={() => closeOutEvent(openEvent)}
+        onCloseOut={async () => await closeOutEvent(openEvent)}
         onOpenCheckIn={() => setView({ kind: 'check-in', eventId: openEvent.id })}
         registrants={selectEventRegistrants({ registrants, eventId: openEvent.id })}
+        responseSheetAccess={responseSheetAccess}
       />
     )
   }
@@ -148,8 +172,8 @@ export const EventsWorkspace = ({
     return (
       <CheckInScreen
         event={openEvent}
-        onAddWalkIn={(walkIn) => addWalkIn({ eventId: openEvent.id, walkIn })}
         members={members}
+        onAddWalkIn={(walkIn) => addWalkIn({ eventId: openEvent.id, walkIn })}
         onBack={() => setView({ kind: 'detail', eventId: openEvent.id })}
         onToggleCheckIn={toggleCheckIn}
         registrants={selectEventRegistrants({ registrants, eventId: openEvent.id })}
@@ -159,7 +183,7 @@ export const EventsWorkspace = ({
 
   return (
     <EventsList
-      localChange={localChange}
+      change={change}
       onAddEvent={() => setView({ kind: 'add' })}
       onArchiveEvent={archiveListedEvent}
       onEditEvent={(event) => setView({ kind: 'edit', eventId: event.id })}

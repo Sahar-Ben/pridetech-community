@@ -4,8 +4,13 @@ import type { CellWrite, SheetsClient, ValueInputOption } from '../sheets/sheets
 const LETTER_A = 'A'.charCodeAt(0)
 const ALPHABET_LENGTH = 26
 
+/* The tab name is matched in two shapes because A1 notation has two: a bare
+   word, and anything else wrapped in apostrophes with its own apostrophes
+   doubled. `Event sheets` and a picked response sheet's tab both take the
+   second shape, so a fake that only read the first would answer every registry
+   read with an empty tab. */
 const RANGE_PATTERN =
-  /^(?<tabName>[^!]+)!(?<startLetters>[A-Z]+)(?<startRow>\d+)?(?::(?<endLetters>[A-Z]+)(?<endRow>\d+)?)?$/
+  /^(?:'(?<quotedTabName>(?:[^']|'')+)'|(?<tabName>[^'!]+))!(?<startLetters>[A-Z]+)(?<startRow>\d+)?(?::(?<endLetters>[A-Z]+)(?<endRow>\d+)?)?$/
 
 export type SheetWrite = {
   kind: 'append' | 'update'
@@ -17,6 +22,7 @@ export type SheetWrite = {
 export type FakeSheet = {
   client: SheetsClient
   writes: readonly SheetWrite[]
+  tabNames: () => readonly string[]
   rowsOf: (tabName: string) => readonly (readonly string[])[]
   replaceRows: (options: { tabName: string; rows: readonly (readonly string[])[] }) => void
 }
@@ -37,7 +43,8 @@ const toColumnIndex = (letters: string): number =>
 
 const parseRange = (range: string): ParsedRange => {
   const groups = RANGE_PATTERN.exec(range)?.groups
-  const tabName = groups?.tabName
+  const quotedTabName = groups?.quotedTabName
+  const tabName = quotedTabName === undefined ? groups?.tabName : quotedTabName.replaceAll("''", "'")
   const startLetters = groups?.startLetters
   if (groups === undefined || tabName === undefined || startLetters === undefined) {
     throw new Error(`the fake sheet cannot read the range ${range}`)
@@ -245,6 +252,20 @@ export const createFakeSheet = ({
         await Promise.resolve()
       },
     ),
+
+    readTabNames: vi.fn(async () => await Promise.resolve([...tabRows.keys()])),
+
+    /* A tab added here starts with no rows at all, which is the state the real
+       `addSheet` leaves behind and the state the header write then fills. */
+    addTabs: vi.fn(async ({ tabNames }: { tabNames: readonly string[] }) => {
+      tabNames.forEach((tabName) => {
+        if (tabRows.has(tabName)) {
+          throw new Error(`the fake sheet already has a tab named ${tabName}`)
+        }
+        tabRows.set(tabName, [])
+      })
+      await Promise.resolve()
+    }),
   }
 
   const replaceRows = ({
@@ -260,5 +281,5 @@ export const createFakeSheet = ({
     )
   }
 
-  return { client, writes, rowsOf, replaceRows }
+  return { client, writes, tabNames: () => [...tabRows.keys()], rowsOf, replaceRows }
 }

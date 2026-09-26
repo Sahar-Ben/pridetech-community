@@ -1,11 +1,7 @@
-import { SampleSectionNotice } from './SampleSectionNotice'
 import { LeadsSection } from '../features/applications/LeadsSection'
 import { EventsSection } from '../features/events/EventsSection'
-import { toIsoDateString } from '../features/events/eventDate'
-import { SAMPLE_EVENTS } from '../features/events/sampleEvents'
-import { SAMPLE_EVENT_REGISTRANTS } from '../features/events/sampleEventRegistrants'
+import type { ResponseSheetAccess } from '../features/events/responseSheetAccess'
 import { MembersSection } from '../features/members/MembersSection'
-import { SAMPLE_MEMBERS } from '../features/members/sampleMembers'
 import { OverviewSection } from '../features/overview/OverviewSection'
 import type { SheetsClient } from '../sheets/sheetsClient'
 import type { Section } from '../shell/section'
@@ -13,12 +9,14 @@ import type { Section } from '../shell/section'
 type WorkspaceSectionProps = {
   section: Section
   sheetsClient: SheetsClient
+  responseSheetAccess: ResponseSheetAccess
   onSessionExpired: () => void
 }
 
 export const WorkspaceSection = ({
   section,
   sheetsClient,
+  responseSheetAccess,
   onSessionExpired,
 }: WorkspaceSectionProps) => {
   if (section === 'overview') {
@@ -33,20 +31,15 @@ export const WorkspaceSection = ({
     return <MembersSection sheetsClient={sheetsClient} onSessionExpired={onSessionExpired} />
   }
 
-  /* Events is the one section still working from invented data, and the people
-     in it are the invented members: nothing on this screen has ever been read
-     from the spreadsheet, and the notice above it says so. */
+  /* No sample-data banner here any more: the events, the tabs they live in and
+     the community the door searches are all read from the spreadsheet. What is
+     still invented is named on the screens that show it, because it is only
+     half of this section rather than all of it. */
   return (
-    <div className="flex flex-col gap-3">
-      <div className="mx-auto w-full max-w-4xl px-4 pt-4">
-        <SampleSectionNotice sectionName="event" />
-      </div>
-      <EventsSection
-        events={SAMPLE_EVENTS}
-        members={SAMPLE_MEMBERS}
-        registrants={SAMPLE_EVENT_REGISTRANTS}
-        today={toIsoDateString(new Date())}
-      />
-    </div>
+    <EventsSection
+      onSessionExpired={onSessionExpired}
+      responseSheetAccess={responseSheetAccess}
+      sheetsClient={sheetsClient}
+    />
   )
 }

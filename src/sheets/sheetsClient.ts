@@ -31,6 +31,8 @@ export type SheetsClient = {
     writes: readonly CellWrite[]
     valueInputOption: ValueInputOption
   }) => Promise<void>
+  readTabNames: () => Promise<readonly string[]>
+  addTabs: (options: { tabNames: readonly string[] }) => Promise<void>
 }
 
 export type CreateSheetsClient = (options: {
@@ -39,6 +41,8 @@ export type CreateSheetsClient = (options: {
 }) => SheetsClient
 
 type ErrorBody = { error?: { message?: string } }
+
+type SpreadsheetTabsBody = { sheets?: readonly { properties?: { title?: string } }[] }
 
 const readErrorDetail = async (response: Response): Promise<string> => {
   const body = (await response.json().catch(() => ({}))) as ErrorBody
@@ -147,6 +151,40 @@ export const createSheetsClient = ({
         body: {
           valueInputOption,
           data: writes.map(({ range, value }) => ({ range, values: [[value]] })),
+        },
+      })
+    },
+
+    /* Titles only. The full `spreadsheets.get` answers with every cell of every
+       tab, which on this spreadsheet is a thousand applications and 787 members
+       fetched to learn three names. */
+    readTabNames: async () => {
+      const body = await request({
+        range: 'the list of tabs',
+        method: 'GET',
+        path: '?fields=sheets.properties.title',
+      })
+      const { sheets } = body as SpreadsheetTabsBody
+      return (sheets ?? []).flatMap(({ properties }) =>
+        properties?.title === undefined ? [] : [properties.title],
+      )
+    },
+
+    /* `spreadsheets.batchUpdate` rather than the values endpoints every other
+       write here uses: this one changes the structure of the spreadsheet rather
+       than its contents, and it is the first call in this app that does. All of
+       the tabs go in one request so a refusal leaves the spreadsheet exactly as
+       it was rather than one tab into a three-tab registry. */
+    addTabs: async ({ tabNames }) => {
+      if (tabNames.length === 0) {
+        return
+      }
+      await request({
+        range: `the new tabs ${tabNames.join(', ')}`,
+        method: 'POST',
+        path: ':batchUpdate',
+        body: {
+          requests: tabNames.map((title) => ({ addSheet: { properties: { title } } })),
         },
       })
     },

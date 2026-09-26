@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { FormCheckboxField } from './FormCheckboxField'
 import { FormTextField } from './FormTextField'
+import { useAsyncAction } from './useAsyncAction'
+import { NoticeBanner } from '../../app/NoticeBanner'
 import {
   COMPACT_BUTTON_SIZE_CLASSES,
   PRIMARY_BUTTON_CLASSES,
@@ -20,17 +22,24 @@ const CANCEL_BUTTON_CLASSES = `${SECONDARY_BUTTON_CLASSES} ${COMPACT_BUTTON_SIZE
 
 const FORM_CLASSES = `${DATA_PANEL_CLASSES} animate-rise flex flex-col gap-4 px-4 py-4 sm:px-6`
 
+const SAVE_FAILED_MESSAGE =
+  'The event was not saved, and the Events tab was not changed.'
+
 type EventFormProps = {
   title: string
   initialDraft: EventDraft
-  onSave: (draft: EventDraft) => void
+  onSave: (draft: EventDraft) => Promise<void>
   onCancel: () => void
 }
 
+/* A save that fails leaves the form exactly as the organiser left it, with the
+   reason on it. Closing over a refused write would lose the change and leave
+   the sheet unchanged, with nothing on screen saying so. */
 export const EventForm = ({ title, initialDraft, onSave, onCancel }: EventFormProps) => {
   const [draft, setDraft] = useState<EventDraft>(initialDraft)
   const [errors, setErrors] = useState<EventDraftErrors>({})
   const nameInputRef = useRef<HTMLInputElement>(null)
+  const saving = useAsyncAction({ fallbackMessage: SAVE_FAILED_MESSAGE })
 
   useEffect(() => {
     nameInputRef.current?.focus()
@@ -47,7 +56,9 @@ export const EventForm = ({ title, initialDraft, onSave, onCancel }: EventFormPr
     if (hasEventDraftErrors(foundErrors)) {
       return
     }
-    onSave(draft)
+    saving.run(async () => {
+      await onSave(draft)
+    })
   }
 
   return (
@@ -93,15 +104,21 @@ export const EventForm = ({ title, initialDraft, onSave, onCancel }: EventFormPr
         onChange={(isMembersOnly) => updateDraft({ isMembersOnly })}
       />
 
+      <div aria-live="polite">
+        {saving.errorMessage !== undefined && (
+          <NoticeBanner role="alert" title={saving.errorMessage} tone="danger" />
+        )}
+      </div>
+
       <div className="flex flex-wrap items-center gap-3">
-        <button className={SAVE_BUTTON_CLASSES} type="submit">
-          Save event
+        <button className={SAVE_BUTTON_CLASSES} disabled={saving.isRunning} type="submit">
+          {saving.isRunning ? 'Saving\u{2026}' : 'Save event'}
         </button>
         <button className={CANCEL_BUTTON_CLASSES} onClick={onCancel} type="button">
           Cancel
         </button>
-        <p className="text-xs font-semibold text-warning-ink">
-          Saving keeps the event in this browser only. Nothing here reaches the Google Sheet yet.
+        <p className="text-xs text-ink-muted">
+          Saving writes this event to the Events tab of your spreadsheet.
         </p>
       </div>
     </form>

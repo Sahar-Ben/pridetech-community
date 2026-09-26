@@ -1,4 +1,4 @@
-import type { CommunityEvent } from './communityEvent'
+import type { CommunityEvent, NewEvent } from './communityEvent'
 
 export type EventDraft = {
   name: string
@@ -57,7 +57,7 @@ export const createEventFromDraft = ({
 }: {
   id: string
   draft: EventDraft
-}): CommunityEvent => ({
+}): NewEvent => ({
   id,
   ...toEventFields(draft),
   isClosedOut: false,

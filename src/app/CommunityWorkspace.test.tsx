@@ -3,24 +3,52 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { CommunityWorkspace } from './CommunityWorkspace'
 import {
-  createFakeSheetsClient,
+  ATTENDANCE_HEADINGS,
+  ATTENDANCE_TAB_NAME,
+  EVENTS_HEADINGS,
+  EVENTS_TAB_NAME,
+  EVENT_SHEETS_HEADINGS,
+  EVENT_SHEETS_TAB_NAME,
+} from '../features/events/eventRegistryTabs'
+import { createFakeResponseSheetAccess } from '../testing/eventsRegistryFactory'
+import { createFakeSheet } from '../testing/fakeSheet'
+import {
   LEADS_HEADER_ROW,
   leadRow,
   MEMBERS_HEADER_ROW,
   memberRow,
 } from '../testing/sheetsClientFactory'
 
+const PRIDE_PANEL_ROW = [
+  'evt-1',
+  'Pride Month Panel',
+  '2026-06-24',
+  'Quillon Cloud',
+  'Quillon Cloud auditorium, Herzliya',
+  '',
+  'Yes',
+  'No',
+  'No',
+  '',
+]
+
+const buildDashboard = ({ eventRows = [PRIDE_PANEL_ROW] }: { eventRows?: readonly (readonly string[])[] } = {}) =>
+  createFakeSheet({
+    tabs: {
+      Leads: [LEADS_HEADER_ROW, leadRow({ name: 'Noa Feldman', email: 'noa@example.com' })],
+      Members: [MEMBERS_HEADER_ROW, memberRow({ name: 'Dana Sorkin', mail: 'dana@example.com' })],
+      [EVENTS_TAB_NAME]: [[...EVENTS_HEADINGS], ...eventRows],
+      [EVENT_SHEETS_TAB_NAME]: [[...EVENT_SHEETS_HEADINGS]],
+      [ATTENDANCE_TAB_NAME]: [[...ATTENDANCE_HEADINGS]],
+    },
+  })
+
 const renderWorkspace = (
   overrides: Partial<Parameters<typeof CommunityWorkspace>[0]> = {},
 ) => {
   const props = {
-    sheetsClient: createFakeSheetsClient({
-      rows: [LEADS_HEADER_ROW, leadRow({ name: 'Noa Feldman', email: 'noa@example.com' })],
-      memberRows: [
-        MEMBERS_HEADER_ROW,
-        memberRow({ name: 'Dana Sorkin', mail: 'dana@example.com' }),
-      ],
-    }),
+    sheetsClient: buildDashboard().client,
+    responseSheetAccess: createFakeResponseSheetAccess(),
     onSessionExpired: vi.fn(),
     onChangeSpreadsheet: vi.fn(),
     onSignOut: vi.fn(),
@@ -81,7 +109,17 @@ describe('CommunityWorkspace', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Events' }))
 
-    expect(screen.getByRole('heading', { name: 'Events' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Events' })).toBeInTheDocument()
+  })
+
+  it('should list the events read from the Events tab of the spreadsheet', async () => {
+    renderWorkspace()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Events' }))
+
+    expect(
+      await screen.findByRole('heading', { name: 'Pride Month Panel' }),
+    ).toBeInTheDocument()
   })
 
   it('should mark the current section with aria-current once it changes', async () => {
@@ -111,33 +149,45 @@ describe('CommunityWorkspace', () => {
     expect(screen.getByRole('heading', { name: 'Dana Sorkin' })).toBeInTheDocument()
   })
 
-  it('should open an event onto its registrants', async () => {
+  it('should open an event onto a registrant list nothing has been read into yet', async () => {
     renderWorkspace()
 
     await userEvent.click(screen.getByRole('button', { name: 'Events' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Summer Rooftop Social' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Pride Month Panel' }))
 
-    const registrants = within(screen.getByRole('table', { name: /registrants/i }))
-    expect(registrants.getAllByRole('row').length).toBeGreaterThan(1)
+    expect(
+      screen.getByText(/nothing has been read from a response sheet for this event/i),
+    ).toBeInTheDocument()
   })
 
   it('should warn that the check-in screen records nothing', async () => {
     renderWorkspace()
 
     await userEvent.click(screen.getByRole('button', { name: 'Events' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Pride Month Panel' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Pride Month Panel' }))
     await userEvent.click(screen.getByRole('button', { name: /check in at the door/i }))
 
     expect(screen.getByText(/not being recorded anywhere/i)).toBeInTheDocument()
   })
 
-  it('should say the Events section is invented, because it still is', async () => {
+  it('should no longer call the whole Events section invented, now that its events are read', async () => {
     renderWorkspace()
 
     await userEvent.click(screen.getByRole('button', { name: 'Events' }))
+    await screen.findByRole('heading', { name: 'Pride Month Panel' })
 
-    expect(screen.getByText(/every event below is invented/i)).toBeInTheDocument()
-    expect(screen.getByText(/nothing in this section is read from your spreadsheet/i)).toBeInTheDocument()
+    expect(screen.queryByText(/every event below is invented/i)).not.toBeInTheDocument()
+  })
+
+  it('should still say the people at an event are not read from the spreadsheet', async () => {
+    renderWorkspace()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Events' }))
+    await screen.findByRole('heading', { name: 'Pride Month Panel' })
+
+    expect(
+      screen.getByText(/registrants, check-in and attendance are not built yet/i),
+    ).toBeInTheDocument()
   })
 
   it('should not call the Members section sample data, now that it reads the sheet', async () => {
