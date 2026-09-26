@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { MemberSavedNotice } from './MemberSavedNotice'
 import { MemberDetailFields } from './MemberDetailFields'
 import { MemberEditForm } from './MemberEditForm'
@@ -19,9 +19,10 @@ type MemberDetailProps = {
   member: Member
   onClose: () => void
   onSave: (member: Member) => Promise<void>
+  eventHistory: ReactNode
 }
 
-export const MemberDetail = ({ member, onClose, onSave }: MemberDetailProps) => {
+export const MemberDetail = ({ member, onClose, onSave, eventHistory }: MemberDetailProps) => {
   const headingRef = useRef<HTMLHeadingElement>(null)
   const editButtonRef = useRef<HTMLButtonElement>(null)
   const isEditButtonFocusRequested = useRef(false)
@@ -116,13 +117,7 @@ export const MemberDetail = ({ member, onClose, onSave }: MemberDetailProps) => 
         <MemberDetailFields member={member} />
       )}
 
-      <section className="rounded-xl border border-dashed border-edge px-4 py-3">
-        <h4 className="text-sm font-bold text-ink">Event history</h4>
-        <p className="mt-1 text-sm text-ink-muted">
-          Not built yet. Nothing in this app records who attended which event, so there is no
-          attendance to show here.
-        </p>
-      </section>
+      {eventHistory}
     </article>
   )
 }

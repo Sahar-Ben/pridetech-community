@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import { MemberDetail } from './MemberDetail'
 import { MembersFilterBar } from './MembersFilterBar'
 import { MembersSummary } from './MembersSummary'
@@ -14,9 +14,14 @@ const SEARCH_SETTLE_MILLISECONDS = 200
 type MembersDirectoryProps = {
   members: readonly Member[]
   onSaveMember: SaveMember
+  renderEventHistory: (member: Member) => ReactNode
 }
 
-export const MembersDirectory = ({ members, onSaveMember }: MembersDirectoryProps) => {
+export const MembersDirectory = ({
+  members,
+  onSaveMember,
+  renderEventHistory,
+}: MembersDirectoryProps) => {
   const [searchText, setSearchText] = useState('')
   const [statusFilter, setStatusFilter] = useState<MemberStatusFilter>('Active')
   const [openRowNumber, setOpenRowNumber] = useState<number | undefined>(undefined)
@@ -89,7 +94,12 @@ export const MembersDirectory = ({ members, onSaveMember }: MembersDirectoryProp
           )}
         </div>
       ) : (
-        <MemberDetail member={openMember} onClose={closeDetail} onSave={saveOpenMember} />
+        <MemberDetail
+          eventHistory={renderEventHistory(openMember)}
+          member={openMember}
+          onClose={closeDetail}
+          onSave={saveOpenMember}
+        />
       )}
     </section>
   )

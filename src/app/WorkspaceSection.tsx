@@ -28,7 +28,13 @@ export const WorkspaceSection = ({
   }
 
   if (section === 'members') {
-    return <MembersSection sheetsClient={sheetsClient} onSessionExpired={onSessionExpired} />
+    return (
+      <MembersSection
+        onSessionExpired={onSessionExpired}
+        responseSheetAccess={responseSheetAccess}
+        sheetsClient={sheetsClient}
+      />
+    )
   }
 
   /* No sample-data banner here any more: the events, the tabs they live in and
