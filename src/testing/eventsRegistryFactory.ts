@@ -1,5 +1,8 @@
 import { vi } from 'vitest'
 import type { EventRegistryWriter } from '../features/events/eventRegistryWriter'
+import type { AttachedResponseSheet } from '../features/events/parseAttachedSheets'
+import type { Registrant } from '../features/events/registrant'
+import type { EventRegistrantsLoad } from '../features/events/useEventRegistrants'
 import type { ResponseSheetAccess } from '../features/events/responseSheetAccess'
 
 /* A writer that settles without complaint, so a test about the listing is not
@@ -24,5 +27,47 @@ export const createFakeResponseSheetAccess = (
   readHeaderRow: vi.fn(
     async () => await Promise.resolve(['Timestamp', 'Name', 'Email', 'Company']),
   ),
+  readRows: vi.fn(
+    async () => await Promise.resolve([['Timestamp', 'Name', 'Email', 'Company']]),
+  ),
   ...overrides,
 })
+
+export const buildAttachedSheet = (
+  overrides: Partial<AttachedResponseSheet> = {},
+): AttachedResponseSheet => ({
+  rowNumber: 2,
+  eventId: 'event-1',
+  spreadsheetId: 'responses-1',
+  sheetName: 'Form Responses 1',
+  role: 'main',
+  mapping: { timestamp: 0, name: 1, email: 2, company: 3 },
+  ...overrides,
+})
+
+/* Registrants as if every event they belong to had already had its sheets
+   read, so a test about the list or the door does not wait on a read. */
+export const buildRegistrantLoads = (
+  registrants: readonly Registrant[],
+): ReadonlyMap<string, EventRegistrantsLoad> => {
+  const eventIds = [...new Set(registrants.map((registrant) => registrant.eventId))]
+  const byEvent = eventIds.map(
+    (eventId) =>
+      [eventId, registrants.filter((registrant) => registrant.eventId === eventId)] as const,
+  )
+  return new Map(
+    byEvent.map(([eventId, eventRegistrants]) => [
+      eventId,
+      {
+        read: {
+          registrants: eventRegistrants,
+          repeatedCount: 0,
+          rowsWithoutNameOrEmail: [],
+          problems: [],
+        },
+        isReading: false,
+        errorMessage: undefined,
+      },
+    ]),
+  )
+}

@@ -6,7 +6,6 @@ import { NoticeBanner } from '../../app/NoticeBanner'
 import { COMPACT_BUTTON_SIZE_CLASSES, PRIMARY_BUTTON_CLASSES } from '../../theme/controls'
 import type { CommunityEvent } from './communityEvent'
 import type { EventSchedule } from './eventSchedule'
-import type { Registrant } from './registrant'
 import { EMPTY_STATE_CLASSES } from '../../theme/surfaces'
 
 const ADD_BUTTON_CLASSES = `${PRIMARY_BUTTON_CLASSES} ${COMPACT_BUTTON_SIZE_CLASSES}`
@@ -16,7 +15,7 @@ const ARCHIVE_FAILED_MESSAGE =
 
 type EventsListProps = {
   schedule: EventSchedule
-  registrants: readonly Registrant[]
+  describeAttendance: (event: CommunityEvent) => string
   change: EventChange | undefined
   onAddEvent: () => void
   onOpenEvent: (event: CommunityEvent) => void
@@ -26,7 +25,7 @@ type EventsListProps = {
 
 export const EventsList = ({
   schedule,
-  registrants,
+  describeAttendance,
   change,
   onAddEvent,
   onOpenEvent,
@@ -65,21 +64,21 @@ export const EventsList = ({
       ) : (
         <>
           <EventListGroup
+            describeAttendance={describeAttendance}
             emptyMessage="Nothing scheduled."
             events={schedule.upcomingEvents}
             onArchiveEvent={archiveEvent}
             onEditEvent={onEditEvent}
             onOpenEvent={onOpenEvent}
-            registrants={registrants}
             title="Upcoming"
           />
           <EventListGroup
+            describeAttendance={describeAttendance}
             emptyMessage="No events have happened yet."
             events={schedule.pastEvents}
             onArchiveEvent={archiveEvent}
             onEditEvent={onEditEvent}
             onOpenEvent={onOpenEvent}
-            registrants={registrants}
             title="Past"
           />
         </>

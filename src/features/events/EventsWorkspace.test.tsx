@@ -3,6 +3,8 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { buildEvent, buildRegistrant } from '../../testing/eventFactory'
 import {
+  buildAttachedSheet,
+  buildRegistrantLoads,
   createFakeEventRegistryWriter,
   createFakeResponseSheetAccess,
 } from '../../testing/eventsRegistryFactory'
@@ -28,18 +30,21 @@ const renderEvents = ({
   attachedSheets?: readonly AttachedResponseSheet[]
   writer?: EventRegistryWriter
 }) => {
+  const onRequestRegistrants = vi.fn()
   render(
     <EventsWorkspace
       attachedSheets={attachedSheets}
       events={events}
       members={[dana]}
-      registrants={registrants}
+      onReloadRegistrants={vi.fn()}
+      onRequestRegistrants={onRequestRegistrants}
+      registrantLoads={buildRegistrantLoads(registrants)}
       responseSheetAccess={createFakeResponseSheetAccess()}
       today={TODAY}
       writer={writer}
     />,
   )
-  return { writer }
+  return { writer, onRequestRegistrants }
 }
 
 const eventNamesIn = (groupName: RegExp): readonly (string | null)[] =>
@@ -100,6 +105,22 @@ describe('EventsWorkspace listing', () => {
     })
 
     expect(screen.getByText(/2 registered/)).toHaveTextContent('1 on the waitlist')
+  })
+
+  it('should not claim nobody registered for an event whose sheet has not been read yet', () => {
+    renderEvents({
+      events: [buildEvent({ id: 'a' })],
+      attachedSheets: [buildAttachedSheet({ eventId: 'a' })],
+    })
+
+    expect(screen.getByText('Open the event to read its registrants')).toBeInTheDocument()
+    expect(screen.queryByText(/0 registered/)).not.toBeInTheDocument()
+  })
+
+  it('should say an event has no response sheet to read registrants from', () => {
+    renderEvents({ events: [buildEvent({ id: 'a' })] })
+
+    expect(screen.getByText('No response sheet attached yet')).toBeInTheDocument()
   })
 
   it('should tell the organiser when there are no events at all', () => {
@@ -292,6 +313,14 @@ describe('EventsWorkspace event detail', () => {
   const openPridePanel = async () => {
     await userEvent.click(screen.getByRole('button', { name: 'Pride Panel' }))
   }
+
+  it('should ask for the registrants of the event that was opened', async () => {
+    const { onRequestRegistrants } = renderEvents({ events: [pridePanel] })
+
+    await openPridePanel()
+
+    expect(onRequestRegistrants).toHaveBeenCalledWith('a')
+  })
 
   it('should list the registrants of the event that was opened', async () => {
     renderEvents({
@@ -489,7 +518,7 @@ describe('EventsWorkspace event detail', () => {
     expect(screen.getByText(/not built yet/i)).toBeInTheDocument()
   })
 
-  it('should say the attendance shown was never recorded anywhere', async () => {
+  it('should say a check-in made here is not recorded anywhere', async () => {
     renderEvents({
       events: [pridePanel],
       registrants: [buildRegistrant({ id: 'r1', eventId: 'a', checkedInAt: '2026-06-24T18:00:00.000Z' })],
@@ -497,7 +526,7 @@ describe('EventsWorkspace event detail', () => {
 
     await openPridePanel()
 
-    expect(screen.getByText(/never been recorded anywhere/i)).toBeInTheDocument()
+    expect(screen.getByText(/lost when the page reloads/i)).toBeInTheDocument()
   })
 
   it('should go back to the listing', async () => {

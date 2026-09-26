@@ -35,7 +35,7 @@ export const EventResponseSheetsPanel = ({
       {attachedSheets.length === 0 ? (
         <p className="text-sm text-ink-muted">
           No response sheet is attached to this event. Attaching one records where the
-          registrations live and which column holds what; reading them comes later.
+          registrations live and which column holds what, and the registrants are read from it.
         </p>
       ) : (
         <ul className="flex flex-col gap-2">

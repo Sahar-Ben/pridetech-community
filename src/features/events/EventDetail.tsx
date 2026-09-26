@@ -1,4 +1,5 @@
 import { EventReconcileNotice } from './EventReconcileNotice'
+import { EventRegistrantsReadStatus } from './EventRegistrantsReadStatus'
 import { EventRegistrantsTable } from './EventRegistrantsTable'
 import { EventResponseSheetsPanel } from './EventResponseSheetsPanel'
 import { describeAttendanceForEvent } from './eventAttendanceText'
@@ -18,6 +19,7 @@ import type { CommunityEvent } from './communityEvent'
 import type { Member } from '../members/member'
 import type { Registrant } from './registrant'
 import type { ResponseSheetAccess } from './responseSheetAccess'
+import type { EventRegistrantsLoad } from './useEventRegistrants'
 import { DATA_PANEL_CLASSES, RECORD_TITLE_CLASSES } from '../../theme/surfaces'
 
 const BACK_ARROW = '\u{2190}'
@@ -35,6 +37,7 @@ const DETAIL_CLASSES = `${DATA_PANEL_CLASSES} animate-rise flex flex-col gap-4 p
 type EventDetailProps = {
   event: CommunityEvent
   registrants: readonly Registrant[]
+  registrantLoad: EventRegistrantsLoad | undefined
   members: readonly Member[]
   attachedSheets: readonly AttachedResponseSheet[]
   responseSheetAccess: ResponseSheetAccess
@@ -42,11 +45,37 @@ type EventDetailProps = {
   onBack: () => void
   onOpenCheckIn: () => void
   onCloseOut: () => Promise<void>
+  onReloadRegistrants: () => void
+}
+
+const EMPTY_LIST_CLASSES =
+  'rounded-xl border border-dashed border-edge px-4 py-10 text-center text-sm text-ink-muted'
+
+/* Said only once there is something true to say: while the first read is on
+   its way, "nobody has registered" would be a guess. */
+const describeEmptyList = ({
+  hasAttachedSheet,
+  load,
+}: {
+  hasAttachedSheet: boolean
+  load: EventRegistrantsLoad | undefined
+}): string | undefined => {
+  if (!hasAttachedSheet) {
+    return 'No response sheet is attached yet. Attach one above to see who registered.'
+  }
+  if (load?.read === undefined) {
+    return undefined
+  }
+  if (load.read.problems.length > 0) {
+    return 'No registrants could be read. See above for which sheet is missing.'
+  }
+  return 'Nobody has registered yet.'
 }
 
 export const EventDetail = ({
   event,
   registrants,
+  registrantLoad,
   members,
   attachedSheets,
   responseSheetAccess,
@@ -54,9 +83,14 @@ export const EventDetail = ({
   onBack,
   onOpenCheckIn,
   onCloseOut,
+  onReloadRegistrants,
 }: EventDetailProps) => {
   const closingOut = useAsyncAction({ fallbackMessage: CLOSE_OUT_FAILED_MESSAGE })
   const summary = summariseEventAttendance({ registrants, isClosedOut: event.isClosedOut })
+  const emptyListText = describeEmptyList({
+    hasAttachedSheet: attachedSheets.length > 0,
+    load: registrantLoad,
+  })
 
   const closeOutEvent = () => {
     closingOut.run(async () => {
@@ -85,12 +119,12 @@ export const EventDetail = ({
             : 'Open to non-members.'}
         </p>
         <p className="text-sm font-bold text-ink">{describeAttendanceForEvent(summary)}</p>
-        {/* The event above is read from the sheet and the figures beside it are
-            not. That gap is the one somebody could act on at a door. */}
+        {/* The registrants are read from the response sheets and the check-ins
+            beside them are not written anywhere. That gap is the one somebody
+            could act on at a door. */}
         <p className="text-xs font-semibold text-warning-ink">
-          This event is read from your spreadsheet. Its registrants are not: no response sheet
-          has been read, the attendance shown here has never been recorded anywhere, and a
-          check-in made in this app is lost when the page reloads.
+          Registrants are read from the response sheets. Check-ins are not recorded yet: one
+          made in this app is lost when the page reloads.
         </p>
       </div>
 
@@ -132,10 +166,15 @@ export const EventDetail = ({
         onAttach={onAttachSheet}
       />
 
+      <EventRegistrantsReadStatus
+        access={responseSheetAccess}
+        load={registrantLoad}
+        onReload={onReloadRegistrants}
+        sheetCount={attachedSheets.length}
+      />
+
       {registrants.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-edge px-4 py-10 text-center text-sm text-ink-muted">
-          No registrants. Nothing has been read from a response sheet for this event.
-        </p>
+        emptyListText !== undefined && <p className={EMPTY_LIST_CLASSES}>{emptyListText}</p>
       ) : (
         <EventRegistrantsTable
           isClosedOut={event.isClosedOut}

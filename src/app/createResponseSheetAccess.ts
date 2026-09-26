@@ -8,6 +8,10 @@ import type { CreateSheetsClient, SheetsClient } from '../sheets/sheetsClient'
 
 const HEADER_ROW_RANGE_END = 'Z1'
 
+/* The same 26 columns the header read offers for mapping, so no mapped column
+   can sit beyond what the rows read reaches. */
+const ROWS_RANGE_END = 'Z'
+
 /* The Picker speaks in callbacks and the attach screen is a sequence of steps,
    so the callbacks are turned into one promise here rather than in a component.
    A cancellation resolves and a failure rejects, because the screen treats them
@@ -63,5 +67,10 @@ export const createResponseSheetAccess = ({
       })
       return rows[0] ?? []
     },
+
+    readRows: async ({ spreadsheetId, sheetName }) =>
+      await clientFor(spreadsheetId).readRange({
+        range: `${toRangeTabName(sheetName)}!A1:${ROWS_RANGE_END}`,
+      }),
   }
 }

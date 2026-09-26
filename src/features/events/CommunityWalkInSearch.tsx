@@ -39,11 +39,11 @@ export const CommunityWalkInSearch = ({
         value={searchText}
       />
 
-      {/* The sheet is the thing this screen could be believed about, so the
-          sentence that would be a lie is the one spelled out. */}
+      {/* The search is real and the walk-in it adds is not written anywhere
+          yet, so the half that could be believed wrongly is the one spelled
+          out. */}
       <p className="text-xs font-semibold text-warning-ink">
-        These are invented sample members held in this browser. This search does not read your
-        Google Sheet.
+        This searches your Members tab. A walk-in added here is not saved to the Google Sheet yet.
       </p>
 
       {results.length > 0 && (

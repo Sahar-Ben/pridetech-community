@@ -1,13 +1,13 @@
 import { NoticeBanner } from '../../app/NoticeBanner'
 
-/* Half of this screen reads and writes the spreadsheet and half of it does
-   not, and the half that does not is the half somebody could stand at a door
+/* The events and their registrants are read from the sheets and the door is
+   not recorded anywhere, and the door is the half somebody could stand at
    believing. Saying which is which, once, above everything, is the only way
-   the events being real does not make the registrant list look real too. */
+   a real registrant list does not make the check-ins look real too. */
 export const EventsRegistryNotice = () => (
   <NoticeBanner
-    detail="Registrants, check-in and attendance are not built yet: no response sheet has been read, and nothing you tap at a door is recorded anywhere."
-    title="Events are read from and written to your spreadsheet. The people at them are not."
+    detail="Registrants are read from each event's response sheets. Check-in and attendance are not built yet: nothing you tap at a door is recorded anywhere."
+    title="Check-ins are not recorded yet."
     tone="warning"
   />
 )
