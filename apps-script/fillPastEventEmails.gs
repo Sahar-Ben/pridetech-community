@@ -16,10 +16,10 @@
    Fix a tab name here if yours differs; the log lists every tab if one is
    not found. */
 const EMAIL_FILL_SOURCES = [
-  { eventName: '1st Event', tabName: '1st Meetup' },
-  { eventName: '2nd Event', tabName: '2nd Meetup' },
-  { eventName: '3rd Event', tabName: '3rd Meetup' },
-  { eventName: '4th Event', tabName: '4th Meetup' },
+  { eventName: '1st Event', tabName: '1st Meetup (16.4.25)' },
+  { eventName: '2nd Event', tabName: '2nd Meetup (20.5.25)' },
+  { eventName: '3rd Event', tabName: '3rd Meetup (16.7.25)' },
+  { eventName: '4th Event', tabName: '4th Meetup (13.8.25)' },
 ]
 
 const EMAIL_FILL_NAME_HEADINGS = ['name', 'full name']
