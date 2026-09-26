@@ -45,6 +45,16 @@ export const EventRow = ({ event, attendanceText, onOpen, onEdit, onArchive }: E
     </div>
 
     <div className="flex shrink-0 items-center gap-2">
+      {/* The name above opens the event too, but it does not look like it
+          does until it is hovered, and a phone has no hover. */}
+      <button
+        aria-label={`Open ${event.name}`}
+        className={ROW_BUTTON_CLASSES}
+        onClick={() => onOpen(event)}
+        type="button"
+      >
+        Open
+      </button>
       <button
         aria-label={`Edit ${event.name}`}
         className={ROW_BUTTON_CLASSES}
