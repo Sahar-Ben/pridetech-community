@@ -567,3 +567,42 @@ describe('EventsSection, reading who registered', () => {
     expect(await registrantNames()).toEqual(['Avi Levi', 'Dana Sorkin'])
   })
 })
+
+describe('EventsSection, giving access to many sheets at once', () => {
+  it('should say how many sheets the app can now read', async () => {
+    const access = accessWithResponses({
+      pickSpreadsheets: vi.fn(
+        async () =>
+          await Promise.resolve([
+            { spreadsheetId: 'responses-1', name: 'Pride RSVP' },
+            { spreadsheetId: 'responses-2', name: 'GAGA RSVP' },
+          ]),
+      ),
+    })
+    renderSection({ sheet: buildSheet(readyTabs()), access })
+
+    await userEvent.click(await screen.findByRole('button', { name: /give access to event sheets/i }))
+
+    expect(await screen.findByText(/can now read the 2 sheets you picked/i)).toBeInTheDocument()
+  })
+
+  it('should read again an event that could not open its sheet before', async () => {
+    const readRows = vi
+      .fn()
+      .mockRejectedValueOnce(new SheetsRequestError({ range: 'A1:Z', status: 403, detail: 'denied' }))
+      .mockResolvedValue(RESPONSE_ROWS)
+    const access = accessWithResponses({ readRows })
+    renderSection({
+      sheet: buildSheet(readyTabs({ attachedRows: [ATTACHED_PANEL_SHEET] })),
+      access,
+    })
+    await openPridePanel()
+    await screen.findByRole('button', { name: /give access to "form responses 1"/i })
+    await userEvent.click(screen.getByRole('button', { name: /back to events/i }))
+
+    await userEvent.click(await screen.findByRole('button', { name: /give access to event sheets/i }))
+
+    expect(await screen.findByText(/2 registered/)).toBeInTheDocument()
+    expect(readRows).toHaveBeenCalledTimes(2)
+  })
+})

@@ -8,15 +8,10 @@ const SCRIPT_MISSING_MESSAGE =
 const PICKER_FAILED_MESSAGE = 'The Google Picker could not be opened.'
 const NO_FILE_IN_RESPONSE_MESSAGE = 'Google Picker returned no file. Try choosing it again.'
 
-const readPickedSpreadsheet = (
-  response: GooglePickerResponse,
-): PickedSpreadsheet | undefined => {
-  const [document] = response.docs ?? []
-  if (document?.id === undefined) {
-    return undefined
-  }
-  return { spreadsheetId: document.id, name: document.name }
-}
+const readPickedSpreadsheets = (response: GooglePickerResponse): readonly PickedSpreadsheet[] =>
+  (response.docs ?? []).flatMap((document) =>
+    document.id === undefined ? [] : [{ spreadsheetId: document.id, name: document.name }],
+  )
 
 export const createGoogleSpreadsheetPicker = ({
   apiKey,
@@ -25,7 +20,7 @@ export const createGoogleSpreadsheetPicker = ({
   apiKey: string
   appId: string
 }): PickSpreadsheet => {
-  return ({ accessToken, onPicked, onCancelled, onError }) => {
+  return ({ accessToken, title, allowMultiple, onPicked, onPickedAll, onCancelled, onError }) => {
     const gapi = window.gapi
     if (gapi === undefined) {
       onError(SCRIPT_MISSING_MESSAGE)
@@ -40,12 +35,16 @@ export const createGoogleSpreadsheetPicker = ({
         }
         const spreadsheetsView = new pickerApi.DocsView(pickerApi.ViewId.SPREADSHEETS)
         const builder = new pickerApi.PickerBuilder()
+        const multiselect = pickerApi.Feature?.MULTISELECT_ENABLED
+        if (allowMultiple === true && multiselect !== undefined) {
+          builder.enableFeature?.(multiselect)
+        }
         const picker = builder
           .addView(spreadsheetsView)
           .setOAuthToken(accessToken)
           .setDeveloperKey(apiKey)
           .setAppId(appId)
-          .setTitle(PICKER_TITLE)
+          .setTitle(title ?? PICKER_TITLE)
           .setCallback((response) => {
             /* The picker also reports 'loaded' and other lifecycle actions; only a
                pick or a cancel is an answer to the question we asked. */
@@ -56,12 +55,17 @@ export const createGoogleSpreadsheetPicker = ({
             if (response.action !== pickerApi.Action.PICKED) {
               return
             }
-            const spreadsheet = readPickedSpreadsheet(response)
-            if (spreadsheet === undefined) {
+            const spreadsheets = readPickedSpreadsheets(response)
+            const [first] = spreadsheets
+            if (first === undefined) {
               onError(NO_FILE_IN_RESPONSE_MESSAGE)
               return
             }
-            onPicked(spreadsheet)
+            if (allowMultiple === true && onPickedAll !== undefined) {
+              onPickedAll(spreadsheets)
+              return
+            }
+            onPicked(first)
           })
           .build()
         picker.setVisible(true)

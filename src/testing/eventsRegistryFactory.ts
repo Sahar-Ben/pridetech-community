@@ -25,6 +25,9 @@ export const createFakeResponseSheetAccess = (
   pickSpreadsheet: vi.fn(
     async () => await Promise.resolve({ spreadsheetId: 'responses-1', name: 'Responses' }),
   ),
+  pickSpreadsheets: vi.fn(
+    async () => await Promise.resolve([{ spreadsheetId: 'responses-1', name: 'Responses' }]),
+  ),
   readTabNames: vi.fn(async () => await Promise.resolve(['Form Responses 1'])),
   readHeaderRow: vi.fn(
     async () => await Promise.resolve(['Timestamp', 'Name', 'Email', 'Company']),

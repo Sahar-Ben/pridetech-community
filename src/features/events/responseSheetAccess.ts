@@ -13,6 +13,9 @@ export type PickedResponseSpreadsheet = {
 
 export type ResponseSheetAccess = {
   pickSpreadsheet: () => Promise<PickedResponseSpreadsheet | undefined>
+  /* Several at once, for handing this app every event's sheet in one visit to
+     the picker. Closing it without choosing answers with none. */
+  pickSpreadsheets: () => Promise<readonly PickedResponseSpreadsheet[]>
   readTabNames: (options: { spreadsheetId: string }) => Promise<readonly string[]>
   readHeaderRow: (options: {
     spreadsheetId: string

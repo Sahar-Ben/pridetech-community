@@ -172,6 +172,18 @@ export const EventsWorkspace = ({
     })
   }
 
+  /* Every event already read that could not open one of its sheets is read
+     again, since that sheet may be among the ones just picked. */
+  const giveSheetAccess = async (): Promise<number> => {
+    const picked = await responseSheetAccess.pickSpreadsheets()
+    registrantLoads.forEach((load, eventId) => {
+      if (load.read?.problems.some((problem) => problem.kind === 'no-access') === true) {
+        onReloadRegistrants(eventId)
+      }
+    })
+    return picked.length
+  }
+
   const openEvent =
     view.kind === 'list' || view.kind === 'add'
       ? undefined
@@ -241,6 +253,7 @@ export const EventsWorkspace = ({
       onAddEvent={() => setView({ kind: 'add' })}
       onArchiveEvent={archiveListedEvent}
       onEditEvent={(event) => setView({ kind: 'edit', eventId: event.id })}
+      onGiveSheetAccess={giveSheetAccess}
       onOpenEvent={(event) => openEventView({ kind: 'detail', eventId: event.id })}
       schedule={groupEventsForListing({ events, today })}
     />

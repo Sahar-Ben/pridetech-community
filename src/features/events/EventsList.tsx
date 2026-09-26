@@ -1,5 +1,6 @@
 import { EventListGroup } from './EventListGroup'
 import { EventsChangeNotice } from './EventsChangeNotice'
+import { GiveSheetAccessButton } from './GiveSheetAccessButton'
 import type { EventChange } from './eventChangeText'
 import { useAsyncAction } from './useAsyncAction'
 import { NoticeBanner } from '../../app/NoticeBanner'
@@ -21,6 +22,7 @@ type EventsListProps = {
   onOpenEvent: (event: CommunityEvent) => void
   onEditEvent: (event: CommunityEvent) => void
   onArchiveEvent: (event: CommunityEvent) => Promise<void>
+  onGiveSheetAccess: () => Promise<number>
 }
 
 export const EventsList = ({
@@ -31,6 +33,7 @@ export const EventsList = ({
   onOpenEvent,
   onEditEvent,
   onArchiveEvent,
+  onGiveSheetAccess,
 }: EventsListProps) => {
   const archiving = useAsyncAction({ fallbackMessage: ARCHIVE_FAILED_MESSAGE })
   const isEmpty = schedule.upcomingEvents.length === 0 && schedule.pastEvents.length === 0
@@ -43,7 +46,8 @@ export const EventsList = ({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex justify-end">
+      <div className="flex flex-wrap items-start justify-end gap-2">
+        <GiveSheetAccessButton onGiveAccess={onGiveSheetAccess} />
         <button className={ADD_BUTTON_CLASSES} onClick={onAddEvent} type="button">
           Add event
         </button>
