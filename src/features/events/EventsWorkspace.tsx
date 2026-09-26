@@ -1,9 +1,10 @@
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { CheckInScreen } from './CheckInScreen'
 import { EventDetail } from './EventDetail'
 import { EventForm } from './EventForm'
 import { EventsList } from './EventsList'
-import { addWalkInRegistrant, toggleRegistrantCheckIn } from './checkIn'
+import { applyAttendance } from './attendanceLog'
+import type { AttendanceStore } from './attendanceStore'
 import { summariseEventAttendance } from './eventAttendance'
 import {
   describeAttendanceForListing,
@@ -17,8 +18,8 @@ import type { CommunityEvent } from './communityEvent'
 import type { EventChange } from './eventChangeText'
 import type { EventRegistryWriter } from './eventRegistryWriter'
 import type { Member } from '../members/member'
-import type { Registrant } from './registrant'
 import type { ResponseSheetAccess } from './responseSheetAccess'
+import { useAttendance } from './useAttendance'
 import type { EventRegistrantsLoad } from './useEventRegistrants'
 import type { WalkInFields } from './walkInValidation'
 
@@ -39,6 +40,8 @@ type EventsWorkspaceProps = {
   today: string
   writer: EventRegistryWriter
   responseSheetAccess: ResponseSheetAccess
+  attendanceStore: AttendanceStore
+  onSessionExpired: () => void
 }
 
 /* The events themselves are never held here. Every change goes to the sheet
@@ -47,10 +50,10 @@ type EventsWorkspaceProps = {
    edit lands on somebody else's event.
 
    Registrants are read from the response sheets by the section and handed in
-   per event. The check-ins and walk-ins are held here, on top of them, and
-   they are the exception that has to be said out loud on screen: nothing
-   writes them anywhere yet. They are kept apart from what was read, so a
-   re-read of a sheet brings in new registrations without undoing a tap. */
+   per event. Who has arrived comes from the Attendance tab's log, laid over
+   them here, so a re-read of a response sheet brings in new registrations
+   without undoing anybody's check-in, and a tap is a line in the log rather
+   than an edit to anybody's registration. */
 export const EventsWorkspace = ({
   events,
   attachedSheets,
@@ -61,33 +64,30 @@ export const EventsWorkspace = ({
   today,
   writer,
   responseSheetAccess,
+  attendanceStore,
+  onSessionExpired,
 }: EventsWorkspaceProps) => {
-  const [checkInsAtDoor, setCheckInsAtDoor] = useState<ReadonlyMap<string, string | undefined>>(
-    new Map(),
-  )
-  const [walkIns, setWalkIns] = useState<readonly Registrant[]>([])
+  const attendance = useAttendance({ store: attendanceStore, onSessionExpired })
   const [change, setChange] = useState<EventChange | undefined>(undefined)
   const [view, setView] = useState<EventsView>({ kind: 'list' })
-  const nextWalkInNumber = useRef(1)
 
   const registrants = useMemo(
-    () => [
-      ...[...registrantLoads.values()].flatMap((load) =>
-        (load.read?.registrants ?? []).map((registrant) =>
-          checkInsAtDoor.has(registrant.id)
-            ? { ...registrant, checkedInAt: checkInsAtDoor.get(registrant.id) }
-            : registrant,
-        ),
+    () =>
+      [...registrantLoads].flatMap(([eventId, load]) =>
+        applyAttendance({
+          registrants: load.read?.registrants ?? [],
+          entries: attendance.entries,
+          eventId,
+        }),
       ),
-      ...walkIns,
-    ],
-    [checkInsAtDoor, registrantLoads, walkIns],
+    [attendance.entries, registrantLoads],
   )
 
   const openList = () => setView({ kind: 'list' })
 
   const openEventView = ({ kind, eventId }: { kind: 'detail' | 'check-in'; eventId: string }) => {
     onRequestRegistrants(eventId)
+    attendance.request()
     setView({ kind, eventId })
   }
 
@@ -150,36 +150,26 @@ export const EventsWorkspace = ({
     if (person === undefined) {
       return
     }
-    const checkedInAt = new Date().toISOString()
-    if (person.isWalkIn) {
-      setWalkIns((currentWalkIns) =>
-        toggleRegistrantCheckIn({ registrants: currentWalkIns, registrantId, checkedInAt }),
-      )
-      return
-    }
-    setCheckInsAtDoor((current) =>
-      new Map(current).set(
-        registrantId,
-        person.checkedInAt === undefined ? checkedInAt : undefined,
-      ),
-    )
+    attendance.record({
+      eventId: person.eventId,
+      email: person.email,
+      name: person.name,
+      status: person.checkedInAt === undefined ? 'attended' : 'undone',
+      at: new Date().toISOString(),
+    })
   }
 
+  /* A walk-in is a check-in of somebody on no response sheet. One whose email
+     is on a sheet after all is simply that registrant arriving. */
   const addWalkIn = ({ eventId, walkIn }: { eventId: string; walkIn: WalkInFields }) => {
-    const id = `walk-in-local-${nextWalkInNumber.current}`
-    nextWalkInNumber.current += 1
-    setWalkIns((currentWalkIns) =>
-      addWalkInRegistrant({
-        registrants: currentWalkIns,
-        walkIn: {
-          id,
-          eventId,
-          name: walkIn.name,
-          email: walkIn.email,
-          checkedInAt: new Date().toISOString(),
-        },
-      }),
-    )
+    const email = walkIn.email.trim()
+    attendance.record({
+      eventId,
+      email: email === '' ? undefined : email,
+      name: walkIn.name.trim(),
+      status: 'attended',
+      at: new Date().toISOString(),
+    })
   }
 
   const openEvent =
@@ -232,10 +222,12 @@ export const EventsWorkspace = ({
   if (openEvent !== undefined && view.kind === 'check-in') {
     return (
       <CheckInScreen
+        attendanceStatus={attendance}
         event={openEvent}
         members={members}
         onAddWalkIn={(walkIn) => addWalkIn({ eventId: openEvent.id, walkIn })}
         onBack={() => openEventView({ kind: 'detail', eventId: openEvent.id })}
+        onRefresh={attendance.reload}
         onToggleCheckIn={toggleCheckIn}
         registrants={selectEventRegistrants({ registrants, eventId: openEvent.id })}
       />

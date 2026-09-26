@@ -158,14 +158,14 @@ describe('CommunityWorkspace', () => {
     expect(screen.getByText(/no response sheet is attached yet/i)).toBeInTheDocument()
   })
 
-  it('should warn that the check-in screen records nothing', async () => {
+  it('should say the check-in screen saves to the Attendance tab', async () => {
     renderWorkspace()
 
     await userEvent.click(screen.getByRole('button', { name: 'Events' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Pride Month Panel' }))
     await userEvent.click(screen.getByRole('button', { name: /check in at the door/i }))
 
-    expect(screen.getByText(/not being recorded anywhere/i)).toBeInTheDocument()
+    expect(await screen.findByText(/saved to the attendance tab/i)).toBeInTheDocument()
   })
 
   it('should no longer call the whole Events section invented, now that its events are read', async () => {
@@ -177,13 +177,13 @@ describe('CommunityWorkspace', () => {
     expect(screen.queryByText(/every event below is invented/i)).not.toBeInTheDocument()
   })
 
-  it('should still say check-ins are not recorded anywhere', async () => {
+  it('should no longer warn that check-ins are not recorded', async () => {
     renderWorkspace()
 
     await userEvent.click(screen.getByRole('button', { name: 'Events' }))
     await screen.findByRole('heading', { name: 'Pride Month Panel' })
 
-    expect(screen.getByText(/check-ins are not recorded yet/i)).toBeInTheDocument()
+    expect(screen.queryByText(/not recorded/i)).not.toBeInTheDocument()
   })
 
   it('should not call the Members section sample data, now that it reads the sheet', async () => {

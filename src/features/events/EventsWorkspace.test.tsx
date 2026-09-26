@@ -5,6 +5,7 @@ import { buildEvent, buildRegistrant } from '../../testing/eventFactory'
 import {
   buildAttachedSheet,
   buildRegistrantLoads,
+  createFakeAttendanceStore,
   createFakeEventRegistryWriter,
   createFakeResponseSheetAccess,
 } from '../../testing/eventsRegistryFactory'
@@ -24,19 +25,23 @@ const renderEvents = ({
   registrants = [],
   attachedSheets = [],
   writer = createFakeEventRegistryWriter(),
+  attendanceStore = createFakeAttendanceStore(),
 }: {
   events: readonly CommunityEvent[]
   registrants?: readonly Registrant[]
   attachedSheets?: readonly AttachedResponseSheet[]
   writer?: EventRegistryWriter
+  attendanceStore?: ReturnType<typeof createFakeAttendanceStore>
 }) => {
   const onRequestRegistrants = vi.fn()
   render(
     <EventsWorkspace
+      attendanceStore={attendanceStore}
       attachedSheets={attachedSheets}
       events={events}
       members={[dana]}
       onReloadRegistrants={vi.fn()}
+      onSessionExpired={vi.fn()}
       onRequestRegistrants={onRequestRegistrants}
       registrantLoads={buildRegistrantLoads(registrants)}
       responseSheetAccess={createFakeResponseSheetAccess()}
@@ -44,7 +49,7 @@ const renderEvents = ({
       writer={writer}
     />,
   )
-  return { writer, onRequestRegistrants }
+  return { writer, onRequestRegistrants, attendanceStore }
 }
 
 const eventNamesIn = (groupName: RegExp): readonly (string | null)[] =>
@@ -518,7 +523,7 @@ describe('EventsWorkspace event detail', () => {
     expect(screen.getByText(/not built yet/i)).toBeInTheDocument()
   })
 
-  it('should say a check-in made here is not recorded anywhere', async () => {
+  it('should no longer warn that a check-in made here is lost', async () => {
     renderEvents({
       events: [pridePanel],
       registrants: [buildRegistrant({ id: 'r1', eventId: 'a', checkedInAt: '2026-06-24T18:00:00.000Z' })],
@@ -526,7 +531,7 @@ describe('EventsWorkspace event detail', () => {
 
     await openPridePanel()
 
-    expect(screen.getByText(/lost when the page reloads/i)).toBeInTheDocument()
+    expect(screen.queryByText(/lost when the page reloads/i)).not.toBeInTheDocument()
   })
 
   it('should go back to the listing', async () => {

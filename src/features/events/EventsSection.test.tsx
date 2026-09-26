@@ -84,7 +84,7 @@ describe('EventsSection, where the spreadsheet has never held an event', () => {
 
     expect(await screen.findByText(/one row per event/i)).toBeInTheDocument()
     expect(screen.getByText(/one row per response sheet attached to an event/i)).toBeInTheDocument()
-    expect(screen.getByText(/one row per person per event/i)).toBeInTheDocument()
+    expect(screen.getByText(/one row per check-in at the door/i)).toBeInTheDocument()
   })
 
   it('should suggest trying it on a copy first', async () => {
@@ -182,10 +182,26 @@ describe('EventsSection, where the registry is ready', () => {
     expect(await screen.findByRole('heading', { name: 'Pride Month Panel' })).toBeInTheDocument()
   })
 
-  it('should say plainly that check-ins at those events are not recorded yet', async () => {
-    renderSection({ sheet: buildSheet(readyTabs()) })
+  it('should write a check-in at the door to the Attendance tab', async () => {
+    const sheet = renderSection({
+      sheet: buildSheet(readyTabs({ attachedRows: [ATTACHED_PANEL_SHEET] })),
+      access: accessWithResponses(),
+    })
+    await userEvent.click(await screen.findByRole('button', { name: 'Pride Month Panel' }))
+    await screen.findByRole('table', { name: /registrants/i })
+    await userEvent.click(screen.getByRole('button', { name: /check in at the door/i }))
+    await screen.findByText(/every check-in is saved/i)
 
-    expect(await screen.findByText(/check-ins are not recorded yet/i)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /avi levi/i }))
+
+    await waitFor(() =>
+      expect(sheet.rowsOf(ATTENDANCE_TAB_NAME)[1]?.slice(0, 4)).toEqual([
+        'evt-1',
+        'avi@example.com',
+        'Avi Levi',
+        'Attended',
+      ]),
+    )
   })
 
   it('should report a row that carries no event id rather than drop it quietly', async () => {

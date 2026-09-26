@@ -1,7 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { LocalOnlySaveNotice } from '../members/LocalOnlySaveNotice'
+import { AttendanceSaveStatus, type AttendanceSaveState } from './AttendanceSaveStatus'
 import { CheckInCounter } from './CheckInCounter'
-import { CheckInDemoNotice } from './CheckInDemoNotice'
 import { CheckInTabPanel } from './CheckInTabPanel'
 import { CheckInTabs } from './CheckInTabs'
 import { DoorSearchField } from './DoorSearchField'
@@ -27,22 +26,31 @@ const WALK_IN_BUTTON_CLASSES = `w-full ${SECONDARY_BUTTON_CLASSES} ${TOUCH_BUTTO
 
 const BACK_BUTTON_CLASSES = `self-start ${SECONDARY_BUTTON_CLASSES} ${COMPACT_BUTTON_SIZE_CLASSES}`
 
+/* Often enough that a person checked in on the other phone at the door shows
+   here before they could be tapped twice, and rarely enough to leave plenty of
+   Google's per-minute allowance for the taps themselves. */
+const REFRESH_INTERVAL_MS = 30_000
+
 type CheckInScreenProps = {
+  attendanceStatus: AttendanceSaveState
   event: CommunityEvent
   registrants: readonly Registrant[]
   members: readonly Member[]
   onBack: () => void
   onToggleCheckIn: (registrantId: string) => void
   onAddWalkIn: (walkIn: WalkInFields) => void
+  onRefresh: () => void
 }
 
 export const CheckInScreen = ({
+  attendanceStatus,
   event,
   registrants,
   members,
   onBack,
   onToggleCheckIn,
   onAddWalkIn,
+  onRefresh,
 }: CheckInScreenProps) => {
   const tabsBaseId = useId()
   const tabPanelId = useId()
@@ -56,6 +64,13 @@ export const CheckInScreen = ({
   useEffect(() => {
     searchInputRef.current?.focus()
   }, [])
+
+  useEffect(() => {
+    const interval = setInterval(onRefresh, REFRESH_INTERVAL_MS)
+    return () => {
+      clearInterval(interval)
+    }
+  }, [onRefresh])
 
   const summary = summariseEventAttendance({ registrants, isClosedOut: false })
   const board = buildCheckInBoard({ registrants, searchText, activeTab })
@@ -118,9 +133,7 @@ export const CheckInScreen = ({
         Check in: {event.name}
       </h3>
 
-      <CheckInDemoNotice />
-
-      <div aria-live="polite">{lastAction !== undefined && <LocalOnlySaveNotice />}</div>
+      <AttendanceSaveStatus state={attendanceStatus} />
 
       {/* Sticky: at a door the search box, the two tabs and the running total
           are the screen. Everything above them is read once and scrolled away. */}

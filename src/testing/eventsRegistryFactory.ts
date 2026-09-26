@@ -1,4 +1,6 @@
 import { vi } from 'vitest'
+import type { AttendanceEntry } from '../features/events/attendanceLog'
+import type { AttendanceStore } from '../features/events/attendanceStore'
 import type { EventRegistryWriter } from '../features/events/eventRegistryWriter'
 import type { AttachedResponseSheet } from '../features/events/parseAttachedSheets'
 import type { Registrant } from '../features/events/registrant'
@@ -70,4 +72,20 @@ export const buildRegistrantLoads = (
       },
     ]),
   )
+}
+
+/* An Attendance tab held in memory: every append lands at once, and `log` is
+   what the tab would now hold. */
+export const createFakeAttendanceStore = (
+  initialEntries: readonly AttendanceEntry[] = [],
+): AttendanceStore & { log: AttendanceEntry[] } => {
+  const log = [...initialEntries]
+  return {
+    log,
+    readEntries: vi.fn(async () => await Promise.resolve([...log])),
+    appendEntry: vi.fn(async (entry: AttendanceEntry) => {
+      log.push(entry)
+      await Promise.resolve()
+    }),
+  }
 }
