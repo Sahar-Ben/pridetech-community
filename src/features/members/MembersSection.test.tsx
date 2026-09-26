@@ -6,6 +6,13 @@ import { MEMBERS_HEADER_ROW } from '../../testing/sheetsClientFactory'
 import { MembersSection } from './MembersSection'
 import { SheetsRequestError } from '../../sheets/sheetsRequestError'
 import type { SheetsClient } from '../../sheets/sheetsClient'
+import type { ResponseSheetAccess } from '../events/responseSheetAccess'
+import {
+  ATTENDANCE_HEADINGS,
+  EVENTS_HEADINGS,
+  EVENT_SHEETS_HEADINGS,
+} from '../events/eventRegistryTabs'
+import { createFakeResponseSheetAccess } from '../../testing/eventsRegistryFactory'
 
 const columnOf = (header: string): number => MEMBERS_HEADER_ROW.indexOf(header)
 
@@ -83,10 +90,19 @@ const membersSheet = (rows: readonly (readonly string[])[]): FakeSheet =>
 const renderSection = ({
   sheetsClient,
   onSessionExpired = vi.fn(),
+  access = createFakeResponseSheetAccess(),
 }: {
   sheetsClient: SheetsClient
   onSessionExpired?: () => void
-}) => render(<MembersSection sheetsClient={sheetsClient} onSessionExpired={onSessionExpired} />)
+  access?: ResponseSheetAccess
+}) =>
+  render(
+    <MembersSection
+      onSessionExpired={onSessionExpired}
+      responseSheetAccess={access}
+      sheetsClient={sheetsClient}
+    />,
+  )
 
 const listedNames = (): readonly string[] =>
   within(screen.getByRole('table', { name: /members/i }))
@@ -322,5 +338,81 @@ describe('MembersSection', () => {
       expect(savedRow({ sheet, rowNumber: 2 })[columnOf('City')]).toBe('Haifa')
     })
     expect(screen.queryByText(/in this browser only/i)).not.toBeInTheDocument()
+  })
+})
+
+describe('MembersSection event history', () => {
+  const eventRow = (id: string, name: string, date: string) => [
+    id, name, date, '', '', '', 'No', 'No', 'No', '',
+  ]
+  const sheetRow = (eventId: string, spreadsheetId: string) => [
+    eventId,
+    spreadsheetId,
+    'Form Responses 1',
+    'main',
+    '{"timestamp":"A","name":"B","email":"C","company":null,"jobTitle":null}',
+  ]
+  const communitySheet = (attendance: readonly (readonly string[])[] = []) =>
+    createFakeSheet({
+      tabs: {
+        Members: [MEMBERS_HEADER_ROW, DANA, TOMER],
+        Events: [
+          [...EVENTS_HEADINGS],
+          eventRow('evt-play', 'PrideTech Play', '2026-09-16'),
+          eventRow('evt-tiktok', 'TikTok', '2026-06-08'),
+        ],
+        'Event sheets': [
+          [...EVENT_SHEETS_HEADINGS],
+          sheetRow('evt-play', 'play-rsvp'),
+          sheetRow('evt-tiktok', 'tiktok-rsvp'),
+        ],
+        Attendance: [[...ATTENDANCE_HEADINGS], ...attendance],
+      },
+    })
+  const rsvpAccess = () =>
+    createFakeResponseSheetAccess({
+      readRows: vi.fn(async ({ spreadsheetId }: { spreadsheetId: string }) =>
+        await Promise.resolve(
+          spreadsheetId === 'play-rsvp'
+            ? [['Timestamp', 'Name', 'Email'], ['', 'Dana Sorkin', 'DANA@example.com']]
+            : [['Timestamp', 'Name', 'Email'], ['', 'Tomer Reznik', 'tomer@example.com']],
+        ),
+      ),
+    })
+
+  it('should list the events a member registered for', async () => {
+    renderSection({ sheetsClient: communitySheet().client, access: rsvpAccess() })
+
+    await openMember('Dana Sorkin')
+
+    const events = await screen.findByRole('list', { name: 'Events' })
+    expect(within(events).getByText('PrideTech Play')).toBeInTheDocument()
+    expect(within(events).queryByText('TikTok')).not.toBeInTheDocument()
+  })
+
+  it('should say attended for a member checked in at the door', async () => {
+    renderSection({
+      sheetsClient: communitySheet([
+        ['evt-play', 'dana@example.com', 'Dana Sorkin', 'Attended', '2026-09-16T18:00:00Z', ''],
+      ]).client,
+      access: rsvpAccess(),
+    })
+
+    await openMember('Dana Sorkin')
+
+    expect(await screen.findByText(/registered for 1 event · attended 1/i)).toBeInTheDocument()
+  })
+
+  it('should read the events once, however many members are opened', async () => {
+    const access = rsvpAccess()
+    renderSection({ sheetsClient: communitySheet().client, access })
+
+    await openMember('Dana Sorkin')
+    await screen.findByRole('list', { name: 'Events' })
+    await userEvent.click(screen.getByRole('button', { name: /back to members/i }))
+    await openMember('Tomer Reznik')
+    await screen.findByRole('list', { name: 'Events' })
+
+    expect(access.readRows).toHaveBeenCalledTimes(2)
   })
 })

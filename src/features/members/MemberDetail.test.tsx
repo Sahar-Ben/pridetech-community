@@ -13,7 +13,15 @@ const renderDetail = ({
   member: Member
   onClose?: () => void
   onSave?: (member: Member) => Promise<void>
-}) => render(<MemberDetail member={member} onClose={onClose} onSave={onSave} />)
+}) =>
+  render(
+    <MemberDetail
+      eventHistory={<p>Event history goes here</p>}
+      member={member}
+      onClose={onClose}
+      onSave={onSave}
+    />,
+  )
 
 const editButton = () => screen.getByRole('button', { name: /^edit$/i })
 const saveButton = () => screen.getByRole('button', { name: /^save$/i })
@@ -73,11 +81,10 @@ describe('MemberDetail', () => {
     expect(screen.queryByText('Removal reason')).not.toBeInTheDocument()
   })
 
-  it('should say the event history is not built yet instead of inventing attendance', () => {
+  it('should show the event history it is handed', () => {
     renderDetail({ member: buildMember({ name: 'Dana Sorkin' }) })
 
-    expect(screen.getByRole('heading', { name: /event history/i })).toBeInTheDocument()
-    expect(screen.getByText(/not built yet/i)).toBeInTheDocument()
+    expect(screen.getByText('Event history goes here')).toBeInTheDocument()
   })
 
   it('should take focus when it opens so a keyboard reaches it', () => {

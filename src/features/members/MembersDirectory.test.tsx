@@ -35,7 +35,13 @@ const formerMember = buildMember({
 const everyone = [dana, tomer, sparse, formerMember]
 
 const renderDirectory = (onSaveMember = vi.fn().mockResolvedValue(undefined)) => {
-  render(<MembersDirectory members={everyone} onSaveMember={onSaveMember} />)
+  render(
+    <MembersDirectory
+      members={everyone}
+      onSaveMember={onSaveMember}
+      renderEventHistory={(member) => <p>History of {member.name}</p>}
+    />,
+  )
   return onSaveMember
 }
 
