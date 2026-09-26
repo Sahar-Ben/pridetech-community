@@ -239,16 +239,17 @@ describe('EventsSection, where the registry is ready', () => {
     expect(sheet.rowsOf(EVENTS_TAB_NAME)[1]?.[0]).toMatch(/^evt-/)
   })
 
-  it('should take an archived event out of the listing without removing its row', async () => {
-    const sheet = renderSection({ sheet: buildSheet(readyTabs()) })
+  it('should leave an event archived in the sheet out of the listing', async () => {
+    const archived = [...PRIDE_PANEL_ROW]
+    archived[8] = 'Yes'
+    renderSection({
+      sheet: buildSheet(
+        readyTabs({ eventRows: [archived, ['evt-2', 'Board Games Night', '2026-10-01', '', 'Tel Aviv', '', 'No', 'No', 'No', '']] }),
+      ),
+    })
 
-    await userEvent.click(
-      await screen.findByRole('button', { name: 'Archive Pride Month Panel' }),
-    )
-
-    expect(await screen.findByText(/attendance is kept/i)).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Board Games Night' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Pride Month Panel' })).not.toBeInTheDocument()
-    expect(sheet.rowsOf(EVENTS_TAB_NAME)).toHaveLength(2)
   })
 })
 
@@ -426,15 +427,19 @@ const registrantNames = async (): Promise<readonly string[]> => {
 }
 
 describe('EventsSection, reading who registered', () => {
-  it('should not read any response sheet until an event is opened', async () => {
-    const access = accessWithResponses()
+  it('should show arrivals out of registrations for every event on the listing', async () => {
     renderSection({
-      sheet: buildSheet(readyTabs({ attachedRows: [ATTACHED_PANEL_SHEET] })),
-      access,
+      sheet: buildSheet({
+        ...readyTabs({ attachedRows: [ATTACHED_PANEL_SHEET] }),
+        [ATTENDANCE_TAB_NAME]: [
+          [...ATTENDANCE_HEADINGS],
+          ['evt-1', 'avi@example.com', 'Avi Levi', 'Attended', '2026-06-24T18:00:00Z', ''],
+        ],
+      }),
+      access: accessWithResponses(),
     })
 
-    expect(await screen.findByText(/open the event to read its registrants/i)).toBeInTheDocument()
-    expect(access.readRows).not.toHaveBeenCalled()
+    expect(await screen.findByText('1 of 2 arrived')).toBeInTheDocument()
   })
 
   it('should list the people on the attached response sheet when the event is opened', async () => {

@@ -12,38 +12,48 @@ const summary = (overrides: Partial<EventAttendanceSummary> = {}): EventAttendan
 })
 
 describe('describeAttendanceForListing', () => {
-  it('should lead with the registration count, which is what a row is scanned for', () => {
-    expect(describeAttendanceForListing(summary({ registeredCount: 120 }))).toBe('120 registered')
+  const listing = (
+    overrides: Partial<EventAttendanceSummary>,
+    { isPast = false, isClosedOut = false } = {},
+  ) => describeAttendanceForListing({ summary: summary(overrides), isPast, isClosedOut })
+
+  it('should lead with the registration count before anybody has arrived', () => {
+    expect(listing({ registeredCount: 120 })).toBe('120 registered')
   })
 
   it('should mention a waitlist only when there is one', () => {
-    expect(describeAttendanceForListing(summary({ registeredCount: 120 }))).not.toMatch(/waitlist/)
-    expect(describeAttendanceForListing(summary({ registeredCount: 120, waitlistCount: 24 }))).toMatch(
-      /24 on the waitlist/,
-    )
+    expect(listing({ registeredCount: 120 })).not.toMatch(/waitlist/)
+    expect(listing({ registeredCount: 120, waitlistCount: 24 })).toMatch(/24 on the waitlist/)
   })
 
-  it('should mention arrivals only once somebody has arrived', () => {
-    expect(describeAttendanceForListing(summary({ registeredCount: 10 }))).not.toMatch(/checked in/)
-    expect(describeAttendanceForListing(summary({ registeredCount: 10, checkedInCount: 4 }))).toMatch(
-      /4 checked in/,
+  it('should say how many arrived out of how many were expected once anybody has', () => {
+    expect(listing({ registeredCount: 40, expectedCount: 40, checkedInCount: 12 })).toBe(
+      '12 of 40 arrived',
     )
-  })
-
-  it('should say nothing about no-shows for an event that is still running', () => {
-    expect(describeAttendanceForListing(summary({ registeredCount: 10 }))).not.toMatch(/no-show/)
   })
 
   it('should report no-shows for a closed-out event', () => {
     expect(
-      describeAttendanceForListing(summary({ registeredCount: 10, checkedInCount: 7, noShowCount: 3 })),
-    ).toMatch(/3 no-shows/)
+      listing(
+        { registeredCount: 10, expectedCount: 10, checkedInCount: 7, noShowCount: 3 },
+        { isClosedOut: true },
+      ),
+    ).toBe('7 of 10 arrived \u{00b7} 3 no-shows')
   })
 
   it('should write a single no-show in the singular', () => {
     expect(
-      describeAttendanceForListing(summary({ registeredCount: 10, checkedInCount: 9, noShowCount: 1 })),
-    ).toMatch(/1 no-show\b/)
+      listing(
+        { registeredCount: 10, expectedCount: 10, checkedInCount: 9, noShowCount: 1 },
+        { isClosedOut: true },
+      ),
+    ).toMatch(/1 no-show$/)
+  })
+
+  it('should say a past event nobody was checked in at never had its attendance recorded', () => {
+    expect(listing({ registeredCount: 43 }, { isPast: true })).toBe(
+      '43 registered \u{00b7} attendance not recorded',
+    )
   })
 })
 

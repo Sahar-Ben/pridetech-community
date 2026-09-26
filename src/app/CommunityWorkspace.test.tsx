@@ -183,7 +183,7 @@ describe('CommunityWorkspace', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Events' }))
     await screen.findByRole('heading', { name: 'Pride Month Panel' })
 
-    expect(screen.queryByText(/not recorded/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/check-ins are not recorded/i)).not.toBeInTheDocument()
   })
 
   it('should not call the Members section sample data, now that it reads the sheet', async () => {

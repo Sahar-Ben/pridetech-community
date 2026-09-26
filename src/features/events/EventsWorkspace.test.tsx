@@ -112,13 +112,13 @@ describe('EventsWorkspace listing', () => {
     expect(screen.getByText(/2 registered/)).toHaveTextContent('1 on the waitlist')
   })
 
-  it('should not claim nobody registered for an event whose sheet has not been read yet', () => {
+  it('should say registrants are being read rather than claim nobody registered', () => {
     renderEvents({
       events: [buildEvent({ id: 'a' })],
       attachedSheets: [buildAttachedSheet({ eventId: 'a' })],
     })
 
-    expect(screen.getByText('Open the event to read its registrants')).toBeInTheDocument()
+    expect(screen.getByText(/reading registrants/i)).toBeInTheDocument()
     expect(screen.queryByText(/0 registered/)).not.toBeInTheDocument()
   })
 
@@ -128,58 +128,31 @@ describe('EventsWorkspace listing', () => {
     expect(screen.getByText('No response sheet attached yet')).toBeInTheDocument()
   })
 
+  it('should ask for every event\'s registrants for the listing', () => {
+    const { onRequestRegistrants } = renderEvents({
+      events: [buildEvent({ id: 'a' }), buildEvent({ id: 'b' })],
+    })
+
+    expect(onRequestRegistrants).toHaveBeenCalledWith('a')
+    expect(onRequestRegistrants).toHaveBeenCalledWith('b')
+  })
+
+  it('should mark an event closed out at the door', () => {
+    renderEvents({ events: [buildEvent({ id: 'a', name: 'Pride Panel', isClosedOut: true })] })
+
+    expect(screen.getByText('Closed')).toBeInTheDocument()
+  })
+
+  it('should offer no archive button on the listing', () => {
+    renderEvents({ events: [buildEvent({ id: 'a', name: 'Pride Panel' })] })
+
+    expect(screen.queryByRole('button', { name: /archive/i })).not.toBeInTheDocument()
+  })
+
   it('should tell the organiser when there are no events at all', () => {
     renderEvents({ events: [] })
 
     expect(screen.getByText(/no events yet/i)).toBeInTheDocument()
-  })
-})
-
-describe('EventsWorkspace archiving', () => {
-  const winterMixer = buildEvent({ id: 'a', name: 'Winter Mixer', date: '2026-12-02' })
-
-  it('should set the archived flag on the event rather than remove its row', async () => {
-    const { writer } = renderEvents({ events: [winterMixer] })
-
-    await userEvent.click(screen.getByRole('button', { name: 'Archive Winter Mixer' }))
-
-    expect(writer.saveEvent).toHaveBeenCalledWith({
-      originalEvent: winterMixer,
-      updatedEvent: { ...winterMixer, isArchived: true },
-    })
-  })
-
-  it('should say the attendance was kept, since archiving is not deleting', async () => {
-    renderEvents({
-      events: [buildEvent({ id: 'a', name: 'Winter Mixer' })],
-      registrants: [buildRegistrant({ id: 'r1', eventId: 'a' })],
-    })
-
-    await userEvent.click(screen.getByRole('button', { name: 'Archive Winter Mixer' }))
-
-    expect(await screen.findByText(/attendance is kept/i)).toBeInTheDocument()
-  })
-
-  it('should say the archive reached the Google Sheet', async () => {
-    renderEvents({ events: [winterMixer] })
-
-    await userEvent.click(screen.getByRole('button', { name: 'Archive Winter Mixer' }))
-
-    expect(await screen.findByText(/saved to the google sheet/i)).toBeInTheDocument()
-  })
-
-  it('should keep the event on screen with the reason when the sheet refused the archive', async () => {
-    renderEvents({
-      events: [winterMixer],
-      writer: createFakeEventRegistryWriter({
-        saveEvent: vi.fn().mockRejectedValue(new Error('Row 4 no longer holds Winter Mixer.')),
-      }),
-    })
-
-    await userEvent.click(screen.getByRole('button', { name: 'Archive Winter Mixer' }))
-
-    expect(await screen.findByText(/row 4 no longer holds winter mixer/i)).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Winter Mixer' })).toBeInTheDocument()
   })
 })
 
