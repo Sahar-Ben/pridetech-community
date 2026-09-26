@@ -199,15 +199,13 @@ const markDuplicates = (found) => {
   })
 }
 
-/* A pop-up in the spreadsheet when it is open, and the editor's Execution log
-   either way, since a run from the editor may have no spreadsheet to show it. */
+/* The editor's Execution log, and a notice in the corner of the spreadsheet.
+   Not a pop-up: a pop-up holds the run open until somebody clicks OK in the
+   spreadsheet, and a run started from the editor has nobody looking there, so
+   it sat until Google stopped it at six minutes. */
 const migrationNotice = (message) => {
   Logger.log(message)
-  try {
-    SpreadsheetApp.getUi().alert(message)
-  } catch (error) {
-    // No spreadsheet window to show it in; the log above has it.
-  }
+  SpreadsheetApp.getActiveSpreadsheet().toast(message, 'PrideTech migration', 30)
 }
 
 const readTabValues = (tabName) => {
