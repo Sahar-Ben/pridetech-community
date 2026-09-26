@@ -1,7 +1,54 @@
 # Apps Script
 
-Scripts that run inside Google, attached to the community spreadsheet. They are
+Scripts that run inside Google, attached to the community spreadsheet (the
+`PrideTech Dashboard`, which holds `Leads`, `Members` and `Events`). They are
 kept here so they are versioned; they are not part of the web app build.
+
+Both scripts can live in the same Apps Script project: in the editor, add each
+as its own file (**+ → Script**).
+
+## `createEventForms.gs`
+
+When you add an upcoming event in the app, within five minutes this:
+
+1. Creates a folder for it in the shared Events folder, named
+   `Event name d.m.yy` (e.g. `Moabet 14.10.26`).
+2. Creates the RSVP form in that folder, titled with the event name, with the
+   date, location and host in its description. Questions: Full Name, Email
+   (required, must be a valid address), Company, Job Title.
+3. Creates the response sheet in the same folder and links the form to it.
+4. Adds the sheet to the `Event sheets` tab with its columns already mapped, so
+   the app can read who registered.
+5. Puts the form's link in a `Form link` column at the end of the `Events` tab,
+   ready to send out.
+
+It skips past events, archived events, events that already have a form link,
+and events you attached a sheet to yourself.
+
+### Setup (once)
+
+1. Open the Dashboard spreadsheet → **Extensions → Apps Script**.
+2. Add a file named `createEventForms` and paste in `createEventForms.gs`.
+   Save.
+3. Pick `installEventFormTrigger` in the function dropdown and click **Run**.
+   Allow the permissions Google asks for (Drive, Forms, Sheets). This also
+   creates forms for any upcoming events already in the tab.
+4. Reload the spreadsheet: a **PrideTech** menu appears with **Create forms for
+   new events now**, for when you don't want to wait five minutes.
+
+Your account needs **edit** access to the Events folder, since the script
+creates folders there as you.
+
+### After a form is created
+
+- **Edit the form freely** in Google Forms: add questions, change the wording,
+  add a banner. Keep the first four questions in place and in order, since the
+  app reads Name, Email, Company and Job Title from those columns.
+- **The first time you open the event in the app**, it will say the response
+  sheet can't be opened and offer **Give access**. Pick the response sheet in
+  the event's folder once. The app can only read files you have picked
+  yourself, and the script made this one, not the app. Each other organiser
+  does the same once per event.
 
 ## `duplicateApplicationEmail.gs`
 
