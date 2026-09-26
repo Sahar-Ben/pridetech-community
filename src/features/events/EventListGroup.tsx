@@ -10,7 +10,6 @@ type EventListGroupProps = {
   emptyMessage: string
   onOpenEvent: (event: CommunityEvent) => void
   onEditEvent: (event: CommunityEvent) => void
-  onArchiveEvent: (event: CommunityEvent) => void
 }
 
 export const EventListGroup = ({
@@ -20,7 +19,6 @@ export const EventListGroup = ({
   emptyMessage,
   onOpenEvent,
   onEditEvent,
-  onArchiveEvent,
 }: EventListGroupProps) => {
   const headingId = useId()
 
@@ -41,7 +39,6 @@ export const EventListGroup = ({
               attendanceText={describeAttendance(event)}
               event={event}
               key={event.id}
-              onArchive={onArchiveEvent}
               onEdit={onEditEvent}
               onOpen={onOpenEvent}
             />

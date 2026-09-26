@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { CheckInScreen } from './CheckInScreen'
 import { EventDetail } from './EventDetail'
 import { EventForm } from './EventForm'
@@ -85,6 +85,21 @@ export const EventsWorkspace = ({
 
   const openList = () => setView({ kind: 'list' })
 
+  /* The listing shows arrivals out of registrations for every event, so on
+     the listing every event's sheets are asked for. Each is read once and
+     kept; asking again for one already read costs nothing. */
+  const isListing = view.kind === 'list'
+  const { request: requestAttendance } = attendance
+  useEffect(() => {
+    if (!isListing) {
+      return
+    }
+    requestAttendance()
+    events
+      .filter((event) => !event.isArchived)
+      .forEach((event) => onRequestRegistrants(event.id))
+  }, [events, isListing, onRequestRegistrants, requestAttendance])
+
   const openEventView = ({ kind, eventId }: { kind: 'detail' | 'check-in'; eventId: string }) => {
     onRequestRegistrants(eventId)
     attendance.request()
@@ -97,17 +112,14 @@ export const EventsWorkspace = ({
         hasAttachedSheet: attachedSheets.some((sheet) => sheet.eventId === event.id),
       })
     }
-    return describeAttendanceForListing(
-      summariseEventAttendance({
+    return describeAttendanceForListing({
+      summary: summariseEventAttendance({
         registrants: selectEventRegistrants({ registrants, eventId: event.id }),
         isClosedOut: event.isClosedOut,
       }),
-    )
-  }
-
-  const archiveListedEvent = async (event: CommunityEvent): Promise<void> => {
-    await writer.saveEvent({ originalEvent: event, updatedEvent: { ...event, isArchived: true } })
-    setChange({ kind: 'archived', eventName: event.name })
+      isPast: event.date < today,
+      isClosedOut: event.isClosedOut,
+    })
   }
 
   const saveNewEvent = async (draft: EventDraft): Promise<void> => {
@@ -251,7 +263,6 @@ export const EventsWorkspace = ({
       change={change}
       describeAttendance={describeListedAttendance}
       onAddEvent={() => setView({ kind: 'add' })}
-      onArchiveEvent={archiveListedEvent}
       onEditEvent={(event) => setView({ kind: 'edit', eventId: event.id })}
       onGiveSheetAccess={giveSheetAccess}
       onOpenEvent={(event) => openEventView({ kind: 'detail', eventId: event.id })}

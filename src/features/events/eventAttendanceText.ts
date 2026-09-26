@@ -7,15 +7,33 @@ const describeNoShows = (noShowCount: number): string =>
 
 const joinParts = (parts: readonly string[]): string => parts.join(SEPARATOR)
 
-/* A row is scanned, so it carries only what is true of that event: a waitlist
-   that exists, arrivals that have happened, no-shows that were concluded. */
-export const describeAttendanceForListing = (summary: EventAttendanceSummary): string =>
-  joinParts([
-    `${summary.registeredCount} registered`,
-    ...(summary.waitlistCount > 0 ? [`${summary.waitlistCount} on the waitlist`] : []),
-    ...(summary.checkedInCount > 0 ? [`${summary.checkedInCount} checked in`] : []),
-    ...(summary.noShowCount === undefined ? [] : [describeNoShows(summary.noShowCount)]),
-  ])
+/* A row is scanned for how many came out of how many were expected, so once
+   anybody has been checked in, or the door is closed, that leads. Before
+   that it is the registration count; and a past event nobody checked anyone
+   in at says its attendance was never recorded, rather than implying nobody
+   came. The count out of is `expectedCount`, which takes in anybody let in
+   off the waitlist or at the door, so it never reads "41 of 40". */
+export const describeAttendanceForListing = ({
+  summary,
+  isPast,
+  isClosedOut,
+}: {
+  summary: EventAttendanceSummary
+  isPast: boolean
+  isClosedOut: boolean
+}): string => {
+  const waitlist = summary.waitlistCount > 0 ? [`${summary.waitlistCount} on the waitlist`] : []
+  if (isClosedOut || summary.checkedInCount > 0) {
+    return joinParts([
+      `${summary.checkedInCount} of ${summary.expectedCount} arrived`,
+      ...(summary.noShowCount === undefined ? [] : [describeNoShows(summary.noShowCount)]),
+    ])
+  }
+  if (isPast) {
+    return joinParts([`${summary.registeredCount} registered`, 'attendance not recorded'])
+  }
+  return joinParts([`${summary.registeredCount} registered`, ...waitlist])
+}
 
 export const describeAttendanceForEvent = (summary: EventAttendanceSummary): string =>
   joinParts([
@@ -25,13 +43,11 @@ export const describeAttendanceForEvent = (summary: EventAttendanceSummary): str
     ...(summary.noShowCount === undefined ? [] : [describeNoShows(summary.noShowCount)]),
   ])
 
-/* An event nobody has opened yet has not had its sheets read, and "0
-   registered" would be a claim about a sheet the app has not looked at. */
+/* An event whose sheets have not been read yet, and "0 registered" would be a
+   claim about a sheet the app has not looked at. */
 export const describeUnreadRegistrantsForListing = ({
   hasAttachedSheet,
 }: {
   hasAttachedSheet: boolean
 }): string =>
-  hasAttachedSheet
-    ? 'Open the event to read its registrants'
-    : 'No response sheet attached yet'
+  hasAttachedSheet ? 'Reading registrants\u{2026}' : 'No response sheet attached yet'

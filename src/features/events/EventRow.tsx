@@ -18,13 +18,12 @@ type EventRowProps = {
   attendanceText: string
   onOpen: (event: CommunityEvent) => void
   onEdit: (event: CommunityEvent) => void
-  onArchive: (event: CommunityEvent) => void
 }
 
-export const EventRow = ({ event, attendanceText, onOpen, onEdit, onArchive }: EventRowProps) => (
+export const EventRow = ({ event, attendanceText, onOpen, onEdit }: EventRowProps) => (
   <li className={ROW_CLASSES}>
     <div className="min-w-0 space-y-1">
-      <h4 className="text-base font-bold">
+      <h4 className="flex flex-wrap items-center gap-2 text-base font-bold">
         <button
           className="rounded text-left text-ink underline-offset-2 hover:underline"
           onClick={() => onOpen(event)}
@@ -32,11 +31,21 @@ export const EventRow = ({ event, attendanceText, onOpen, onEdit, onArchive }: E
         >
           {event.name}
         </button>
+        {/* Closed out at the door: the attendance below is final. */}
+        {event.isClosedOut && (
+          <span className="rounded-full bg-neutral-surface px-2.5 py-0.5 text-xs font-bold text-neutral-ink ring-1 ring-neutral-ink/25 ring-inset">
+            Closed
+          </span>
+        )}
       </h4>
       <p className="text-sm text-ink">
         {formatEventDate(event.date)}
-        {SEPARATOR}
-        {event.location}
+        {event.location !== '' && (
+          <>
+            {SEPARATOR}
+            {event.location}
+          </>
+        )}
       </p>
       {event.host !== undefined && (
         <p className="text-xs text-ink-muted">Hosted by {event.host}</p>
@@ -62,14 +71,6 @@ export const EventRow = ({ event, attendanceText, onOpen, onEdit, onArchive }: E
         type="button"
       >
         Edit
-      </button>
-      <button
-        aria-label={`Archive ${event.name}`}
-        className={ROW_BUTTON_CLASSES}
-        onClick={() => onArchive(event)}
-        type="button"
-      >
-        Archive
       </button>
     </div>
   </li>
