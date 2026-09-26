@@ -81,6 +81,19 @@ their columns mapped. It needs `createEventForms.gs` in the same project.
 Imported events are marked with a note that attendance was not recorded, and
 they are never closed out, so nobody on them is counted as a no-show.
 
+## `fillPastEventEmails.gs`
+
+A one-off, after the migration. The first four RSVP forms never asked for an
+email, but the Dashboard's old per-event tabs (`1st Meetup` to `4th Meetup`)
+have them. This adds an **Email** column to each of those events' RSVP sheets,
+fills it by matching full names (falling back to the Members tab), and records
+the new column in `Event sheets` so the app matches those people by email.
+
+Add it as another file, then run **`fillPastEventEmails`**. It only fills empty
+cells, and the Execution log lists every name it could not match, so they can
+be typed in by hand. If a source tab is named differently, change it in
+`EMAIL_FILL_SOURCES` at the top.
+
 ## `duplicateApplicationEmail.gs`
 
 When someone submits the membership form with an email address the community
