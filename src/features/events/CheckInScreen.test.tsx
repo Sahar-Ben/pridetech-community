@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { buildEvent, buildRegistrant } from '../../testing/eventFactory'
 import {
   buildRegistrantLoads,
+  createFakeAttendanceStore,
   createFakeEventRegistryWriter,
   createFakeResponseSheetAccess,
 } from '../../testing/eventsRegistryFactory'
@@ -45,17 +46,21 @@ const openCheckIn = async ({
   event = autumnMixer,
   registrants = [ronit, nadav, tal],
   members = [dana, ori],
+  attendanceStore = createFakeAttendanceStore(),
 }: {
   event?: CommunityEvent
   registrants?: readonly Registrant[]
   members?: readonly Member[]
+  attendanceStore?: ReturnType<typeof createFakeAttendanceStore>
 } = {}) => {
   render(
     <EventsWorkspace
+      attendanceStore={attendanceStore}
       attachedSheets={[]}
       events={[event]}
       members={members}
       onReloadRegistrants={vi.fn()}
+      onSessionExpired={vi.fn()}
       onRequestRegistrants={vi.fn()}
       registrantLoads={buildRegistrantLoads(registrants)}
       responseSheetAccess={createFakeResponseSheetAccess()}
@@ -65,6 +70,8 @@ const openCheckIn = async ({
   )
   await userEvent.click(screen.getByRole('button', { name: 'Autumn Mixer' }))
   await userEvent.click(screen.getByRole('button', { name: /check in at the door/i }))
+  await screen.findByText(/every check-in is saved/i)
+  return { attendanceStore }
 }
 
 const doorList = () => within(screen.getByRole('tabpanel'))
@@ -432,13 +439,13 @@ describe('CheckInScreen adding a member who never filled the form', () => {
     expect(within(danaRow).getByText('Member')).toBeInTheDocument()
   })
 
-  it('should say the search reads the Members tab and the walk-in is not saved', async () => {
+  it('should say the search reads the Members tab and the walk-in is saved', async () => {
     await openCheckIn()
 
     await searchCommunity('dana')
 
     expect(screen.getByText(/searches your members tab/i)).toBeInTheDocument()
-    expect(screen.getByText(/not saved to the google sheet yet/i)).toBeInTheDocument()
+    expect(screen.getByText(/a walk-in added here is saved/i)).toBeInTheDocument()
   })
 })
 
@@ -631,29 +638,74 @@ describe('CheckInScreen members-only policy', () => {
   })
 })
 
-describe('CheckInScreen honesty', () => {
-  it('should warn that nothing is recorded before anybody is tapped in', async () => {
+describe('CheckInScreen saving to the Attendance tab', () => {
+  it('should say every check-in is saved to the Attendance tab', async () => {
     await openCheckIn()
 
-    expect(screen.getByText(/not being recorded anywhere/i)).toBeInTheDocument()
+    expect(screen.getByText(/every check-in is saved to the attendance tab/i)).toBeInTheDocument()
   })
 
-  it('should warn that a check-in stayed in this browser', async () => {
-    await openCheckIn()
+  it('should write a check-in to the Attendance tab', async () => {
+    const { attendanceStore } = await openCheckIn()
 
     await userEvent.click(nameOnDoor(/Ronit Amsalem/))
 
-    expect(screen.getByText(/saved in this browser only/i)).toBeInTheDocument()
+    expect(attendanceStore.log).toEqual([
+      expect.objectContaining({ name: 'Ronit Amsalem', status: 'attended' }),
+    ])
   })
 
-  it('should warn that a walk-in stayed in this browser', async () => {
-    await openCheckIn()
+  it('should write an undone check-in as a new row rather than remove the first', async () => {
+    const { attendanceStore } = await openCheckIn()
+
+    await userEvent.click(nameOnDoor(/Ronit Amsalem/))
+    await userEvent.click(arrivedTab())
+    await userEvent.click(nameOnDoor(/Ronit Amsalem/))
+
+    expect(attendanceStore.log.map((entry) => entry.status)).toEqual(['attended', 'undone'])
+  })
+
+  it('should write a walk-in to the Attendance tab', async () => {
+    const { attendanceStore } = await openCheckIn()
 
     await userEvent.click(screen.getByRole('button', { name: /add someone not on the list/i }))
     await userEvent.click(screen.getByLabelText(/not a pridetech member/i))
     await userEvent.type(screen.getByLabelText(/^name/i), 'Shai Lavon')
     await userEvent.click(screen.getByRole('button', { name: /^add walk-in$/i }))
 
-    expect(screen.getByText(/saved in this browser only/i)).toBeInTheDocument()
+    expect(attendanceStore.log).toEqual([
+      expect.objectContaining({ name: 'Shai Lavon', email: undefined, status: 'attended' }),
+    ])
+  })
+
+  it('should show somebody checked in on another phone as already arrived', async () => {
+    await openCheckIn({
+      attendanceStore: createFakeAttendanceStore([
+        {
+          eventId: autumnMixer.id,
+          email: ronit.email,
+          name: ronit.name,
+          status: 'attended',
+          at: '2026-09-24T18:00:00.000Z',
+        },
+      ]),
+    })
+
+    await userEvent.click(arrivedTab())
+
+    expect(nameOnDoor(/Ronit Amsalem/)).toBeInTheDocument()
+  })
+
+  it('should take a check-in back and say so when the sheet refuses it', async () => {
+    const attendanceStore = createFakeAttendanceStore()
+    attendanceStore.appendEntry = vi.fn(async () => {
+      throw new Error('Quota exceeded')
+    })
+    await openCheckIn({ attendanceStore })
+
+    await userEvent.click(nameOnDoor(/Ronit Amsalem/))
+
+    expect(await screen.findByText(/ronit amsalem was not saved/i)).toBeInTheDocument()
+    expect(within(pendingTab()).getByText('3')).toBeInTheDocument()
   })
 })

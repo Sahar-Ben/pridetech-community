@@ -39,11 +39,8 @@ export const CommunityWalkInSearch = ({
         value={searchText}
       />
 
-      {/* The search is real and the walk-in it adds is not written anywhere
-          yet, so the half that could be believed wrongly is the one spelled
-          out. */}
-      <p className="text-xs font-semibold text-warning-ink">
-        This searches your Members tab. A walk-in added here is not saved to the Google Sheet yet.
+      <p className="text-xs text-ink-muted">
+        This searches your Members tab. A walk-in added here is saved to the Attendance tab.
       </p>
 
       {results.length > 0 && (

@@ -119,13 +119,6 @@ export const EventDetail = ({
             : 'Open to non-members.'}
         </p>
         <p className="text-sm font-bold text-ink">{describeAttendanceForEvent(summary)}</p>
-        {/* The registrants are read from the response sheets and the check-ins
-            beside them are not written anywhere. That gap is the one somebody
-            could act on at a door. */}
-        <p className="text-xs font-semibold text-warning-ink">
-          Registrants are read from the response sheets. Check-ins are not recorded yet: one
-          made in this app is lost when the page reloads.
-        </p>
       </div>
 
       <div aria-live="polite">

@@ -84,7 +84,7 @@ export const REGISTRY_TAB_DEFINITIONS: readonly RegistryTabDefinition[] = [
     tabName: ATTENDANCE_TAB_NAME,
     headings: ATTENDANCE_HEADINGS,
     requiredHeadings: ATTENDANCE_HEADINGS,
-    holds: 'one row per person per event, once check-in is built',
+    holds: 'one row per check-in at the door, and per check-in undone',
   },
 ]
 
@@ -112,3 +112,7 @@ export const buildRegistryTabRange = buildTabRange
 
 export const buildEventRowRange = (rowNumber: number): string =>
   `${toRangeTabName(EVENTS_TAB_NAME)}!A${rowNumber}:${LAST_READ_COLUMN}${rowNumber}`
+
+export const ATTENDANCE_RANGE = buildTabRange(ATTENDANCE_TAB_NAME)
+
+export const ATTENDANCE_APPEND_RANGE = `${toRangeTabName(ATTENDANCE_TAB_NAME)}!A:${LAST_READ_COLUMN}`
