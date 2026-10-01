@@ -1,5 +1,6 @@
 import { splitInterests } from './applicantTags'
 import type { ReviewableApplication } from './leadsReview'
+import { toLinkedInHref } from '../../app/linkedInUrl'
 
 /* Newest is the order the review already holds, so it costs nothing; the
    others are re-sorts of whatever the filters left. */
@@ -74,7 +75,8 @@ const matchesLinkedIn = (application: ReviewableApplication, filter: LinkedInFil
   if (filter === 'any') {
     return true
   }
-  const hasProfile = application.lead.linkedIn !== undefined
+  /* A profile the card can actually open, so the filter and the button agree. */
+  const hasProfile = toLinkedInHref(application.lead.linkedIn) !== undefined
   return filter === 'with' ? hasProfile : !hasProfile
 }
 

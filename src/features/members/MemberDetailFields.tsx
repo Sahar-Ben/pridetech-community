@@ -1,5 +1,6 @@
 import { MemberDetailField } from './MemberDetailField'
 import { toRecordedMail, type Member } from './member'
+import { toLinkedInHref } from '../../app/linkedInUrl'
 
 type MemberDetailFieldsProps = {
   member: Member
@@ -26,13 +27,14 @@ export const MemberDetailFields = ({ member }: MemberDetailFieldsProps) => {
       />
       <MemberDetailField label="Phone" value={member.phone} />
       <MemberDetailField label="City" value={member.city} />
-      <MemberDetailField href={member.linkedIn} label="LinkedIn" value={member.linkedIn} />
+      <MemberDetailField
+        href={toLinkedInHref(member.linkedIn)}
+        label="LinkedIn"
+        value={member.linkedIn}
+      />
       <MemberDetailField label="Interests" value={member.interests} />
       <MemberDetailField label="Shirt size" value={member.shirtSize} />
-      <MemberDetailField
-        label="Informed for membership"
-        value={member.informedForMembership}
-      />
+      <MemberDetailField label="Informed for membership" value={member.informedForMembership} />
       <MemberDetailField label="Approved at" value={member.approvedAt} />
       <MemberDetailField label="Notes" value={member.notes} />
     </dl>

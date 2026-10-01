@@ -308,3 +308,20 @@ describe('MemberDetail', () => {
     expect(approvedAtField).toHaveAttribute('readonly')
   })
 })
+
+describe('MemberDetail, the LinkedIn link', () => {
+  it('should open LinkedIn for a profile saved without https://', () => {
+    renderDetail({ member: buildMember({ linkedIn: 'www.linkedin.com/in/dana-maman' }) })
+
+    const link = screen.getByRole('link', { name: 'www.linkedin.com/in/dana-maman' })
+    expect(link).toHaveAttribute('href', 'https://www.linkedin.com/in/dana-maman')
+    expect(link).toHaveAttribute('target', '_blank')
+  })
+
+  it('should show text that holds no address as text rather than a broken link', () => {
+    renderDetail({ member: buildMember({ linkedIn: 'will send later' }) })
+
+    expect(screen.getByText('will send later')).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'will send later' })).not.toBeInTheDocument()
+  })
+})
