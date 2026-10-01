@@ -21,7 +21,10 @@ export const DoorSearchField = ({ label, value, onChange, inputRef }: DoorSearch
 
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-xs font-bold tracking-wide text-ink-muted uppercase" htmlFor={inputId}>
+      <label
+        className="font-mono text-[11px] font-medium tracking-[0.12em] text-ink-muted uppercase"
+        htmlFor={inputId}
+      >
         {label}
       </label>
       <input

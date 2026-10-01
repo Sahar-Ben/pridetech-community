@@ -108,7 +108,7 @@ const listedNames = (): readonly string[] =>
   within(screen.getByRole('table', { name: /members/i }))
     .getAllByRole('row')
     .slice(1)
-    .map((row) => within(row).getAllByRole('cell')[0]?.textContent ?? '')
+    .map((row) => within(row).getAllByRole('button')[0]?.textContent ?? '')
 
 const waitForNames = async (names: readonly string[]): Promise<void> => {
   await waitFor(() => {
@@ -156,7 +156,7 @@ describe('MembersSection', () => {
     renderSection({ sheetsClient: membersSheet([DANA, FORMER]).client })
     await waitForNames(['Dana Sorkin'])
 
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: /status/i }), 'Ex-member')
+    await userEvent.click(within(screen.getByRole('group', { name: 'Status' })).getByRole('button', { name: 'Ex-members' }))
 
     await waitForNames(['Gaya Ronen'])
   })

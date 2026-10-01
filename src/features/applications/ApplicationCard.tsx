@@ -1,12 +1,13 @@
+import { ApplicantContactLinks } from './ApplicantContactLinks'
+import { summariseInterests } from './applicantTags'
 import { ApplicationDecisionControls } from './ApplicationDecisionControls'
 import type { ApprovalDecision, DeclineDecision, MaybeDecision } from './decision'
 import type { ReviewableApplication } from './leadsReview'
 import { PriorMemberNotice } from './PriorMemberNotice'
 import type { LeadDecisionState } from './useLeadDecisions'
+import { initialsOf } from '../../app/initials'
 import { NoticeBanner } from '../../app/NoticeBanner'
 import { WORK_PANEL_CLASSES } from '../../theme/surfaces'
-
-const FIELD_SEPARATOR = ' \u{00b7} '
 
 /* The surface the organiser reads 256 times in a sitting: one flat card, the
    applicant on top, the decision underneath at thumb size. */
@@ -26,16 +27,8 @@ const AVATAR_CLASSES = [
   'bg-nav-active font-mono text-sm font-bold text-chart-1',
 ].join(' ')
 
-const initialsOf = (name: string): string =>
-  name
-    .split(/\s+/)
-    .filter((word) => word !== '')
-    .slice(0, 2)
-    .map((word) => word[0]?.toUpperCase() ?? '')
-    .join('')
-
-const joinPresentFields = (fields: ReadonlyArray<string | undefined>): string =>
-  fields.filter((field) => field !== undefined).join(FIELD_SEPARATOR)
+const CHIP_CLASSES =
+  'rounded-full border border-card-strong-edge bg-surface px-2.5 py-1.5 text-xs text-neutral-ink'
 
 type ApplicationCardProps = {
   application: ReviewableApplication
@@ -56,53 +49,53 @@ export const ApplicationCard = ({
   const { lead, priorMember } = application
   const isNamedByEmail = lead.name === undefined
   const applicantName = lead.name ?? lead.email
-  const roleLine = joinPresentFields([lead.jobTitle, lead.company])
-  const contextLine = joinPresentFields([lead.city, lead.interests])
-  const contactLine = joinPresentFields([isNamedByEmail ? undefined : lead.email, lead.phone])
+  const roleLine = [lead.jobTitle, lead.company].filter((field) => field !== undefined).join(' · ')
+  const interests = summariseInterests(lead.interests)
 
   return (
     <li className={`${CARD_CLASSES} ${decisionState.isSaving ? SAVING_CLASSES : ''}`}>
-      <div className="flex flex-col gap-3.5">
-        <div className="flex min-w-0 items-start gap-3">
-          <span aria-hidden="true" className={AVATAR_CLASSES}>
-            {initialsOf(applicantName)}
-          </span>
-          <div className="min-w-0 space-y-1">
-            <h3 className="text-lg leading-snug font-semibold tracking-[-0.01em] break-words text-ink">
-              {applicantName}
-            </h3>
-            {roleLine !== '' && <p className="text-[13px] text-ink-muted">{roleLine}</p>}
-            {contextLine !== '' && <p className="text-xs text-ink-faint">{contextLine}</p>}
-            <p className="text-xs text-ink-muted">
-              {lead.linkedIn === undefined ? (
-                <span className="font-semibold text-warning-on-panel">No LinkedIn</span>
-              ) : (
-                <a
-                  className="font-semibold text-accent underline underline-offset-2"
-                  href={lead.linkedIn}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  LinkedIn
-                </a>
-              )}
-              {contactLine !== '' && (
-                <span>
-                  {FIELD_SEPARATOR}
-                  {contactLine}
-                </span>
-              )}
-            </p>
-          </div>
+      <div className="flex min-w-0 items-center gap-3">
+        <span aria-hidden="true" className={AVATAR_CLASSES}>
+          {initialsOf(applicantName)}
+        </span>
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <h3 className="text-lg leading-snug font-semibold tracking-[-0.01em] break-words text-ink">
+            {applicantName}
+          </h3>
+          {roleLine !== '' && <p className="text-[13px] text-ink-muted">{roleLine}</p>}
+          {/* The address is the key every duplicate and prior-member match is
+              made on, so it stays readable even with a button beside it. */}
+          {!isNamedByEmail && (
+            <p className="truncate font-mono text-[11px] text-ink-faint">{lead.email}</p>
+          )}
         </div>
-
-        <ApplicationDecisionControls
-          lead={lead}
-          isSaving={decisionState.isSaving}
-          onApprove={onApprove}
-          decisions={decisions}
-        />
       </div>
+
+      {(lead.city !== undefined || interests.shown.length > 0) && (
+        <ul aria-label="City and interests" className="flex flex-wrap gap-1.5">
+          {lead.city !== undefined && <li className={`${CHIP_CLASSES} text-ink`}>{lead.city}</li>}
+          {interests.shown.map((interest) => (
+            <li className={CHIP_CLASSES} key={interest}>
+              {interest}
+            </li>
+          ))}
+          {interests.hiddenCount > 0 && (
+            <li className={CHIP_CLASSES}>
+              <span aria-hidden="true">+{interests.hiddenCount}</span>
+              <span className="sr-only">and {interests.hiddenCount} more</span>
+            </li>
+          )}
+        </ul>
+      )}
+
+      <ApplicantContactLinks lead={lead} />
+
+      <ApplicationDecisionControls
+        lead={lead}
+        isSaving={decisionState.isSaving}
+        onApprove={onApprove}
+        decisions={decisions}
+      />
 
       {priorMember !== undefined && <PriorMemberNotice priorMember={priorMember} />}
 

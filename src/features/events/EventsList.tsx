@@ -32,7 +32,7 @@ export const EventsList = ({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-start justify-end gap-2">
+      <div className="flex flex-wrap items-start gap-2 sm:justify-end">
         <GiveSheetAccessButton onGiveAccess={onGiveSheetAccess} />
         <button className={ADD_BUTTON_CLASSES} onClick={onAddEvent} type="button">
           Add event

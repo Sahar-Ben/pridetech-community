@@ -266,10 +266,7 @@ describe('LeadsSection, approving an application', () => {
     renderSection({ sheetsClient: sheet.client })
     await screen.findByText('Noa Feldman')
 
-    await userEvent.selectOptions(
-      within(cardFor('Noa Feldman')).getByLabelText(/gender/i),
-      'F',
-    )
+    await userEvent.click(within(cardFor('Noa Feldman')).getByRole('radio', { name: 'F' }))
     await decide({ applicant: 'Noa Feldman', action: /approve/i })
 
     await waitFor(() => {

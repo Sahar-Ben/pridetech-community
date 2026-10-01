@@ -15,9 +15,11 @@ type LeadsDataQualityNotesProps = {
 
 const ROW_LIST_CLASSES = 'flex flex-col gap-1.5'
 
-/* On the gradient rather than on a card, so the ink is plain white: it is prose
-   about the sheet, not a row of the sheet. */
-const NOTES_CLASSES = 'flex flex-col gap-1.5 text-sm text-on-brand'
+/* Prose about the sheet rather than a row of it: the warnings are banners,
+   and the one line explaining where to fix them is the quiet footnote. */
+const NOTES_CLASSES = 'flex flex-col gap-2.5 text-sm text-ink-muted'
+
+const FOOTNOTE_CLASSES = 'flex items-start gap-2 text-xs text-ink-faint'
 
 /* These three facts live nowhere else: the Members tab shows who was approved,
    but nothing in the app or the sheet shows which rows the reviewer can never
@@ -40,12 +42,6 @@ export const LeadsDataQualityNotes = ({ review, spreadsheetId }: LeadsDataQualit
 
   return (
     <div className={NOTES_CLASSES}>
-      {hasRowsToOpen && (
-        <p>
-          Fixing any of these means editing the Leads tab in Google Sheets: this app writes a
-          decision into the Status column and nothing else, so reload once you have.
-        </p>
-      )}
 
       {leadsWithoutEmailNote !== undefined && (
         <SheetIssueDisclosure summary={leadsWithoutEmailNote}>
@@ -77,6 +73,30 @@ export const LeadsDataQualityNotes = ({ review, spreadsheetId }: LeadsDataQualit
         </SheetIssueDisclosure>
       )}
 
+      {hasRowsToOpen && (
+        <p className={FOOTNOTE_CLASSES}>
+          <svg
+            aria-hidden="true"
+            className="mt-0.5 shrink-0"
+            fill="none"
+            height="14"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+            width="14"
+          >
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 11v5" />
+            <path d="M12 8h.01" />
+          </svg>
+          <span>
+            Fixing any of these means editing the Leads tab in Google Sheets: this app writes a
+            decision into the Status column and nothing else, so reload once you have.
+          </span>
+        </p>
+      )}
     </div>
   )
 }

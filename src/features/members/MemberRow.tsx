@@ -3,8 +3,19 @@ import { EmptyValue } from './EmptyValue'
 import { MemberStatusBadge } from './MemberStatusBadge'
 import { MEMBER_COLUMN_CLASSES } from './memberColumns'
 import type { Member } from './member'
+import { initialsOf } from '../../app/initials'
 
 const CELL_CLASSES = 'px-3 py-2.5 align-middle text-ink'
+
+const AVATAR_CLASSES = [
+  'flex size-[42px] shrink-0 items-center justify-center rounded-[14px] bg-nav-active',
+  'font-mono text-[13px] font-bold text-chart-1',
+].join(' ')
+
+const GENDER_TAG_CLASSES = [
+  'inline-flex size-[30px] items-center justify-center rounded-[9px] border border-card-strong-edge',
+  'font-mono text-xs text-neutral-ink',
+].join(' ')
 
 /* The rule between rows carries more here than it did on white: 787 of them
    are scanned by eye, and on the deep panel the hairline resolves to a line at
@@ -14,8 +25,8 @@ const CELL_CLASSES = 'px-3 py-2.5 align-middle text-ink'
    which on this panel now means recessed-and-darker: a row lights up under the
    pointer, it does not sink. 1.35:1, against the white theme's 1.09:1. */
 const ROW_CLASSES = [
-  'cursor-pointer border-t border-hairline',
-  'transition-colors duration-150 ease-brand hover:bg-on-brand/10',
+  'cursor-pointer border-t border-hairline first:border-t-0',
+  'transition-colors duration-150 ease-brand hover:bg-surface',
 ].join(' ')
 
 /* The secondary columns are scan targets, not the record: the detail view
@@ -50,15 +61,29 @@ const MemberRowView = ({
       className={ROW_CLASSES}
       onClick={() => onOpen(member)}
     >
-      <td className={`${CELL_CLASSES} ${MEMBER_COLUMN_CLASSES.name} font-medium break-words`}>
-        <button
-          className="rounded text-left font-semibold text-ink underline-offset-2 hover:underline"
-          onClick={() => onOpen(member)}
-          ref={nameButtonRef}
-          type="button"
-        >
-          {member.name}
-        </button>
+      <td className={`${CELL_CLASSES} ${MEMBER_COLUMN_CLASSES.name} h-[68px] break-words`}>
+        <div className="flex min-w-0 items-center gap-3">
+          <span aria-hidden="true" className={AVATAR_CLASSES}>
+            {initialsOf(member.name)}
+          </span>
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <button
+              className="rounded text-left text-[15px] font-semibold text-ink underline-offset-2 hover:underline"
+              onClick={() => onOpen(member)}
+              ref={nameButtonRef}
+              type="button"
+            >
+              {member.name}
+            </button>
+            {/* The company column is hidden on a phone, so the company rides
+                under the name there, as the design has it. */}
+            {member.company !== undefined && (
+              <span aria-hidden="true" className="truncate text-xs text-ink-faint sm:hidden">
+                {member.company}
+              </span>
+            )}
+          </div>
+        </div>
       </td>
       <td className={`${SECONDARY_CELL_CLASSES} ${MEMBER_COLUMN_CLASSES.title}`}>
         {member.title ?? <EmptyValue />}
@@ -70,10 +95,14 @@ const MemberRowView = ({
         {member.city ?? <EmptyValue />}
       </td>
       <td className={`${CELL_CLASSES} ${MEMBER_COLUMN_CLASSES.gender} whitespace-nowrap`}>
-        {member.gender ?? <EmptyValue />}
+        {member.gender === undefined ? (
+          <EmptyValue />
+        ) : (
+          <span className={GENDER_TAG_CLASSES}>{member.gender}</span>
+        )}
       </td>
       <td className={`${CELL_CLASSES} ${MEMBER_COLUMN_CLASSES.status} whitespace-nowrap`}>
-        <MemberStatusBadge status={member.status} />
+        <MemberStatusBadge compact status={member.status} />
       </td>
     </tr>
   )

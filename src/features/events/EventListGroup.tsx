@@ -25,7 +25,7 @@ export const EventListGroup = ({
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-2">
       <h3
-        className="text-xs font-bold tracking-[0.18em] text-on-brand uppercase"
+        className="font-mono text-[11px] font-medium tracking-[0.14em] text-ink-muted uppercase"
         id={headingId}
       >
         {title}

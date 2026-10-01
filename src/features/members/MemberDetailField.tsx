@@ -13,7 +13,9 @@ export const MemberDetailField = ({ label, value, href }: MemberDetailFieldProps
 
   return (
     <div className="border-t border-hairline py-2.5">
-      <dt className="text-xs font-bold tracking-wide text-ink-muted uppercase">{label}</dt>
+      <dt className="font-mono text-[11px] font-medium tracking-[0.12em] text-ink-muted uppercase">
+        {label}
+      </dt>
       <dd className="mt-1 text-sm break-words text-ink">
         {value === undefined && <EmptyValue />}
         {value !== undefined && href === undefined && value}

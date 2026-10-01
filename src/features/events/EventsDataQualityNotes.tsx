@@ -48,7 +48,7 @@ export const EventsDataQualityNotes = ({
   }
 
   return (
-    <details className="rounded-[var(--radius-data)] border border-glass-edge bg-glass px-4 py-3 text-on-brand backdrop-blur-md">
+    <details className="rounded-[var(--radius-data)] border border-card-edge bg-card px-4 py-3 text-ink-muted">
       <summary className="cursor-pointer text-sm font-bold">{describeNoteCount(notes.length)}</summary>
       <ul className="mt-2 flex list-disc flex-col gap-1 pl-5 text-sm">
         {notes.map((note) => (

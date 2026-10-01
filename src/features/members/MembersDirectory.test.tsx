@@ -49,7 +49,7 @@ const listedNames = (): readonly string[] =>
   within(screen.getByRole('table', { name: /members/i }))
     .getAllByRole('row')
     .slice(1)
-    .map((row) => within(row).getAllByRole('cell')[0]?.textContent ?? '')
+    .map((row) => within(row).getAllByRole('button')[0]?.textContent ?? '')
 
 const searchBox = () => screen.getByRole('searchbox', { name: /search/i })
 
@@ -138,7 +138,7 @@ describe('MembersDirectory', () => {
   it('should list only ex-members when the status filter asks for them', async () => {
     renderDirectory()
 
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: /status/i }), 'Ex-member')
+    await userEvent.click(within(screen.getByRole('group', { name: 'Status' })).getByRole('button', { name: 'Ex-members' }))
 
     expect(listedNames()).toEqual(['Gaya Ronen'])
   })
@@ -146,7 +146,7 @@ describe('MembersDirectory', () => {
   it('should list everyone when the status filter is set to All', async () => {
     renderDirectory()
 
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: /status/i }), 'All')
+    await userEvent.click(within(screen.getByRole('group', { name: 'Status' })).getByRole('button', { name: 'All' }))
 
     expect(listedNames()).toEqual([
       'Dana Sorkin',
@@ -186,7 +186,7 @@ describe('MembersDirectory', () => {
   it('should show the removal reason when an ex-member detail is opened', async () => {
     renderDirectory()
 
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: /status/i }), 'Ex-member')
+    await userEvent.click(within(screen.getByRole('group', { name: 'Status' })).getByRole('button', { name: 'Ex-members' }))
     await userEvent.click(screen.getByRole('button', { name: 'Gaya Ronen' }))
 
     expect(screen.getByText('Moved abroad')).toBeInTheDocument()

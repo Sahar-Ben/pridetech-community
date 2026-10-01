@@ -82,7 +82,7 @@ export const MembersDirectory = ({
             <p className={EMPTY_STATE_CLASSES}>No members match this search.</p>
           ) : (
             <div className="flex flex-col gap-2">
-              <p className="text-sm font-semibold text-on-brand">
+              <p className="font-mono text-[11px] tracking-[0.12em] text-ink-muted uppercase">
                 Showing {visibleMembers.length} of {members.length}
               </p>
               <MembersTable

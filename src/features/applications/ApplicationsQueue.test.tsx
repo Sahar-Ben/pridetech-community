@@ -112,7 +112,7 @@ describe('ApplicationsQueue', () => {
     const onApprove = vi.fn()
     renderQueue({ decisions: stubDecisions({ approve: onApprove }) })
 
-    await userEvent.selectOptions(screen.getByLabelText(/gender/i), 'F')
+    await userEvent.click(screen.getByRole('radio', { name: 'F' }))
     await userEvent.click(screen.getByRole('button', { name: /approve/i }))
 
     expect(onApprove).toHaveBeenCalledWith({ lead: expect.objectContaining({ name: 'Dana Maman' }), gender: 'F' })
@@ -656,7 +656,7 @@ describe('ApplicationsQueue, filtering by status', () => {
     renderBothStates(stubDecisions({ approve: onApprove }))
 
     await showDeclined()
-    await userEvent.selectOptions(screen.getByLabelText(/gender/i), 'F')
+    await userEvent.click(screen.getByRole('radio', { name: 'F' }))
     await userEvent.click(screen.getByRole('button', { name: /approve/i }))
 
     expect(onApprove).toHaveBeenCalledWith({
@@ -822,7 +822,7 @@ describe('ApplicationsQueue, applications kept for later', () => {
     renderBothStates(stubDecisions({ approve: onApprove }))
 
     await showMaybe()
-    await userEvent.selectOptions(screen.getByLabelText(/gender/i), 'F')
+    await userEvent.click(screen.getByRole('radio', { name: 'F' }))
     await userEvent.click(screen.getByRole('button', { name: /approve/i }))
 
     expect(onApprove).toHaveBeenCalledWith({

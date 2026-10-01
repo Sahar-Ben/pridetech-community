@@ -22,7 +22,7 @@ export const DistributionTable = ({
   <table className="w-full border-collapse text-sm text-on-brand">
     <caption className="sr-only">{caption}</caption>
     <thead>
-      <tr className="border-b border-glass-edge text-xs font-semibold tracking-wide text-panel-deep-ink-muted">
+      <tr className="border-b border-glass-edge font-mono text-[11px] font-medium tracking-[0.08em] text-ink-muted">
         <th className={CELL_CLASSES} scope="col">
           {categoryHeading}
         </th>

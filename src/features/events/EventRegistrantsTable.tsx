@@ -5,7 +5,7 @@ import type { Member } from '../members/member'
 import type { Registrant } from './registrant'
 
 const HEADER_CELL_CLASSES =
-  'px-3 py-2.5 text-left text-xs font-bold tracking-wide text-ink-muted uppercase'
+  'px-3 py-2.5 text-left font-mono text-[11px] font-medium tracking-[0.12em] text-ink-muted uppercase'
 
 /* Nested inside the event detail panel, so it borrows that panel's surface
    rather than stacking a second shadow on top of it. */

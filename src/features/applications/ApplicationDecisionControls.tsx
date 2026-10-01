@@ -4,9 +4,26 @@ import { DecisionReasonDialog } from './DecisionReasonDialog'
 import type { ReasonedDecisionKind } from './decisionReason'
 import type { Lead } from './lead'
 import { PRIMARY_BUTTON_CLASSES, SECONDARY_BUTTON_CLASSES } from '../../theme/controls'
-import { FIELD_BORDER_CLASSES, FIELD_LABEL_CLASSES } from '../../theme/fields'
+import { FIELD_LABEL_CLASSES } from '../../theme/fields'
 
-const GENDER_SELECT_CLASSES = `h-11 w-[186px] rounded-[14px] border bg-surface-sunken px-3 text-base text-ink disabled:opacity-50 ${FIELD_BORDER_CLASSES}`
+/* Three native radios drawn as a segmented control: arrow keys move between
+   them and a screen reader hears "Gender, radio group" without any ARIA of
+   ours. The unknown option shows "?" and is named in full for assistive
+   technology. */
+const GENDER_GROUP_CLASSES =
+  'grid w-[186px] grid-cols-3 gap-1 rounded-[14px] border border-card-edge bg-surface-sunken p-[3px]'
+
+const GENDER_OPTION_CLASSES = [
+  'flex min-h-10 cursor-pointer items-center justify-center rounded-[11px] border border-transparent',
+  'font-mono text-sm text-neutral-ink transition-colors duration-150 ease-brand',
+  'has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[var(--ui-focus-ring)]',
+  'has-[:checked]:border-accent has-[:checked]:bg-nav-active has-[:checked]:text-accent',
+  /* "Not decided yet" is the one choice that should look unfinished, so it
+     wears the warning ink while it is the one picked. */
+  'has-[:checked[value=unknown]]:border-warning-edge has-[:checked[value=unknown]]:bg-warning-surface',
+  'has-[:checked[value=unknown]]:text-warning-ink',
+  'has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50',
+].join(' ')
 
 const DECISION_SIZE_CLASSES = 'min-h-[52px] px-2 text-[15px]'
 
@@ -24,14 +41,11 @@ const CONTROL_STACK_CLASSES = 'flex flex-col gap-3.5'
    natural reach on the left and is the first decision a keyboard reaches. */
 const DECISION_ROW_CLASSES = 'grid grid-cols-[1.5fr_1fr_1fr] gap-2'
 
-const GENDER_OPTIONS: ReadonlyArray<{ value: Gender; label: string }> = [
-  { value: 'unknown', label: 'Unknown' },
-  { value: 'F', label: 'F' },
-  { value: 'M', label: 'M' },
+const GENDER_OPTIONS: ReadonlyArray<{ value: Gender; shown: string; name: string }> = [
+  { value: 'F', shown: 'F', name: 'F' },
+  { value: 'M', shown: 'M', name: 'M' },
+  { value: 'unknown', shown: '?', name: 'Unknown' },
 ]
-
-const isGender = (value: string): value is Gender =>
-  GENDER_OPTIONS.some((option) => option.value === value)
 
 /* A handler is absent wherever its decision is not on offer, and the button
    goes with it: the list an application is being read from is the record of a
@@ -55,7 +69,8 @@ export const ApplicationDecisionControls = ({
   decisions,
 }: ApplicationDecisionControlsProps) => {
   const { onDecline, onMarkMaybe } = decisions
-  const genderSelectId = useId()
+  const genderGroupName = useId()
+  const genderLegendId = useId()
   const [gender, setGender] = useState<Gender>('unknown')
   const [pendingKind, setPendingKind] = useState<ReasonedDecisionKind | undefined>(undefined)
   const declineButtonRef = useRef<HTMLButtonElement>(null)
@@ -89,28 +104,31 @@ export const ApplicationDecisionControls = ({
 
   return (
     <div className={CONTROL_STACK_CLASSES}>
-      <div className="flex items-center justify-between gap-3">
-        <label className={FIELD_LABEL_CLASSES} htmlFor={genderSelectId}>
+      <div
+        aria-labelledby={genderLegendId}
+        className="flex items-center justify-between gap-3"
+        role="radiogroup"
+      >
+        <span className={FIELD_LABEL_CLASSES} id={genderLegendId}>
           Gender
-        </label>
-        <select
-          className={GENDER_SELECT_CLASSES}
-          disabled={isSaving}
-          id={genderSelectId}
-          value={gender}
-          onChange={(event) => {
-            const selected = event.target.value
-            if (isGender(selected)) {
-              setGender(selected)
-            }
-          }}
-        >
+        </span>
+        <div className={GENDER_GROUP_CLASSES}>
           {GENDER_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
+            <label className={GENDER_OPTION_CLASSES} key={option.value}>
+              <input
+                aria-label={option.name}
+                checked={gender === option.value}
+                className="sr-only"
+                disabled={isSaving}
+                name={genderGroupName}
+                onChange={() => setGender(option.value)}
+                type="radio"
+                value={option.value}
+              />
+              <span aria-hidden="true">{option.shown}</span>
+            </label>
           ))}
-        </select>
+        </div>
       </div>
       <div className={DECISION_ROW_CLASSES}>
         <button

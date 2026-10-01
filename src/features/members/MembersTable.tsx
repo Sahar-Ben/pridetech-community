@@ -5,13 +5,15 @@ import type { Member } from './member'
 import { WORK_PANEL_CLASSES } from '../../theme/surfaces'
 
 const HEADER_CELL_CLASSES =
-  'px-3 py-2.5 text-left text-xs font-bold tracking-wide text-ink-muted uppercase'
+  'px-3 py-2.5 text-left font-mono text-[11px] font-medium tracking-[0.12em] text-ink-muted uppercase'
 
-/* The one opaque thing on the panel, and it has to be: rows scroll underneath a
-   sticky header, and a translucent one would show them through the column
-   names. `--ui-panel-deep-solid` is the panel's own lightest composite written
-   out flat, which is also the surface every contrast here was measured on. */
-const HEADER_ROW_CLASSES = 'sticky top-0 bg-panel-deep-solid'
+/* Auto layout on a phone: the header is out of the flow there, and a fixed
+   table would size its columns from it and split the row three ways.
+
+   Opaque, because rows scroll underneath a sticky header. On a phone the rows
+   are a list, as the design draws them -- avatar, name, company, gender,
+   status dot -- and the column names are there for a screen reader only. */
+const HEADER_ROW_CLASSES = 'sticky top-0 bg-panel-deep-solid max-sm:sr-only'
 
 /* No `overflow` on the wrapper: any scroll container here, hidden or auto,
    would become the sticky header's scrollport and the header would stop
@@ -32,7 +34,7 @@ const MembersTableView = ({
   onFocusRestored,
 }: MembersTableProps) => (
   <div className={WRAPPER_CLASSES}>
-    <table aria-label="Members" className="w-full table-fixed text-sm">
+    <table aria-label="Members" className="w-full table-auto text-sm sm:table-fixed">
       <thead className={HEADER_ROW_CLASSES}>
         <tr>
           <th
