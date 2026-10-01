@@ -2,6 +2,7 @@ import { groupDuplicateApplicants, type DuplicateApplicant } from './duplicateAp
 import type { Lead, LeadStatus } from './lead'
 import { isActiveMemberMatch, type MemberEmailIndex, type MemberMatch } from './memberEmailIndex'
 import type { LeadWithoutEmail, ParsedLeads } from './parseLeads'
+import { toApplicationDate } from '../overview/applicationTimestamp'
 
 /* `priorMember` is the row an ex-member already has on the Members tab. It rides
    along with the application because approving one of these reactivates that row
@@ -37,8 +38,26 @@ export type LeadsReview = {
   counts: LeadsReviewCounts
 }
 
-const bySheetRow = <T extends { rowNumber: number }>(earlier: T, later: T): number =>
-  earlier.rowNumber - later.rowNumber
+/* Newest submission first. The Timestamp column decides across days, so a
+   sheet somebody re-sorted by hand still lists the latest applicant on top;
+   within one day -- the column is only read to the day -- the later row wins,
+   because the form appends every submission at the bottom. A row whose
+   timestamp cannot be read goes after every dated one rather than being
+   guessed into place. */
+const newestFirst = (first: Lead, second: Lead): number => {
+  const firstTime = toApplicationDate(first.timestamp)?.getTime()
+  const secondTime = toApplicationDate(second.timestamp)?.getTime()
+  if (firstTime !== secondTime) {
+    if (firstTime === undefined) {
+      return 1
+    }
+    if (secondTime === undefined) {
+      return -1
+    }
+    return secondTime - firstTime
+  }
+  return second.rowNumber - first.rowNumber
+}
 
 /* An active member row is not a prior record to bring back, so it is not offered
    as one: the notice promises a reactivation, and approving against an active row
@@ -81,7 +100,7 @@ export const buildLeadsReview = ({
       }
       return [{ lead, priorMember: member }]
     })
-    .toSorted((earlier, later) => bySheetRow(earlier.lead, later.lead))
+    .toSorted((first, second) => newestFirst(first.lead, second.lead))
 
   const alreadyMemberLeads = undecidedLeads
     .flatMap((lead) => {
@@ -91,7 +110,7 @@ export const buildLeadsReview = ({
       }
       return [{ lead, member }]
     })
-    .toSorted((earlier, later) => bySheetRow(earlier.lead, later.lead))
+    .toSorted((first, second) => newestFirst(first.lead, second.lead))
 
   /* Declined rows are the one decided state the app offers a way back from, so
      they are carried whole rather than counted: approving one of them is the
@@ -101,7 +120,7 @@ export const buildLeadsReview = ({
     parsedLeads.leads
       .filter((lead) => lead.status === status)
       .map((lead) => ({ lead, priorMember: priorMemberOf({ lead, memberEmailIndex }) }))
-      .toSorted((earlier, later) => bySheetRow(earlier.lead, later.lead))
+      .toSorted((first, second) => newestFirst(first.lead, second.lead))
 
   const declinedApplications = applicationsWithStatus('declined')
 

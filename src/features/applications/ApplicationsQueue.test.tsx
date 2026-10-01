@@ -97,7 +97,7 @@ describe('ApplicationsQueue', () => {
     expect(screen.queryByRole('heading', { level: 3, name: 'Already In' })).not.toBeInTheDocument()
   })
 
-  it('should show oldest applications first, since they have waited longest', () => {
+  it('should show the latest submission first', () => {
     renderQueue({
       leads: [
         pendingLead({ rowNumber: 9, name: 'Newer', email: 'newer@example.com' }),
@@ -105,7 +105,7 @@ describe('ApplicationsQueue', () => {
       ],
     })
     const names = screen.getAllByRole('heading', { level: 3 }).map((node) => node.textContent)
-    expect(names).toEqual(['Older', 'Newer'])
+    expect(names).toEqual(['Newer', 'Older'])
   })
 
   it('should approve with the gender chosen by the reviewer', async () => {

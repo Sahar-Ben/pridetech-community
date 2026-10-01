@@ -46,14 +46,16 @@ const lead = ({
   name = 'Dana Maman',
   email = 'dana@example.com',
   status = 'pending',
+  timestamp = '3/8/2025 14:25:20',
 }: {
   rowNumber?: number
   name?: string
   email?: string
   status?: LeadStatus
+  timestamp?: string
 } = {}): Lead => ({
   rowNumber,
-  timestamp: '3/8/2025 14:25:20',
+  timestamp,
   name,
   jobTitle: 'Founder',
   company: 'Salted Mind',
@@ -167,21 +169,49 @@ describe('buildLeadsReview', () => {
     expect(review.alreadyMemberLeads).toEqual([])
   })
 
-  it('should show the application that has waited longest first', () => {
+  it('should show the latest submission first', () => {
     const review = reviewOf({
       leads: [
-        lead({ rowNumber: 9, name: 'Newer', email: 'newer@example.com' }),
         lead({ rowNumber: 2, name: 'Older', email: 'older@example.com' }),
+        lead({ rowNumber: 9, name: 'Newer', email: 'newer@example.com' }),
       ],
     })
 
     expect(review.waitingApplications.map((waiting) => waiting.lead.name)).toEqual([
-      'Older',
       'Newer',
+      'Older',
     ])
   })
 
-  it('should list the excluded applications in sheet order too', () => {
+  it('should go by the submission date even when the sheet was re-sorted by hand', () => {
+    const review = reviewOf({
+      leads: [
+        lead({ rowNumber: 2, name: 'September', email: 'sep@example.com', timestamp: '9/28/2026 10:00:00' }),
+        lead({ rowNumber: 9, name: 'March', email: 'mar@example.com', timestamp: '3/8/2026 10:00:00' }),
+      ],
+    })
+
+    expect(review.waitingApplications.map((waiting) => waiting.lead.name)).toEqual([
+      'September',
+      'March',
+    ])
+  })
+
+  it('should put an application whose timestamp cannot be read after the dated ones', () => {
+    const review = reviewOf({
+      leads: [
+        lead({ rowNumber: 9, name: 'Undated', email: 'undated@example.com', timestamp: '' }),
+        lead({ rowNumber: 2, name: 'Dated', email: 'dated@example.com' }),
+      ],
+    })
+
+    expect(review.waitingApplications.map((waiting) => waiting.lead.name)).toEqual([
+      'Dated',
+      'Undated',
+    ])
+  })
+
+  it('should list the excluded applications newest first too', () => {
     const review = reviewOf({
       leads: [
         lead({ rowNumber: 9, name: 'Newer', email: 'newer@example.com' }),
@@ -194,8 +224,8 @@ describe('buildLeadsReview', () => {
     })
 
     expect(review.alreadyMemberLeads.map((excluded) => excluded.lead.name)).toEqual([
-      'Older',
       'Newer',
+      'Older',
     ])
   })
 
@@ -412,7 +442,7 @@ describe('buildLeadsReview, the applications that were declined', () => {
     expect(review.declinedApplications).toEqual([])
   })
 
-  it('should list the declined applications in sheet order, like the queue above them', () => {
+  it('should list the declined applications newest first, like the queue above them', () => {
     const review = reviewOf({
       leads: [
         lead({ rowNumber: 9, name: 'Newer', email: 'newer@example.com', status: 'declined' }),
@@ -421,8 +451,8 @@ describe('buildLeadsReview, the applications that were declined', () => {
     })
 
     expect(review.declinedApplications.map((declined) => declined.lead.name)).toEqual([
-      'Older',
       'Newer',
+      'Older',
     ])
   })
 
