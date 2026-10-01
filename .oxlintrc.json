@@ -12,7 +12,7 @@
   },
   "overrides": [
     {
-      "files": ["vite.config.ts"],
+      "files": ["vite.config.ts", "playwright.config.ts", "e2e/harness/vite.config.ts"],
       "rules": {
         "import/no-default-export": "off"
       }

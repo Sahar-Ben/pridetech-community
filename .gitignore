@@ -34,3 +34,8 @@ client_secret*.json
 *serviceAccount.json
 
 coverage/
+
+# Playwright
+test-results/
+playwright-report/
+blob-report/

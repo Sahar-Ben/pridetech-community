@@ -29,6 +29,19 @@ jobs:
       # cosmetic one.
       - run: npm run lint
       - run: npm test
+      # The browser suite: every screen at phone, small-phone and desktop width,
+      # on an in-memory sheet. A layout that slides sideways, a pinned bar that
+      # drifts, a link that leads nowhere -- each fails here, before the site.
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+          retention-days: 14
       - run: npm run build
         env:
           VITE_GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID }}

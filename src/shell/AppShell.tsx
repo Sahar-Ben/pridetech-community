@@ -19,9 +19,11 @@ const HEADER_CLASSES = 'z-30 shrink-0 bg-ground pt-[env(safe-area-inset-top)]'
    up the nav is a rail, so the content steps right by its width instead and
    the matching right padding at `xl` keeps the column centred on the page.
    `overscroll-contain` stops a fling at the end of the list from bouncing the
-   whole screen. */
+   whole screen. Sideways it never scrolls: nothing is meant to be wider than
+   the screen, and the e2e suite measures that, so this only stops a stray wide
+   value from turning the list into something that slides left and right. */
 const MAIN_CLASSES = [
-  'min-h-0 grow overflow-y-auto overscroll-contain',
+  'min-h-0 grow overflow-x-hidden overflow-y-auto overscroll-contain',
   'pb-[calc(8rem+env(safe-area-inset-bottom))] md:pb-12 md:pl-60 xl:pr-60',
 ].join(' ')
 

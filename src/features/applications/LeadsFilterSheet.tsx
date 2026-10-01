@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import {
   LEAD_SORT_LABELS,
   LEAD_SORTS,
@@ -102,7 +103,10 @@ export const LeadsFilterSheet = ({
 
   const update = (changes: Partial<LeadListQuery>) => onQueryChange({ ...query, ...changes })
 
-  return (
+  /* Rendered at the end of the page rather than where it is declared: a card
+     in the list is animated in, and an animated ancestor becomes the frame a
+     `fixed` element is placed in, which trapped the dialog inside one card. */
+  return createPortal(
     <>
       <button
         aria-label="Close filters"
@@ -258,6 +262,7 @@ export const LeadsFilterSheet = ({
           </button>
         </footer>
       </div>
-    </>
+    </>,
+    document.body,
   )
 }

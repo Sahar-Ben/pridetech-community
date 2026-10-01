@@ -16,7 +16,7 @@ export const MemberDetailField = ({ label, value, href }: MemberDetailFieldProps
       <dt className="font-mono text-[11px] font-medium tracking-[0.12em] text-ink-muted uppercase">
         {label}
       </dt>
-      <dd className="mt-1 text-sm break-words text-ink">
+      <dd className="mt-1 text-sm wrap-anywhere text-ink">
         {value === undefined && <EmptyValue />}
         {value !== undefined && href === undefined && value}
         {value !== undefined && href !== undefined && (

@@ -59,7 +59,7 @@ export const ApplicationCard = ({
           {initialsOf(applicantName)}
         </span>
         <div className="flex min-w-0 flex-col gap-0.5">
-          <h3 className="text-lg leading-snug font-semibold tracking-[-0.01em] break-words text-ink">
+          <h3 className="text-lg leading-snug font-semibold tracking-[-0.01em] wrap-anywhere text-ink">
             {applicantName}
           </h3>
           {roleLine !== '' && <p className="text-[13px] text-ink-muted">{roleLine}</p>}

@@ -1,0 +1,4 @@
+@import '../../src/index.css';
+/* The harness's vite root is `e2e/harness`, so Tailwind is pointed at the app
+   explicitly or it would generate classes for nothing. */
+@source '../../src';

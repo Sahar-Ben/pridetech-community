@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
+import { createPortal } from 'react-dom'
 import {
   isReasonChipSelected,
   REASON_CHIPS,
@@ -12,17 +13,26 @@ import {
   PRIMARY_BUTTON_CLASSES,
   SECONDARY_BUTTON_CLASSES,
 } from '../../theme/controls'
-import { FIELD_BORDER_CLASSES, FIELD_CONTROL_CLASSES, FIELD_LABEL_CLASSES } from '../../theme/fields'
+import {
+  FIELD_BORDER_CLASSES,
+  FIELD_CONTROL_CLASSES,
+  FIELD_LABEL_CLASSES,
+} from '../../theme/fields'
 import { WORK_PANEL_CLASSES } from '../../theme/surfaces'
 
 const CLOSE_GLYPH = '\u{00d7}'
 
+/* Above the bottom nav (z-40), which would otherwise cover the dialog's
+   buttons; anchored to the bottom on a phone, where the thumb is, and centred
+   from `sm` up. */
 const SCRIM_CLASSES = [
-  'fixed inset-0 z-40 flex items-center justify-center p-4',
-  'bg-[rgb(9_6_24/0.55)] backdrop-blur-sm animate-fade',
+  'fixed inset-0 z-50 flex items-end justify-center p-3 sm:items-center sm:p-4',
+  'bg-[rgb(4_3_10/0.7)] backdrop-blur-sm animate-fade',
 ].join(' ')
 
-const DIALOG_CLASSES = `${WORK_PANEL_CLASSES} flex w-full max-w-md flex-col gap-4 px-5 py-4`
+/* Never taller than the screen: on a short phone it scrolls inside itself
+   rather than pushing its buttons off the bottom. */
+const DIALOG_CLASSES = `${WORK_PANEL_CLASSES} flex max-h-[calc(100dvh-1.5rem)] w-full max-w-md flex-col gap-4 overflow-y-auto overscroll-contain rounded-[var(--radius-brand)] px-5 py-4`
 
 /* The same shape as the view chips above the queue, and deliberately not the
    same component: those are a tablist, where one choice is always current and
@@ -115,7 +125,10 @@ export const DecisionReasonDialog = ({
     }
   }
 
-  return (
+  /* Rendered at the end of the page rather than where it is declared: a card
+     in the list is animated in, and an animated ancestor becomes the frame a
+     `fixed` element is placed in, which trapped the dialog inside one card. */
+  return createPortal(
     <div className={SCRIM_CLASSES}>
       <div
         aria-labelledby={headingId}
@@ -198,6 +211,7 @@ export const DecisionReasonDialog = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

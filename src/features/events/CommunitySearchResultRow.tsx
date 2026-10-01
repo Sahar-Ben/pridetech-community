@@ -31,10 +31,10 @@ export const CommunitySearchResultRow = ({
   return (
     <div className={ROW_CLASSES}>
       <span className="flex min-w-0 flex-col gap-0.5">
-        <span className="text-base font-bold break-words text-ink">
+        <span className="text-base font-bold wrap-anywhere text-ink">
           {member.name}
         </span>
-        <span className="text-sm break-words text-ink-muted">{member.mail}</span>
+        <span className="text-sm wrap-anywhere text-ink-muted">{member.mail}</span>
         {member.status !== 'Active' && (
           <span>
             <MemberStatusBadge status={member.status} />

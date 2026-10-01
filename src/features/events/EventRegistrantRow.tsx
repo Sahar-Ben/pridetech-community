@@ -27,16 +27,16 @@ export const EventRegistrantRow = ({
 
   return (
     <tr className="border-t border-hairline">
-      <td className={`${CELL_CLASSES} ${REGISTRANT_COLUMN_CLASSES.name} break-words`}>
+      <td className={`${CELL_CLASSES} ${REGISTRANT_COLUMN_CLASSES.name} wrap-anywhere`}>
         <span className="font-semibold text-ink">{registrant.name}</span>
         {registrant.isWalkIn && (
           <span className="ml-1 text-xs text-ink-muted">(walk-in)</span>
         )}
       </td>
-      <td className={`${CELL_CLASSES} ${REGISTRANT_COLUMN_CLASSES.email} break-words`}>
+      <td className={`${CELL_CLASSES} ${REGISTRANT_COLUMN_CLASSES.email} wrap-anywhere`}>
         {registrant.email ?? <EmptyValue />}
       </td>
-      <td className={`${CELL_CLASSES} ${REGISTRANT_COLUMN_CLASSES.company} break-words`}>
+      <td className={`${CELL_CLASSES} ${REGISTRANT_COLUMN_CLASSES.company} wrap-anywhere`}>
         {registrant.company ?? <EmptyValue />}
       </td>
       <td className={`${CELL_CLASSES} ${REGISTRANT_COLUMN_CLASSES.link} text-xs`}>

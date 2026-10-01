@@ -61,7 +61,7 @@ const MemberRowView = ({
       className={ROW_CLASSES}
       onClick={() => onOpen(member)}
     >
-      <td className={`${CELL_CLASSES} ${MEMBER_COLUMN_CLASSES.name} h-[68px] break-words`}>
+      <td className={`${CELL_CLASSES} ${MEMBER_COLUMN_CLASSES.name} h-[68px] wrap-anywhere`}>
         <div className="flex min-w-0 items-center gap-3">
           <span aria-hidden="true" className={AVATAR_CLASSES}>
             {initialsOf(member.name)}
@@ -78,7 +78,10 @@ const MemberRowView = ({
             {/* The company column is hidden on a phone, so the company rides
                 under the name there, as the design has it. */}
             {member.company !== undefined && (
-              <span aria-hidden="true" className="truncate text-xs text-ink-faint sm:hidden">
+              /* Clamped rather than truncated: `truncate` never wraps, and in
+                 the phone's auto-width table a long company would set the
+                 width of the whole table. */
+              <span aria-hidden="true" className="line-clamp-1 text-xs text-ink-faint sm:hidden">
                 {member.company}
               </span>
             )}

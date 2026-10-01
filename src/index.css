@@ -239,6 +239,13 @@
     color: var(--ui-on-brand);
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
+    /* Everything on screen is text people typed into a form, and some of it
+       has no spaces: a pasted URL as a job title, a 60-letter name. Without
+       this one such word widens its card, its list and then the whole screen,
+       which on a phone becomes a page that slides sideways. `anywhere` breaks
+       only a word that cannot fit on a line of its own, so ordinary text
+       wraps exactly as before. */
+    overflow-wrap: anywhere;
   }
 
   /* One ring for the whole app: white, inside a violet halo, so it reads on

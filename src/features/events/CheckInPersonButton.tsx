@@ -53,10 +53,10 @@ export const CheckInPersonButton = ({
       type="button"
     >
       <span className="flex min-w-0 flex-col gap-1">
-        <span className="text-lg leading-tight font-bold break-words text-ink">
+        <span className="text-lg leading-tight font-bold wrap-anywhere text-ink">
           {registrant.name}
         </span>
-        <span className="text-sm break-words text-ink-muted">
+        <span className="text-sm wrap-anywhere text-ink-muted">
           {registrant.email ?? 'No email on this sheet'}
         </span>
         <span className="flex flex-wrap gap-1.5">
