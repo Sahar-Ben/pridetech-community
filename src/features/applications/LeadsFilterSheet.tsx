@@ -94,13 +94,8 @@ export const LeadsFilterSheet = ({
         onClose()
       }
     }
-    /* The page behind does not scroll while the sheet is up, or a swipe on
-       the sheet's edge would move the list instead of the sheet. */
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
     document.addEventListener('keydown', closeOnEscape)
     return () => {
-      document.body.style.overflow = previousOverflow
       document.removeEventListener('keydown', closeOnEscape)
     }
   }, [onClose])

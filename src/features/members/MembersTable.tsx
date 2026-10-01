@@ -17,7 +17,7 @@ const HEADER_ROW_CLASSES = 'sticky top-0 bg-panel-deep-solid max-sm:sr-only'
 
 /* No `overflow` on the wrapper: any scroll container here, hidden or auto,
    would become the sticky header's scrollport and the header would stop
-   following the page. Narrow viewports drop columns instead of scrolling. */
+   following the list. Narrow viewports drop columns instead of scrolling. */
 const WRAPPER_CLASSES = WORK_PANEL_CLASSES
 
 type MembersTableProps = {

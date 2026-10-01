@@ -139,3 +139,29 @@ describe('AppShell, the account menu', () => {
     expect(screen.getByRole('button', { name: 'Change spreadsheet' })).toBeInTheDocument()
   })
 })
+
+describe('AppShell, scrolling', () => {
+  it('should scroll the content area rather than the page, so the header and nav cannot be left out of place', () => {
+    renderShell()
+
+    expect(screen.getByRole('main')).toHaveClass('overflow-y-auto')
+  })
+
+  it('should open a newly chosen section at its top', () => {
+    const { rerender } = render(
+      <AppShell account={account()} activeSection="leads" onSelectSection={vi.fn()}>
+        <p>Leads content</p>
+      </AppShell>,
+    )
+    const main = screen.getAllByRole('main').at(-1) as HTMLElement
+    main.scrollTop = 900
+
+    rerender(
+      <AppShell account={account()} activeSection="members" onSelectSection={vi.fn()}>
+        <p>Members content</p>
+      </AppShell>,
+    )
+
+    expect(main.scrollTop).toBe(0)
+  })
+})
