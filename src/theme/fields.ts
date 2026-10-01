@@ -1,9 +1,10 @@
-export const FIELD_LABEL_CLASSES = 'text-xs font-semibold tracking-wide text-ink-muted'
+export const FIELD_LABEL_CLASSES =
+  'font-mono text-[11px] font-medium tracking-[0.12em] text-ink-muted uppercase'
 
 /* The border colour is kept apart from the rest so an invalid field replaces it
    instead of stacking a second border-colour utility over it. */
 export const FIELD_CONTROL_CLASSES = [
-  'w-full rounded-xl border bg-surface px-3 py-2 text-sm text-ink',
+  'w-full rounded-2xl border bg-surface-sunken px-4 py-2.5 text-base text-ink',
   'transition-[border-color,box-shadow] duration-150 ease-brand',
 ].join(' ')
 
@@ -19,7 +20,7 @@ export const INVALID_FIELD_BORDER_CLASSES =
   'border-danger-on-panel focus:border-danger-on-panel'
 
 export const READ_ONLY_FIELD_CONTROL_CLASSES =
-  'w-full rounded-xl border border-hairline bg-surface-sunken px-3 py-2 text-sm text-ink-muted'
+  'w-full rounded-2xl border border-hairline bg-ground px-4 py-2.5 text-base text-ink-muted'
 
 /* `danger-on-panel` rather than `danger-ink`: this sentence is written straight
    onto whatever panel the field is on, and the deep panel re-points it. */

@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { WorkspaceHeader } from './WorkspaceHeader'
 import { WorkspaceSection } from './WorkspaceSection'
 import type { ResponseSheetAccess } from '../features/events/responseSheetAccess'
 import type { SheetsClient } from '../sheets/sheetsClient'
@@ -32,7 +31,6 @@ export const CommunityWorkspace = ({
       activeSection={activeSection}
       onSelectSection={setActiveSection}
     >
-      <WorkspaceHeader />
       <WorkspaceSection
         onSessionExpired={onSessionExpired}
         responseSheetAccess={responseSheetAccess}

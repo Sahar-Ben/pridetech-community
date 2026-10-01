@@ -9,31 +9,27 @@ import {
 import type { LeadsReviewCounts } from './leadsReview'
 import { WORK_PANEL_CLASSES } from '../../theme/surfaces'
 
-/* The panel is what lets these follow the cards below them off white. A bare
-   row of chips on the gradient would be the only pale slab left on the screen,
-   and their borders could not have cleared 3:1 against both their own fill and
-   the gradient's lightest point. */
-const BAR_CLASSES = `${WORK_PANEL_CLASSES} flex flex-wrap gap-2 px-3 py-2.5`
+/* A segmented control: three equal cells in one card, the chosen one filled
+   with the accent. */
+const BAR_CLASSES = `${WORK_PANEL_CLASSES} grid grid-cols-3 gap-1 rounded-[18px] p-1`
 
 const CHIP_CLASSES = [
-  'flex items-center gap-2 rounded-full border px-3.5 py-1.5',
+  'flex min-h-[46px] items-center justify-center gap-1.5 rounded-[14px] border px-1',
   'text-sm font-semibold transition-colors duration-150 ease-brand',
 ].join(' ')
 
 const SELECTED_CHIP_CLASSES = 'border-accent-solid bg-accent-solid text-on-accent'
 
-const UNSELECTED_CHIP_CLASSES = 'border-edge bg-surface text-ink hover:bg-surface-sunken'
+const UNSELECTED_CHIP_CLASSES =
+  'border-transparent bg-transparent text-neutral-ink hover:bg-surface'
 
-/* The count pill is re-inked per state rather than styled once. Measured: one
-   pill style for both leaves the selected chip's count at 1.68:1, because the
-   panel points `surface-raised` and `ink` at a translucent white on a dark
-   panel and the selected chip is a light accent fill. Each state carries the
-   ink its own fill can hold. */
-const COUNT_CLASSES = 'rounded-full px-2 py-0.5 text-xs font-bold ring-1 ring-inset'
+/* The count is re-inked per state: dark on the accent fill, faint grey on the
+   card (5.3:1). */
+const COUNT_CLASSES = 'rounded-full px-1.5 py-0.5 font-mono text-[11px] font-medium'
 
-const SELECTED_COUNT_CLASSES = 'bg-on-accent/15 text-on-accent ring-on-accent/25'
+const SELECTED_COUNT_CLASSES = 'bg-on-accent/15 text-on-accent'
 
-const UNSELECTED_COUNT_CLASSES = 'bg-surface-raised text-ink ring-edge/60'
+const UNSELECTED_COUNT_CLASSES = 'text-ink-faint'
 
 type LeadsFilterChipsProps = {
   baseId: string

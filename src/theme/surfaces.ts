@@ -31,15 +31,13 @@ export const CHART_PANEL_CLASSES = 'chart-panel'
 export const WORK_PANEL_CLASSES = 'work-panel'
 
 export const SHELL_SECTION_TITLE_CLASSES =
-  'font-display text-2xl font-light tracking-tight text-on-brand'
+  'm-0 text-[30px] leading-tight font-semibold tracking-[-0.03em] text-on-brand'
 
 export const SHELL_HERO_TITLE_CLASSES =
-  'font-display text-4xl leading-tight font-light tracking-tight text-on-brand'
+  'text-4xl leading-tight font-semibold tracking-[-0.03em] text-on-brand'
 
-/* Source Sans 3, not Sulphur Point, even at 30px. A record title is somebody's
-   name or an event's name read off the sheet: display type would put the one
-   value on the screen that has to be right into a light geometric face with a
-   Latin-only character set. */
+/* A record title is somebody's name or an event's name read off the sheet, so
+   it is set in the body face at a weight that reads, not as display type. */
 export const RECORD_TITLE_CLASSES = 'text-3xl font-bold tracking-tight text-ink'
 
 export const NOTICE_SURFACE_CLASSES = {
@@ -49,6 +47,6 @@ export const NOTICE_SURFACE_CLASSES = {
 } as const
 
 export const EMPTY_STATE_CLASSES = [
-  'rounded-[var(--radius-brand)] border border-dashed border-glass-edge bg-glass',
-  'px-4 py-10 text-center text-on-brand backdrop-blur-md',
+  'rounded-[var(--radius-brand)] border border-dashed border-card-strong-edge bg-card',
+  'px-4 py-10 text-center text-on-brand',
 ].join(' ')

@@ -1,9 +1,9 @@
 import { EventsSectionBody } from './EventsSectionBody'
 import type { ResponseSheetAccess } from './responseSheetAccess'
 import { useEventsScreen } from './useEventsScreen'
+import { SectionTitle } from '../../app/SectionTitle'
 import { SectionErrorNotice } from '../../app/SectionErrorNotice'
 import type { SheetsClient } from '../../sheets/sheetsClient'
-import { SHELL_SECTION_TITLE_CLASSES } from '../../theme/surfaces'
 
 const SECTION_CLASSES = 'mx-auto w-full max-w-4xl px-4 pb-12'
 
@@ -34,8 +34,8 @@ export const EventsSection = ({
 
   return (
     <section className={SECTION_CLASSES}>
-      <header className="py-3">
-        <h2 className={SHELL_SECTION_TITLE_CLASSES}>Events</h2>
+      <header className="pt-6 pb-4">
+        <SectionTitle eyebrow="Door & calendar" title="Events" />
       </header>
       <EventsSectionBody
         data={state.data}

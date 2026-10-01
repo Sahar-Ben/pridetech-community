@@ -12,16 +12,13 @@ import { LeadsDataQualityNotes } from './LeadsDataQualityNotes'
 import { describeApplicationsCount, describeEmptyView } from './leadsReviewText'
 import { LeadsFilterChips } from './LeadsFilterChips'
 import type { LeadDecisions } from './useLeadDecisions'
+import { SectionTitle } from '../../app/SectionTitle'
 import { COMPACT_BUTTON_SIZE_CLASSES, SHELL_BUTTON_CLASSES } from '../../theme/controls'
-import { EMPTY_STATE_CLASSES, SHELL_SECTION_TITLE_CLASSES } from '../../theme/surfaces'
+import { EMPTY_STATE_CLASSES } from '../../theme/surfaces'
 
 /* Glass and blur on the strip that follows the scroll, because it carries a
    heading, a count and one button. The 256 cards under it do not. */
-const HEADER_CLASSES = [
-  'sticky top-0 z-10 -mx-1 flex flex-wrap items-baseline justify-between gap-3',
-  'rounded-b-[var(--radius-brand)] border-b border-glass-edge bg-glass px-1 py-3',
-  'backdrop-blur-xl',
-].join(' ')
+const HEADER_CLASSES = 'flex flex-col gap-3 pt-6'
 
 const RELOAD_BUTTON_CLASSES = `${SHELL_BUTTON_CLASSES} ${COMPACT_BUTTON_SIZE_CLASSES}`
 
@@ -55,11 +52,9 @@ export const ApplicationsQueue = ({
   return (
     <section className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 pb-12">
       <header className={HEADER_CLASSES}>
-        <h2 className={SHELL_SECTION_TITLE_CLASSES}>Applications</h2>
-        <div className="flex flex-wrap items-baseline gap-3">
-          {countLine !== undefined && (
-            <p className="text-sm font-semibold text-on-brand">{countLine}</p>
-          )}
+        <SectionTitle eyebrow="Leads" title="Applications" />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {countLine !== undefined && <p className="text-sm text-ink-muted">{countLine}</p>}
           {/* The reviewer needs this without a failure first: a decision that
               aborted because the sheet moved leaves a card explaining why, and
               the only way forward is to read the sheet again. */}

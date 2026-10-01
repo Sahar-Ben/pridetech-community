@@ -1,7 +1,7 @@
 import { PROVENANCE_SURFACES, PROVENANCE_WORDS, type Provenance } from './provenance'
 
 const BADGE_CLASSES =
-  'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-bold tracking-wide uppercase'
+  'inline-flex items-center rounded-full border px-2.5 py-1 font-mono text-[11px] font-medium tracking-[0.08em] uppercase'
 
 type ProvenanceBadgeProps = {
   provenance: Provenance

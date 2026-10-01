@@ -7,7 +7,8 @@ import type { Member } from './member'
 import { filterMembers, type MemberStatusFilter } from './memberFilters'
 import { useDebouncedValue } from './useDebouncedValue'
 import type { SaveMember } from './useMemberSave'
-import { EMPTY_STATE_CLASSES, SHELL_SECTION_TITLE_CLASSES } from '../../theme/surfaces'
+import { SectionTitle } from '../../app/SectionTitle'
+import { EMPTY_STATE_CLASSES } from '../../theme/surfaces'
 
 const SEARCH_SETTLE_MILLISECONDS = 200
 
@@ -64,8 +65,8 @@ export const MembersDirectory = ({
 
   return (
     <section className="mx-auto w-full max-w-4xl px-4 pb-12">
-      <header className="py-3">
-        <h2 className={SHELL_SECTION_TITLE_CLASSES}>Members</h2>
+      <header className="pt-6 pb-4">
+        <SectionTitle eyebrow="Directory" title="Members" />
       </header>
 
       {openMember === undefined ? (

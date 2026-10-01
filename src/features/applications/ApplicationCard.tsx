@@ -8,14 +8,11 @@ import { WORK_PANEL_CLASSES } from '../../theme/surfaces'
 
 const FIELD_SEPARATOR = ' \u{00b7} '
 
-/* The deep brand panel, not white. This is the surface the organiser reads 256
-   times in a sitting, so what matters is that its contrast is still a fixed
-   number: the fill is deep enough that the gradient moves its hue and not its
-   luminance, and body text holds 15.2:1 at the lightest point the card can
-   land on, against 17.7:1 on the white it replaces. */
+/* The surface the organiser reads 256 times in a sitting: one flat card, the
+   applicant on top, the decision underneath at thumb size. */
 const CARD_CLASSES = [
   WORK_PANEL_CLASSES,
-  'flex flex-col gap-3 px-4 py-3.5',
+  'flex flex-col gap-3.5 rounded-[var(--radius-brand)] p-[18px]',
   'transition-[opacity,transform,box-shadow] duration-200 ease-brand',
   'hover:shadow-lift',
 ].join(' ')
@@ -23,6 +20,19 @@ const CARD_CLASSES = [
 /* The card is on its way out of the queue and cannot be acted on again, and
    saying so with the same fade it will leave by costs no extra step. */
 const SAVING_CLASSES = 'scale-[0.995] opacity-60'
+
+const AVATAR_CLASSES = [
+  'flex size-[46px] shrink-0 items-center justify-center rounded-[15px] border border-card-strong-edge',
+  'bg-nav-active font-mono text-sm font-bold text-chart-1',
+].join(' ')
+
+const initialsOf = (name: string): string =>
+  name
+    .split(/\s+/)
+    .filter((word) => word !== '')
+    .slice(0, 2)
+    .map((word) => word[0]?.toUpperCase() ?? '')
+    .join('')
 
 const joinPresentFields = (fields: ReadonlyArray<string | undefined>): string =>
   fields.filter((field) => field !== undefined).join(FIELD_SEPARATOR)
@@ -52,31 +62,38 @@ export const ApplicationCard = ({
 
   return (
     <li className={`${CARD_CLASSES} ${decisionState.isSaving ? SAVING_CLASSES : ''}`}>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0 space-y-1">
-          <h3 className="text-base font-bold text-ink">{applicantName}</h3>
-          {roleLine !== '' && <p className="text-sm text-ink">{roleLine}</p>}
-          {contextLine !== '' && <p className="text-xs text-ink-muted">{contextLine}</p>}
-          <p className="text-xs text-ink-muted">
-            {lead.linkedIn === undefined ? (
-              <span className="font-semibold text-warning-on-panel">No LinkedIn</span>
-            ) : (
-              <a
-                className="font-semibold text-accent underline underline-offset-2"
-                href={lead.linkedIn}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                LinkedIn
-              </a>
-            )}
-            {contactLine !== '' && (
-              <span>
-                {FIELD_SEPARATOR}
-                {contactLine}
-              </span>
-            )}
-          </p>
+      <div className="flex flex-col gap-3.5">
+        <div className="flex min-w-0 items-start gap-3">
+          <span aria-hidden="true" className={AVATAR_CLASSES}>
+            {initialsOf(applicantName)}
+          </span>
+          <div className="min-w-0 space-y-1">
+            <h3 className="text-lg leading-snug font-semibold tracking-[-0.01em] break-words text-ink">
+              {applicantName}
+            </h3>
+            {roleLine !== '' && <p className="text-[13px] text-ink-muted">{roleLine}</p>}
+            {contextLine !== '' && <p className="text-xs text-ink-faint">{contextLine}</p>}
+            <p className="text-xs text-ink-muted">
+              {lead.linkedIn === undefined ? (
+                <span className="font-semibold text-warning-on-panel">No LinkedIn</span>
+              ) : (
+                <a
+                  className="font-semibold text-accent underline underline-offset-2"
+                  href={lead.linkedIn}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  LinkedIn
+                </a>
+              )}
+              {contactLine !== '' && (
+                <span>
+                  {FIELD_SEPARATOR}
+                  {contactLine}
+                </span>
+              )}
+            </p>
+          </div>
         </div>
 
         <ApplicationDecisionControls

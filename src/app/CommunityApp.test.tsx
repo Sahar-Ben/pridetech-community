@@ -146,6 +146,8 @@ describe('CommunityApp', () => {
     await signIn(google)
     await screen.findByRole('heading', { name: 'Overview' })
 
+    await userEvent.click(screen.getByRole('button', { name: 'Account' }))
+
     await userEvent.click(screen.getByRole('button', { name: /sign out/i }))
 
     expect(screen.getByRole('button', { name: /sign in with google/i })).toBeInTheDocument()
@@ -160,6 +162,8 @@ describe('CommunityApp', () => {
     })
     await signIn(google)
     await screen.findByRole('heading', { name: 'Overview' })
+
+    await userEvent.click(screen.getByRole('button', { name: 'Account' }))
 
     await userEvent.click(screen.getByRole('button', { name: /change spreadsheet/i }))
 

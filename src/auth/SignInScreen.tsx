@@ -10,8 +10,7 @@ type SignInScreenProps = {
   onSignIn: () => void
 }
 
-/* The one screen with no data on it, so it is the one screen allowed to be the
-   website: 44px glass, Sulphur Point at display size, nothing to read at length. */
+/* The one screen with no data on it: the wordmark, one heading, one button. */
 export const SignInScreen = ({ errorMessage, onSignIn }: SignInScreenProps) => (
   <section className="mx-auto flex min-h-dvh w-full max-w-lg items-center px-4 py-16">
     <div

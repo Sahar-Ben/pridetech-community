@@ -23,11 +23,11 @@ const MembersSummaryView = ({ members }: MembersSummaryProps) => {
 
   return (
     <div className={SUMMARY_CLASSES}>
-      <p className="font-display text-3xl leading-none font-light tracking-tight text-on-brand">
+      <p className="text-[22px] leading-none font-semibold tracking-[-0.03em] text-on-brand">
         {members.length} members{SEPARATOR}
         {activeMembers.length} active
       </p>
-      <p className="text-sm font-medium text-on-brand">
+      <p className="text-sm text-ink-muted">
         Gender of active members: {split.womenPercentage}% women ({split.womenCount}){SEPARATOR}
         {split.menPercentage}% men ({split.menCount}){SEPARATOR}
         {split.unrecordedPercentage}% not recorded ({split.unrecordedCount})

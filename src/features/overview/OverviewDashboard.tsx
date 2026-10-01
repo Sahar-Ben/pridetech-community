@@ -6,7 +6,7 @@ import { IndustryNotBuiltCard } from './IndustryNotBuiltCard'
 import { OverviewStats } from './OverviewStats'
 import type { Overview } from './buildOverview'
 import { describeCompanyCoverage, describeUnknownShare } from './overviewText'
-import { SHELL_SECTION_TITLE_CLASSES } from '../../theme/surfaces'
+import { SectionTitle } from '../../app/SectionTitle'
 
 const GRID_CLASSES = 'grid grid-cols-1 gap-4 xl:grid-cols-2'
 
@@ -16,8 +16,8 @@ type OverviewDashboardProps = {
 
 export const OverviewDashboard = ({ overview }: OverviewDashboardProps) => (
   <section className="mx-auto w-full max-w-4xl px-4 pb-12">
-    <header className="py-3">
-      <h2 className={SHELL_SECTION_TITLE_CLASSES}>Overview</h2>
+    <header className="pt-6 pb-4">
+      <SectionTitle eyebrow="Community pulse" title="Overview" />
     </header>
 
     <div className="flex flex-col gap-4">

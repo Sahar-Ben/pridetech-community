@@ -3,23 +3,26 @@ import type { ApprovalDecision, DeclineDecision, Gender, MaybeDecision } from '.
 import { DecisionReasonDialog } from './DecisionReasonDialog'
 import type { ReasonedDecisionKind } from './decisionReason'
 import type { Lead } from './lead'
-import {
-  COMPACT_BUTTON_SIZE_CLASSES,
-  PRIMARY_BUTTON_CLASSES,
-  SECONDARY_BUTTON_CLASSES,
-} from '../../theme/controls'
+import { PRIMARY_BUTTON_CLASSES, SECONDARY_BUTTON_CLASSES } from '../../theme/controls'
 import { FIELD_BORDER_CLASSES, FIELD_LABEL_CLASSES } from '../../theme/fields'
 
-const GENDER_SELECT_CLASSES = `rounded-xl border bg-surface px-2.5 py-1.5 text-sm text-ink disabled:opacity-50 ${FIELD_BORDER_CLASSES}`
+const GENDER_SELECT_CLASSES = `h-11 w-[186px] rounded-[14px] border bg-surface-sunken px-3 text-base text-ink disabled:opacity-50 ${FIELD_BORDER_CLASSES}`
 
-const APPROVE_BUTTON_CLASSES = `${PRIMARY_BUTTON_CLASSES} ${COMPACT_BUTTON_SIZE_CLASSES}`
+const DECISION_SIZE_CLASSES = 'min-h-[52px] px-2 text-[15px]'
 
-const SECONDARY_DECISION_BUTTON_CLASSES = `${SECONDARY_BUTTON_CLASSES} ${COMPACT_BUTTON_SIZE_CLASSES}`
+const APPROVE_BUTTON_CLASSES = `${PRIMARY_BUTTON_CLASSES} ${DECISION_SIZE_CLASSES}`
 
-/* Wraps below `sm`, where a third decision no longer fits on one line beside
-   the gender select; from `sm` up the row keeps its width, so the applicant's
-   details take the space instead. */
-const CONTROL_ROW_CLASSES = 'flex flex-wrap items-center gap-2 sm:shrink-0'
+const MAYBE_BUTTON_CLASSES = `${SECONDARY_BUTTON_CLASSES} ${DECISION_SIZE_CLASSES} bg-transparent`
+
+/* Decline wears the danger ink so it cannot be mistaken for its neighbour; it
+   still asks for a reason before anything is written. */
+const DECLINE_BUTTON_CLASSES = `${SECONDARY_BUTTON_CLASSES} ${DECISION_SIZE_CLASSES} border-danger-edge bg-transparent text-danger-ink hover:bg-danger-surface`
+
+const CONTROL_STACK_CLASSES = 'flex flex-col gap-3.5'
+
+/* Approve gets the widest cell and comes first, so it sits under the thumb's
+   natural reach on the left and is the first decision a keyboard reaches. */
+const DECISION_ROW_CLASSES = 'grid grid-cols-[1.5fr_1fr_1fr] gap-2'
 
 const GENDER_OPTIONS: ReadonlyArray<{ value: Gender; label: string }> = [
   { value: 'unknown', label: 'Unknown' },
@@ -85,58 +88,62 @@ export const ApplicationDecisionControls = ({
   }
 
   return (
-    <div className={CONTROL_ROW_CLASSES}>
-      <label className={FIELD_LABEL_CLASSES} htmlFor={genderSelectId}>
-        Gender
-      </label>
-      <select
-        className={GENDER_SELECT_CLASSES}
-        disabled={isSaving}
-        id={genderSelectId}
-        value={gender}
-        onChange={(event) => {
-          const selected = event.target.value
-          if (isGender(selected)) {
-            setGender(selected)
-          }
-        }}
-      >
-        {GENDER_OPTIONS.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-      <button
-        className={APPROVE_BUTTON_CLASSES}
-        disabled={isSaving}
-        type="button"
-        onClick={() => onApprove({ lead, gender })}
-      >
-        {isSaving ? 'Saving...' : 'Approve'}
-      </button>
-      {onMarkMaybe !== undefined && (
-        <button
-          className={SECONDARY_DECISION_BUTTON_CLASSES}
+    <div className={CONTROL_STACK_CLASSES}>
+      <div className="flex items-center justify-between gap-3">
+        <label className={FIELD_LABEL_CLASSES} htmlFor={genderSelectId}>
+          Gender
+        </label>
+        <select
+          className={GENDER_SELECT_CLASSES}
           disabled={isSaving}
-          ref={maybeButtonRef}
-          type="button"
-          onClick={() => setPendingKind('maybe')}
+          id={genderSelectId}
+          value={gender}
+          onChange={(event) => {
+            const selected = event.target.value
+            if (isGender(selected)) {
+              setGender(selected)
+            }
+          }}
         >
-          Maybe
-        </button>
-      )}
-      {onDecline !== undefined && (
+          {GENDER_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className={DECISION_ROW_CLASSES}>
         <button
-          className={SECONDARY_DECISION_BUTTON_CLASSES}
+          className={APPROVE_BUTTON_CLASSES}
           disabled={isSaving}
-          ref={declineButtonRef}
           type="button"
-          onClick={() => setPendingKind('decline')}
+          onClick={() => onApprove({ lead, gender })}
         >
-          Decline
+          {isSaving ? 'Saving...' : 'Approve'}
         </button>
-      )}
+        {onMarkMaybe !== undefined && (
+          <button
+            className={MAYBE_BUTTON_CLASSES}
+            disabled={isSaving}
+            ref={maybeButtonRef}
+            type="button"
+            onClick={() => setPendingKind('maybe')}
+          >
+            Maybe
+          </button>
+        )}
+        {onDecline !== undefined && (
+          <button
+            className={DECLINE_BUTTON_CLASSES}
+            disabled={isSaving}
+            ref={declineButtonRef}
+            type="button"
+            onClick={() => setPendingKind('decline')}
+          >
+            Decline
+          </button>
+        )}
+      </div>
 
       {pendingKind !== undefined && (
         <DecisionReasonDialog

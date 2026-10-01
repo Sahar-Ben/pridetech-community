@@ -1,12 +1,12 @@
 import type { GenderSplit } from './genderSplit'
 
 const SEGMENT_CLASSES = {
-  women: 'bg-on-brand',
-  men: 'bg-on-brand/55',
-  unrecorded: 'bg-on-brand/20',
+  women: 'bg-chart-1',
+  men: 'bg-chart-2',
+  unrecorded: 'bg-chart-unknown',
 } as const
 
-const SEGMENT_TRANSITION_CLASSES = 'transition-[width] duration-200 ease-brand'
+const SEGMENT_TRANSITION_CLASSES = 'rounded-full transition-[width] duration-200 ease-brand'
 
 type GenderSplitBarProps = {
   split: GenderSplit
@@ -16,10 +16,7 @@ type GenderSplitBarProps = {
    so the bar itself is hidden from assistive technology. That is also why it
    is the one place alpha-on-glass is fine: nothing here is text. */
 export const GenderSplitBar = ({ split }: GenderSplitBarProps) => (
-  <div
-    aria-hidden="true"
-    className="flex h-2 w-full max-w-md overflow-hidden rounded-full bg-on-brand/15"
-  >
+  <div aria-hidden="true" className="flex h-2 w-full gap-1 overflow-hidden">
     <div
       className={`${SEGMENT_CLASSES.women} ${SEGMENT_TRANSITION_CLASSES}`}
       style={{ width: `${split.womenPercentage}%` }}

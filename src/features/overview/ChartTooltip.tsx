@@ -15,7 +15,7 @@ type ChartTooltipProps = {
    on this dashboard any more. */
 const TOOLTIP_CLASSES = [
   'pointer-events-none absolute z-10 min-w-28 max-w-56 rounded-[var(--radius-data)]',
-  'border border-glass-edge bg-[rgb(9_6_24/0.82)] px-3 py-2 text-on-brand',
+  'border border-card-strong-edge bg-nav px-3 py-2 text-on-brand',
   'shadow-lift backdrop-blur-md',
 ].join(' ')
 

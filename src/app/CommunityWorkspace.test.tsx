@@ -63,7 +63,7 @@ describe('CommunityWorkspace', () => {
   it('should display the community name', () => {
     renderWorkspace()
 
-    expect(screen.getByRole('heading', { name: 'PrideTech Community' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'PrideTech Community · Admin' })).toBeInTheDocument()
   })
 
   it('should open on the Overview section', () => {
@@ -207,6 +207,8 @@ describe('CommunityWorkspace', () => {
   it('should let the reviewer choose a different spreadsheet', async () => {
     const { onChangeSpreadsheet } = renderWorkspace()
 
+    await userEvent.click(screen.getByRole('button', { name: 'Account' }))
+
     await userEvent.click(screen.getByRole('button', { name: /change spreadsheet/i }))
 
     expect(onChangeSpreadsheet).toHaveBeenCalledTimes(1)
@@ -215,6 +217,7 @@ describe('CommunityWorkspace', () => {
   it('should let the reviewer sign out', async () => {
     const { onSignOut } = renderWorkspace()
 
+    await userEvent.click(screen.getByRole('button', { name: 'Account' }))
     await userEvent.click(screen.getByRole('button', { name: /sign out/i }))
 
     expect(onSignOut).toHaveBeenCalledTimes(1)
@@ -222,28 +225,41 @@ describe('CommunityWorkspace', () => {
 })
 
 describe('CommunityWorkspace, where the account actions live', () => {
-  it('should keep both account actions in the sidebar rather than over the work', () => {
+  it('should keep both account actions behind the Account button rather than over the work', async () => {
+    renderWorkspace()
+
+    expect(screen.queryByRole('button', { name: /sign out/i })).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Account' }))
+
+    const menu = screen.getByRole('group', { name: 'Account' })
+
+    expect(within(menu).getByRole('button', { name: /change spreadsheet/i })).toBeInTheDocument()
+    expect(within(menu).getByRole('button', { name: /sign out/i })).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: /sign out/i })).toHaveLength(1)
+  })
+
+  it('should keep the account actions out of the section nav', () => {
     renderWorkspace()
 
     const navigation = screen.getByRole('navigation', { name: /sections/i })
 
-    expect(
-      within(navigation).getByRole('button', { name: /change spreadsheet/i }),
-    ).toBeInTheDocument()
-    expect(within(navigation).getByRole('button', { name: /sign out/i })).toBeInTheDocument()
-    expect(screen.getAllByRole('button', { name: /sign out/i })).toHaveLength(1)
+    expect(within(navigation).getAllByRole('button')).toHaveLength(4)
   })
 
   it('should still change the spreadsheet from its new home', async () => {
     const { onChangeSpreadsheet } = renderWorkspace()
 
+    await userEvent.click(screen.getByRole('button', { name: 'Account' }))
     await userEvent.click(screen.getByRole('button', { name: /change spreadsheet/i }))
 
     expect(onChangeSpreadsheet).toHaveBeenCalledOnce()
   })
 
-  it('should name the spreadsheet it is working against when that name is known', () => {
+  it('should name the spreadsheet it is working against when that name is known', async () => {
     renderWorkspace({ spreadsheetName: 'PrideTech WRITE TEST' })
+
+    await userEvent.click(screen.getByRole('button', { name: 'Account' }))
 
     expect(screen.getByText('PrideTech WRITE TEST')).toBeInTheDocument()
   })
