@@ -9,9 +9,14 @@ import type { SheetsClient } from '../../sheets/sheetsClient'
 type LeadsSectionProps = {
   sheetsClient: SheetsClient
   onSessionExpired: () => void
+  onWaitingCountRead?: (count: number) => void
 }
 
-export const LeadsSection = ({ sheetsClient, onSessionExpired }: LeadsSectionProps) => {
+export const LeadsSection = ({
+  sheetsClient,
+  onSessionExpired,
+  onWaitingCountRead,
+}: LeadsSectionProps) => {
   const { state, reload } = useLeads({ sheetsClient, onSessionExpired })
   const decisions = useLeadDecisions({ sheetsClient, onSessionExpired })
   const loadedReview = state.status === 'ready' ? state.review : undefined
@@ -33,6 +38,15 @@ export const LeadsSection = ({ sheetsClient, onSessionExpired }: LeadsSectionPro
           }),
     [decisions.decidedRowNumbers, loadedReview],
   )
+
+  /* Read after the decisions taken here are subtracted, so the nav's badge
+     counts down as the queue is worked. */
+  const waitingCount = review?.counts.waitingCount
+  useEffect(() => {
+    if (waitingCount !== undefined) {
+      onWaitingCountRead?.(waitingCount)
+    }
+  }, [onWaitingCountRead, waitingCount])
 
   if (state.status === 'loading') {
     return (

@@ -1,4 +1,6 @@
 import { buildOverview, type Overview } from './buildOverview'
+import { buildLeadsReview } from '../applications/leadsReview'
+import { buildMemberEmailIndex } from '../applications/memberEmailIndex'
 import { parseLeads } from '../applications/parseLeads'
 import {
   LEADS_RANGE,
@@ -26,9 +28,18 @@ export const loadOverview = async ({
     readTabRows({ sheetsClient, range: LEADS_RANGE, tabName: LEADS_TAB_NAME }),
   ])
 
-  return buildOverview({
-    members: parseMembers({ rows: memberRows }),
-    leads: parseLeads({ rows: leadRows }).leads,
-    asOf,
+  const parsedLeads = parseLeads({ rows: leadRows })
+  const { counts } = buildLeadsReview({
+    parsedLeads,
+    memberEmailIndex: buildMemberEmailIndex({ rows: memberRows }),
   })
+
+  return {
+    ...buildOverview({
+      members: parseMembers({ rows: memberRows }),
+      leads: parsedLeads.leads,
+      asOf,
+    }),
+    applications: counts,
+  }
 }

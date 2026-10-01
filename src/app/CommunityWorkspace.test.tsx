@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { CommunityWorkspace } from './CommunityWorkspace'
@@ -221,6 +221,25 @@ describe('CommunityWorkspace', () => {
     await userEvent.click(screen.getByRole('button', { name: /sign out/i }))
 
     expect(onSignOut).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('CommunityWorkspace, the review queue on the Overview', () => {
+  it('should badge the Leads tab with the waiting count the Overview read', async () => {
+    renderWorkspace()
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Leads' })).toHaveAccessibleDescription('1 waiting')
+    })
+  })
+
+  it('should open the Leads screen from Start reviewing', async () => {
+    renderWorkspace()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Start reviewing' }))
+
+    expect(screen.getByRole('button', { name: 'Leads' })).toHaveAttribute('aria-current', 'page')
+    expect(await screen.findByText('Noa Feldman')).toBeInTheDocument()
   })
 })
 

@@ -33,3 +33,33 @@ describe('SectionNav', () => {
     expect(onSelectSection).toHaveBeenCalledWith('events')
   })
 })
+
+describe('SectionNav, the Leads badge', () => {
+  it('should show how many applications are waiting on the Leads tab', () => {
+    render(
+      <SectionNav activeSection="overview" leadsWaitingCount={255} onSelectSection={vi.fn()} />,
+    )
+
+    expect(screen.getByText('255')).toBeInTheDocument()
+  })
+
+  it('should keep the plain name and carry the count as the description', () => {
+    render(
+      <SectionNav activeSection="overview" leadsWaitingCount={255} onSelectSection={vi.fn()} />,
+    )
+
+    expect(screen.getByRole('button', { name: 'Leads' })).toHaveAccessibleDescription('255 waiting')
+  })
+
+  it('should show nothing before the queue has been read', () => {
+    render(<SectionNav activeSection="overview" onSelectSection={vi.fn()} />)
+
+    expect(screen.getByRole('button', { name: 'Leads' })).not.toHaveAccessibleDescription()
+  })
+
+  it('should show nothing once the queue is empty', () => {
+    render(<SectionNav activeSection="overview" leadsWaitingCount={0} onSelectSection={vi.fn()} />)
+
+    expect(screen.queryByText('0')).not.toBeInTheDocument()
+  })
+})

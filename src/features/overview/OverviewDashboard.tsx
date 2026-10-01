@@ -4,6 +4,7 @@ import { DistributionTable } from './DistributionTable'
 import { GenderPie } from './GenderPie'
 import { IndustryNotBuiltCard } from './IndustryNotBuiltCard'
 import { OverviewStats } from './OverviewStats'
+import { ReviewQueueCard } from './ReviewQueueCard'
 import type { Overview } from './buildOverview'
 import { describeCompanyCoverage, describeUnknownShare } from './overviewText'
 import { SectionTitle } from '../../app/SectionTitle'
@@ -12,9 +13,10 @@ const GRID_CLASSES = 'grid grid-cols-1 gap-4 xl:grid-cols-2'
 
 type OverviewDashboardProps = {
   overview: Overview
+  onStartReviewing: () => void
 }
 
-export const OverviewDashboard = ({ overview }: OverviewDashboardProps) => (
+export const OverviewDashboard = ({ overview, onStartReviewing }: OverviewDashboardProps) => (
   <section className="mx-auto w-full max-w-4xl px-4 pb-12">
     <header className="pt-6 pb-4">
       <SectionTitle eyebrow="Community pulse" title="Overview" />
@@ -22,6 +24,11 @@ export const OverviewDashboard = ({ overview }: OverviewDashboardProps) => (
 
     <div className="flex flex-col gap-4">
       <OverviewStats overview={overview} />
+
+      <ReviewQueueCard
+        onStartReviewing={onStartReviewing}
+        waitingCount={overview.applications.waitingCount}
+      />
 
       <div className={GRID_CLASSES}>
         <ChartCard

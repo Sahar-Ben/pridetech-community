@@ -11,6 +11,8 @@ type WorkspaceSectionProps = {
   sheetsClient: SheetsClient
   responseSheetAccess: ResponseSheetAccess
   onSessionExpired: () => void
+  onSelectSection: (section: Section) => void
+  onWaitingCountRead: (count: number) => void
 }
 
 export const WorkspaceSection = ({
@@ -18,13 +20,28 @@ export const WorkspaceSection = ({
   sheetsClient,
   responseSheetAccess,
   onSessionExpired,
+  onSelectSection,
+  onWaitingCountRead,
 }: WorkspaceSectionProps) => {
   if (section === 'overview') {
-    return <OverviewSection sheetsClient={sheetsClient} onSessionExpired={onSessionExpired} />
+    return (
+      <OverviewSection
+        onSessionExpired={onSessionExpired}
+        onStartReviewing={() => onSelectSection('leads')}
+        onWaitingCountRead={onWaitingCountRead}
+        sheetsClient={sheetsClient}
+      />
+    )
   }
 
   if (section === 'leads') {
-    return <LeadsSection sheetsClient={sheetsClient} onSessionExpired={onSessionExpired} />
+    return (
+      <LeadsSection
+        onSessionExpired={onSessionExpired}
+        onWaitingCountRead={onWaitingCountRead}
+        sheetsClient={sheetsClient}
+      />
+    )
   }
 
   if (section === 'members') {

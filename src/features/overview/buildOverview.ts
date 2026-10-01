@@ -4,10 +4,11 @@ import { buildGenderDistribution } from './genderDistribution'
 import { buildTenureDistribution } from './tenureDistribution'
 import { buildPositionDistribution, buildSeniorityDistribution } from './titleDistributions'
 import type { Lead } from '../applications/lead'
+import type { LeadsReviewCounts } from '../applications/leadsReview'
 import type { Member } from '../members/member'
 import { selectActiveMembers } from '../members/memberFilters'
 
-export type Overview = {
+export type MemberOverview = {
   memberCount: number
   exMemberCount: number
   gender: Distribution
@@ -15,6 +16,13 @@ export type Overview = {
   position: Distribution
   seniority: Distribution
   companies: CompanyBreakdown
+}
+
+/* The member charts plus the review queue's counts, drawn from the same two
+   reads by the same `buildLeadsReview` the Leads screen uses, so the Overview
+   can never quote a different number of waiting applications than the queue. */
+export type Overview = MemberOverview & {
+  applications: LeadsReviewCounts
 }
 
 /* Active members only, and every chart on the same denominator. The members
@@ -29,7 +37,7 @@ export const buildOverview = ({
   members: readonly Member[]
   leads: readonly Lead[]
   asOf: Date
-}): Overview => {
+}): MemberOverview => {
   const activeMembers = selectActiveMembers(members)
 
   return {

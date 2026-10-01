@@ -10,7 +10,7 @@ type OverviewStatsProps = {
 }
 
 /* The headline number across the row, with the ex-members it leaves out said
-   under it, then two tiles. Numbers rather than one-bar charts. The distinct-company figure
+   under it, then four tiles: two about the members, two about the queue. Numbers rather than one-bar charts. The distinct-company figure
    carries its own caveat where it is read: it counts how many different
    spellings of a company name are on the sheet, and `Google` and `Google
    Israel` are two of those whether or not they are two employers. */
@@ -31,6 +31,18 @@ export const OverviewStats = ({ overview }: OverviewStatsProps) => (
       label="No company"
       note="Members with the Company cell empty"
       value={overview.companies.membersWithoutCompanyCount}
+    />
+    <StatTile
+      label="Pending leads"
+      note="Waiting for review on the Leads tab"
+      tone="accent"
+      value={overview.applications.waitingCount}
+    />
+    <StatTile
+      label="Duplicate emails"
+      note="Addresses on more than one application"
+      tone="warning"
+      value={overview.applications.repeatedLeadEmailCount}
     />
   </dl>
 )

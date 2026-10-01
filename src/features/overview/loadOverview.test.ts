@@ -36,6 +36,25 @@ describe('loadOverview', () => {
     expect(overview.tenure.buckets.find((bucket) => bucket.key === 'four-years-or-more')?.count).toBe(1)
   })
 
+  it('should count the review queue exactly as the Leads screen does', async () => {
+    const sheet = sheetWith({
+      members: [memberRow({ name: 'Dana Sorkin', mail: 'dana@example.com' })],
+      leads: [
+        leadRow({ name: 'Dana Sorkin', email: 'dana@example.com' }),
+        leadRow({ name: 'Noa Feldman', email: 'noa@example.com' }),
+        leadRow({ name: 'Noa Feldman', email: 'noa@example.com' }),
+        leadRow({ name: 'Omer Golan', email: 'omer@example.com' }),
+        leadRow({ name: 'Tal Levi', email: 'tal@example.com', status: 'Declined' }),
+      ],
+    })
+
+    const { applications } = await loadOverview({ sheetsClient: sheet.client, asOf })
+
+    expect(applications.waitingCount).toBe(3)
+    expect(applications.alreadyMemberCount).toBe(1)
+    expect(applications.repeatedLeadEmailCount).toBe(1)
+  })
+
   it('should name the tab that could not be read rather than drawing empty charts', async () => {
     const sheetsClient: SheetsClient = {
       ...sheetWith().client,

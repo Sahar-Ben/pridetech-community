@@ -1,3 +1,4 @@
+import { useId } from 'react'
 import { SectionIcon } from './SectionIcon'
 import { SECTION_LABELS, SECTIONS, type Section } from './section'
 
@@ -12,7 +13,7 @@ const NAV_CLASSES = [
 ].join(' ')
 
 const ITEM_BASE_CLASSES = [
-  'flex h-full min-h-11 w-full flex-col items-center justify-center gap-1 rounded-[20px] text-[11px]',
+  'relative flex h-full min-h-11 w-full flex-col items-center justify-center gap-1 rounded-[20px] text-[11px]',
   'transition-colors duration-150 ease-brand',
   'md:min-h-12 md:flex-row md:justify-start md:gap-3 md:rounded-2xl md:px-4 md:text-sm',
 ].join(' ')
@@ -25,24 +26,59 @@ const itemClasses = (isActive: boolean): string =>
       : 'font-medium text-ink-muted hover:bg-glass-hover hover:text-ink',
   ].join(' ')
 
+/* Pinned to the icon's corner on a phone, pushed to the row's end on the rail. */
+const BADGE_CLASSES = [
+  'absolute top-1 right-[calc(50%-30px)] rounded-full bg-badge px-1.5 py-px',
+  'font-mono text-[10px] leading-4 font-bold text-on-badge',
+  'md:static md:ml-auto',
+].join(' ')
+
 type SectionNavProps = {
   activeSection: Section
   onSelectSection: (section: Section) => void
+  leadsWaitingCount?: number
 }
 
-export const SectionNav = ({ activeSection, onSelectSection }: SectionNavProps) => (
-  <nav aria-label="Sections" className={NAV_CLASSES}>
-    {SECTIONS.map((section) => (
-      <button
-        aria-current={section === activeSection ? 'page' : undefined}
-        className={itemClasses(section === activeSection)}
-        key={section}
-        onClick={() => onSelectSection(section)}
-        type="button"
-      >
-        <SectionIcon section={section} />
-        <span>{SECTION_LABELS[section]}</span>
-      </button>
-    ))}
-  </nav>
-)
+/* The badge is absent until a screen has read the queue, and absent at zero:
+   a "0" on a tab is a notification about nothing. It is decoration for the
+   eye; a screen reader hears the count as the button's description, so the
+   button keeps its plain name. */
+export const SectionNav = ({
+  activeSection,
+  onSelectSection,
+  leadsWaitingCount,
+}: SectionNavProps) => {
+  const badgeDescriptionId = useId()
+  const showsBadge = leadsWaitingCount !== undefined && leadsWaitingCount > 0
+
+  return (
+    <nav aria-label="Sections" className={NAV_CLASSES}>
+      {SECTIONS.map((section) => {
+        const hasBadge = section === 'leads' && showsBadge
+        return (
+          <button
+            aria-current={section === activeSection ? 'page' : undefined}
+            aria-describedby={hasBadge ? badgeDescriptionId : undefined}
+            className={itemClasses(section === activeSection)}
+            key={section}
+            onClick={() => onSelectSection(section)}
+            type="button"
+          >
+            <SectionIcon section={section} />
+            <span>{SECTION_LABELS[section]}</span>
+            {hasBadge && (
+              <span aria-hidden="true" className={BADGE_CLASSES}>
+                {leadsWaitingCount.toLocaleString('en-US')}
+              </span>
+            )}
+          </button>
+        )
+      })}
+      {showsBadge && (
+        <span className="sr-only" id={badgeDescriptionId}>
+          {`${leadsWaitingCount.toLocaleString('en-US')} waiting`}
+        </span>
+      )}
+    </nav>
+  )
+}

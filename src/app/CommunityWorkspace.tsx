@@ -23,16 +23,20 @@ export const CommunityWorkspace = ({
   onSignOut,
 }: CommunityWorkspaceProps) => {
   const [activeSection, setActiveSection] = useState<Section>(DEFAULT_SECTION)
+  const [waitingCount, setWaitingCount] = useState<number | undefined>(undefined)
   const account = { spreadsheetName, onChangeSpreadsheet, onSignOut }
 
   return (
     <AppShell
       account={account}
       activeSection={activeSection}
+      leadsWaitingCount={waitingCount}
       onSelectSection={setActiveSection}
     >
       <WorkspaceSection
+        onSelectSection={setActiveSection}
         onSessionExpired={onSessionExpired}
+        onWaitingCountRead={setWaitingCount}
         responseSheetAccess={responseSheetAccess}
         section={activeSection}
         sheetsClient={sheetsClient}

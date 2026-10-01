@@ -14,10 +14,17 @@ type AppShellProps = {
   activeSection: Section
   onSelectSection: (section: Section) => void
   account: WorkspaceAccount
+  leadsWaitingCount?: number
   children: ReactNode
 }
 
-export const AppShell = ({ activeSection, onSelectSection, account, children }: AppShellProps) => (
+export const AppShell = ({
+  activeSection,
+  onSelectSection,
+  account,
+  leadsWaitingCount,
+  children,
+}: AppShellProps) => (
   <div className="min-h-dvh bg-ground text-on-brand">
     <header className="sticky top-0 z-30 bg-ground/95 pt-[env(safe-area-inset-top)] backdrop-blur-md">
       <div className="mx-auto flex w-full items-center justify-between px-5 pt-5 pb-4 md:px-6">
@@ -29,6 +36,10 @@ export const AppShell = ({ activeSection, onSelectSection, account, children }: 
 
     <main className={MAIN_CLASSES}>{children}</main>
 
-    <SectionNav activeSection={activeSection} onSelectSection={onSelectSection} />
+    <SectionNav
+      activeSection={activeSection}
+      leadsWaitingCount={leadsWaitingCount}
+      onSelectSection={onSelectSection}
+    />
   </div>
 )
