@@ -5,6 +5,7 @@ import type { ApprovalDecision, DeclineDecision, MaybeDecision } from './decisio
 import type { ReviewableApplication } from './leadsReview'
 import { PriorMemberNotice } from './PriorMemberNotice'
 import type { LeadDecisionState } from './useLeadDecisions'
+import { CopyableValue } from '../../app/CopyableValue'
 import { initialsOf } from '../../app/initials'
 import { NoticeBanner } from '../../app/NoticeBanner'
 import { WORK_PANEL_CLASSES } from '../../theme/surfaces'
@@ -63,11 +64,6 @@ export const ApplicationCard = ({
             {applicantName}
           </h3>
           {roleLine !== '' && <p className="text-[13px] text-ink-muted">{roleLine}</p>}
-          {/* The address is the key every duplicate and prior-member match is
-              made on, so it stays readable even with a button beside it. */}
-          {!isNamedByEmail && (
-            <p className="truncate font-mono text-[11px] text-ink-faint">{lead.email}</p>
-          )}
         </div>
       </div>
 
@@ -93,6 +89,14 @@ export const ApplicationCard = ({
           )}
         </ul>
       )}
+
+      {/* The address is the key every duplicate and prior-member match is made
+          on, and both are what an organiser pastes into a message: each sits
+          on its own line with a copy button. */}
+      <div className="flex flex-col gap-1.5">
+        {!isNamedByEmail && <CopyableValue label="email" value={lead.email} />}
+        {lead.phone !== undefined && <CopyableValue label="phone" value={lead.phone} />}
+      </div>
 
       <ApplicantContactLinks lead={lead} />
 

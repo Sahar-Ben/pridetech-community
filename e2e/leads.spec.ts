@@ -62,11 +62,30 @@ test.describe('the LinkedIn button', () => {
   })
 })
 
-test('Email and Call open the mail app and the dialler', async ({ page }) => {
+test('Email and WhatsApp open the mail app and a WhatsApp chat; there is no Call button', async ({
+  page,
+}) => {
   const card = cardOf(page, 'LinkedIn Case 1')
 
   await expect(card.getByRole('link', { name: 'Email' })).toHaveAttribute('href', /^mailto:[^\s]+@/)
-  await expect(card.getByRole('link', { name: 'Call' })).toHaveAttribute('href', /^tel:\+?\d+$/)
+  await expect(card.getByRole('link', { name: 'WhatsApp' })).toHaveAttribute(
+    'href',
+    'https://wa.me/972501234567',
+  )
+  await expect(card.getByRole('link', { name: 'Call' })).toHaveCount(0)
+})
+
+test('the email and phone on a card copy with one tap', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  const card = cardOf(page, 'LinkedIn Case 1')
+
+  await card.getByRole('button', { name: 'Copy email' }).click()
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(
+    /^lead\d+@example\.com$/,
+  )
+
+  await card.getByRole('button', { name: 'Copy phone' }).click()
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('050-123-4567')
 })
 
 test.describe('search, sort and filter', () => {

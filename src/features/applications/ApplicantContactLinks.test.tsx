@@ -36,16 +36,21 @@ describe('ApplicantContactLinks', () => {
     )
   })
 
-  it('should dial the number with the spaces and dashes taken out', () => {
+  it('should message the number on WhatsApp, in international form', () => {
     render(<ApplicantContactLinks lead={lead()} />)
 
-    expect(screen.getByRole('link', { name: 'Call' })).toHaveAttribute('href', 'tel:0501234567')
+    expect(screen.getByRole('link', { name: 'WhatsApp' })).toHaveAttribute(
+      'href',
+      'https://wa.me/972501234567',
+    )
+    expect(screen.queryByRole('link', { name: 'Call' })).not.toBeInTheDocument()
   })
 
-  it('should offer no Call button when the applicant left no number', () => {
+  it('should offer no WhatsApp button when the applicant left no number', () => {
     render(<ApplicantContactLinks lead={lead({ phone: undefined })} />)
 
-    expect(screen.queryByRole('link', { name: 'Call' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'WhatsApp' })).not.toBeInTheDocument()
+    expect(screen.getByText('No phone')).toBeInTheDocument()
   })
 
   it('should say the profile is missing in its place', () => {

@@ -60,6 +60,8 @@ test('on a phone the nav and the decision buttons are big enough for a thumb', a
     page.getByRole('button', { name: 'Maybe' }).first(),
     page.getByRole('button', { name: 'Decline' }).first(),
     page.getByRole('link', { name: 'Email' }).first(),
+    page.getByRole('link', { name: 'WhatsApp' }).first(),
+    page.getByRole('button', { name: 'Copy email' }).first(),
     page.getByRole('button', { name: /sort & filter/i }),
   ]
   for (const target of targets) {

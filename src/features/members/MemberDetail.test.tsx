@@ -161,7 +161,9 @@ describe('MemberDetail', () => {
     await userEvent.click(cancelButton())
 
     expect(screen.getByRole('heading', { name: 'Dana Sorkin' })).toBeInTheDocument()
-    expect(screen.getByText('Tel Aviv')).toBeInTheDocument()
+    /* Once under the name and once in the fields, and the edit nowhere. */
+    expect(screen.getAllByText('Tel Aviv')).toHaveLength(2)
+    expect(screen.queryByText('Haifa')).not.toBeInTheDocument()
 
     await userEvent.click(editButton())
 
@@ -323,5 +325,66 @@ describe('MemberDetail, the LinkedIn link', () => {
 
     expect(screen.getByText('will send later')).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'will send later' })).not.toBeInTheDocument()
+  })
+})
+
+describe('MemberDetail, reaching the member', () => {
+  const reachable = buildMember({
+    name: 'Achva Rettig',
+    title: 'Senior product analyst',
+    company: 'Scopely',
+    mail: 'achva@example.com',
+    phone: '0522653289',
+    linkedIn: 'https://www.linkedin.com/in/achva',
+  })
+
+  it('should offer LinkedIn, WhatsApp, Call and Email as quick buttons', () => {
+    renderDetail({ member: reachable })
+
+    expect(screen.getByRole('link', { name: 'LinkedIn' })).toHaveAttribute(
+      'href',
+      'https://www.linkedin.com/in/achva',
+    )
+    expect(screen.getByRole('link', { name: 'WhatsApp' })).toHaveAttribute(
+      'href',
+      'https://wa.me/972522653289',
+    )
+    expect(screen.getByRole('link', { name: 'Call' })).toHaveAttribute('href', 'tel:+972522653289')
+    expect(screen.getByRole('link', { name: 'Email' })).toHaveAttribute(
+      'href',
+      'mailto:achva@example.com',
+    )
+  })
+
+  it('should copy one field from its own copy button', async () => {
+    const user = userEvent.setup()
+    renderDetail({ member: reachable })
+
+    await user.click(screen.getByRole('button', { name: 'Copy email' }))
+
+    expect(await navigator.clipboard.readText()).toBe('achva@example.com')
+  })
+
+  it('should copy every way to reach the member at once', async () => {
+    const user = userEvent.setup()
+    renderDetail({ member: reachable })
+
+    await user.click(screen.getByRole('button', { name: 'Copy all contact details' }))
+
+    expect(await navigator.clipboard.readText()).toBe(
+      [
+        'Achva Rettig',
+        'Senior product analyst · Scopely',
+        'Email: achva@example.com',
+        'Phone: 0522653289',
+        'LinkedIn: https://www.linkedin.com/in/achva',
+      ].join('\n'),
+    )
+  })
+
+  it('should hide the quick buttons while the member is being edited', async () => {
+    await startEditing(reachable)
+
+    expect(screen.queryByRole('link', { name: 'WhatsApp' })).not.toBeInTheDocument()
   })
 })

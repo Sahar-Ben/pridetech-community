@@ -43,3 +43,49 @@ test('a member opens, shows a working LinkedIn link, and goes back', async ({ pa
   await page.getByRole('button', { name: /back to members/i }).click()
   await expect(page.getByRole('table', { name: 'Members' })).toBeVisible()
 })
+
+test.describe('the member page', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.getByRole('button', { name: /^Alexandria-Konstantina/ }).click()
+    await expect(page.getByRole('button', { name: /back to members/i })).toBeVisible()
+  })
+
+  test('offers LinkedIn, WhatsApp, Call and Email as working quick buttons', async ({ page }) => {
+    const main = page.getByRole('main')
+
+    await expect(main.getByRole('link', { name: 'LinkedIn', exact: true })).toHaveAttribute(
+      'href',
+      'https://www.linkedin.com/in/member-without-scheme',
+    )
+    await expect(main.getByRole('link', { name: 'WhatsApp' })).toHaveAttribute(
+      'href',
+      'https://wa.me/972500000000',
+    )
+    await expect(main.getByRole('link', { name: 'Call' })).toHaveAttribute(
+      'href',
+      'tel:+972500000000',
+    )
+    await expect(main.getByRole('link', { name: 'Email', exact: true })).toHaveAttribute(
+      'href',
+      /^mailto:averyvery/,
+    )
+  })
+
+  test('copies one field, and everything at once', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+
+    await page.getByRole('button', { name: 'Copy phone' }).click()
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('050-000-0000')
+
+    await page.getByRole('button', { name: 'Copy linkedin' }).click()
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+      'https://www.linkedin.com/in/member-without-scheme',
+    )
+
+    await page.getByRole('button', { name: 'Copy all contact details' }).click()
+    const summary = await page.evaluate(() => navigator.clipboard.readText())
+    expect(summary.split('\n')[0]).toMatch(/^Alexandria-Konstantina/)
+    expect(summary).toContain('Phone: 050-000-0000')
+    expect(summary).toContain('LinkedIn: https://www.linkedin.com/in/member-without-scheme')
+  })
+})
