@@ -343,3 +343,81 @@ describe('createSheetsClient, where the spreadsheet structure itself is read or 
     )
   })
 })
+
+describe('createSheetsClient, when Google says to slow down', () => {
+  const quotaExceeded = (): Response =>
+    jsonResponse({
+      body: { error: { message: "Quota exceeded for quota metric 'Read requests'" } },
+      status: 429,
+    })
+
+  it('should wait and ask again rather than fail on the first 429', async () => {
+    const fetchSpy = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(quotaExceeded())
+      .mockResolvedValueOnce(quotaExceeded())
+      .mockResolvedValueOnce(jsonResponse({ body: { values: [['Dana']] }, status: 200 }))
+    const sleep = vi.fn(async (_milliseconds: number) => await Promise.resolve())
+    const client = createSheetsClient({
+      spreadsheetId: 'sheet-1',
+      getAccessToken: () => 'token-1',
+      fetchImpl: fetchSpy,
+      sleep,
+    })
+
+    await expect(client.readRange({ range: 'Members!A1:Z' })).resolves.toEqual([['Dana']])
+    expect(fetchSpy).toHaveBeenCalledTimes(3)
+    expect(sleep.mock.calls.map(([delay]) => delay)).toEqual([1000, 2000])
+  })
+
+  it('should wait as long as Google asks when it says so', async () => {
+    const fetchSpy = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        new Response('{}', { status: 429, headers: { 'Retry-After': '7' } }),
+      )
+      .mockResolvedValueOnce(jsonResponse({ body: { values: [] }, status: 200 }))
+    const sleep = vi.fn(async (_milliseconds: number) => await Promise.resolve())
+    const client = createSheetsClient({
+      spreadsheetId: 'sheet-1',
+      getAccessToken: () => 'token-1',
+      fetchImpl: fetchSpy,
+      sleep,
+    })
+
+    await client.readRange({ range: 'Members!A1:Z' })
+
+    expect(sleep).toHaveBeenCalledWith(7000)
+  })
+
+  it('should give up with the quota message once every retry is spent', async () => {
+    const fetchSpy = vi.fn<typeof fetch>().mockImplementation(async () => await Promise.resolve(quotaExceeded()))
+    const client = createSheetsClient({
+      spreadsheetId: 'sheet-1',
+      getAccessToken: () => 'token-1',
+      fetchImpl: fetchSpy,
+      retryDelaysMs: [1, 1],
+      sleep: async () => await Promise.resolve(),
+    })
+
+    await expect(client.readRange({ range: 'Members!A1:Z' })).rejects.toThrow(/429 Quota exceeded/)
+    expect(fetchSpy).toHaveBeenCalledTimes(3)
+  })
+
+  it('should not retry a refusal that waiting cannot fix', async () => {
+    const fetchSpy = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(jsonResponse({ body: { error: { message: 'nope' } }, status: 403 }))
+    const sleep = vi.fn(async (_milliseconds: number) => await Promise.resolve())
+    const client = createSheetsClient({
+      spreadsheetId: 'sheet-1',
+      getAccessToken: () => 'token-1',
+      fetchImpl: fetchSpy,
+      sleep,
+    })
+
+    await expect(client.readRange({ range: 'Members!A1:Z' })).rejects.toThrow(/403/)
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+    expect(sleep).not.toHaveBeenCalled()
+  })
+})

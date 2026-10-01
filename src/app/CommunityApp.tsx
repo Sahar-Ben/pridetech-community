@@ -9,6 +9,7 @@ import { useStoredSpreadsheetId } from '../config/useStoredSpreadsheetId'
 import type { PickSpreadsheet } from '../picker/spreadsheetPicker'
 import { SpreadsheetPickerScreen } from '../picker/SpreadsheetPickerScreen'
 import { useSpreadsheetPicker } from '../picker/useSpreadsheetPicker'
+import { withReadCache } from '../sheets/readCache'
 import type { CreateSheetsClient } from '../sheets/sheetsClient'
 
 type CommunityAppProps = {
@@ -36,7 +37,10 @@ export const CommunityApp = ({
     if (accessToken === undefined || spreadsheetId === undefined) {
       return undefined
     }
-    return createClient({ spreadsheetId, getAccessToken: () => accessToken })
+    /* Display reads are shared between screens for a short while, so moving
+       around the app does not spend Google's per-minute read quota
+       (readCache.ts). */
+    return withReadCache(createClient({ spreadsheetId, getAccessToken: () => accessToken }))
   }, [accessToken, createClient, spreadsheetId])
 
   /* Built from the same grant and the same picker as the Dashboard

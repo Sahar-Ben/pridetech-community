@@ -3,6 +3,7 @@ import './harness.css'
 import { HARNESS_TABS } from './fixtures'
 import { CommunityWorkspace } from '../../src/app/CommunityWorkspace'
 import { createFakeResponseSheetAccess } from '../../src/testing/eventsRegistryFactory'
+import { withReadCache } from '../../src/sheets/readCache'
 import { createFakeSheet } from '../../src/testing/fakeSheet'
 
 const rootElement = document.getElementById('root')
@@ -11,7 +12,24 @@ if (rootElement === null) {
   throw new Error('Root element #root was not found in the harness page')
 }
 
-const sheet = createFakeSheet({ tabs: HARNESS_TABS })
+/* Every read that reaches the sheet is counted, so a test can hold the app to
+   Google's per-minute read quota; the client is wrapped in the same display
+   cache as the real app. */
+declare global {
+  interface Window {
+    harnessReads: string[]
+  }
+}
+window.harnessReads = []
+
+const sheet = createFakeSheet({
+  tabs: HARNESS_TABS,
+  onRead: (range) => {
+    window.harnessReads.push(range)
+  },
+})
+
+const sheetsClient = withReadCache(sheet.client)
 
 createRoot(rootElement).render(
   <CommunityWorkspace
@@ -19,7 +37,7 @@ createRoot(rootElement).render(
     onSessionExpired={() => undefined}
     onSignOut={() => undefined}
     responseSheetAccess={createFakeResponseSheetAccess()}
-    sheetsClient={sheet.client}
+    sheetsClient={sheetsClient}
     spreadsheetName="E2E HARNESS"
   />,
 )

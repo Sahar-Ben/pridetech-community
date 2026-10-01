@@ -8,6 +8,7 @@ import {
   type RegistryTabPlans,
 } from './registrySetupPlan'
 import { describeError } from '../../errors/describeError'
+import { readForDisplay } from '../../sheets/readCache'
 import type { SheetsClient } from '../../sheets/sheetsClient'
 import { isExpiredSessionError, isForbiddenError } from '../../sheets/sheetsRequestError'
 
@@ -37,7 +38,8 @@ const readRegistryRows = async ({
   )
   const tabRows = await Promise.all(
     presentTabNames.map(
-      async (tabName) => await sheetsClient.readRange({ range: buildRegistryTabRange(tabName) }),
+      async (tabName) =>
+        await readForDisplay({ sheetsClient, range: buildRegistryTabRange(tabName) }),
     ),
   )
   return new Map(presentTabNames.map((tabName, index) => [tabName, tabRows[index] ?? []]))

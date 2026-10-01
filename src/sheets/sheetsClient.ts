@@ -17,6 +17,13 @@ export type CellWrite = {
 export type SheetsClient = {
   spreadsheetId: string
   readRange: (options: { range: string }) => Promise<string[][]>
+  /* For reads that only put a screen up: may answer from a short-lived copy
+     (see readCache.ts). A read that checks a row before writing to it uses
+     `readRange`, which always asks Google. Absent on clients without a cache. */
+  readRangeForDisplay?: (options: { range: string }) => Promise<string[][]>
+  /* Drops every remembered read, so the next one asks Google: called by the
+     Reload and Try again buttons. */
+  forgetCachedReads?: () => void
   appendRow: (options: {
     range: string
     values: readonly string[]
@@ -64,14 +71,39 @@ const toCellText = (cell: unknown): string => {
 const describeRanges = (writes: readonly CellWrite[]): string =>
   writes.map((write) => write.range).join(', ')
 
+/* Google allows about 60 reads a minute per person. Going over it, or a
+   moment of Google being busy, is answered with 429 or 503 and nothing done,
+   so asking again after a pause is safe for reads and writes alike. The waits
+   double, and a Retry-After from Google is honoured when it is longer. */
+const RETRYABLE_STATUSES: ReadonlySet<number> = new Set([429, 503])
+
+export const DEFAULT_RETRY_DELAYS_MS: readonly number[] = [1000, 2000, 4000, 8000]
+
+const MAX_RETRY_AFTER_MS = 30_000
+
+const retryAfterMs = (response: Response): number | undefined => {
+  const header = response.headers.get('Retry-After')
+  const seconds = header === null ? Number.NaN : Number(header)
+  return Number.isFinite(seconds) ? Math.min(seconds * 1000, MAX_RETRY_AFTER_MS) : undefined
+}
+
+const waitFor = async (milliseconds: number): Promise<void> =>
+  await new Promise((resolve) => {
+    setTimeout(resolve, milliseconds)
+  })
+
 export const createSheetsClient = ({
   spreadsheetId,
   getAccessToken,
   fetchImpl = fetch,
+  retryDelaysMs = DEFAULT_RETRY_DELAYS_MS,
+  sleep = waitFor,
 }: {
   spreadsheetId: string
   getAccessToken: () => string
   fetchImpl?: typeof fetch
+  retryDelaysMs?: readonly number[]
+  sleep?: (milliseconds: number) => Promise<void>
 }): SheetsClient => {
   const request = async ({
     range,
@@ -84,14 +116,24 @@ export const createSheetsClient = ({
     method: string
     body?: unknown
   }): Promise<unknown> => {
-    const response = await fetchImpl(`${SHEETS_API_BASE}/${spreadsheetId}${path}`, {
-      method,
-      headers: {
-        Authorization: `Bearer ${getAccessToken()}`,
-        'Content-Type': 'application/json',
-      },
-      body: body === undefined ? undefined : JSON.stringify(body),
-    })
+    const send = async (): Promise<Response> =>
+      await fetchImpl(`${SHEETS_API_BASE}/${spreadsheetId}${path}`, {
+        method,
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+          'Content-Type': 'application/json',
+        },
+        body: body === undefined ? undefined : JSON.stringify(body),
+      })
+
+    let response = await send()
+    for (const delay of retryDelaysMs) {
+      if (!RETRYABLE_STATUSES.has(response.status)) {
+        break
+      }
+      await sleep(Math.max(delay, retryAfterMs(response) ?? 0))
+      response = await send()
+    }
     if (!response.ok) {
       throw new SheetsRequestError({
         range,

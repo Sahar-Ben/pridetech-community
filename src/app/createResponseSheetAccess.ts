@@ -4,6 +4,7 @@ import type {
 } from '../features/events/responseSheetAccess'
 import type { PickSpreadsheet } from '../picker/spreadsheetPicker'
 import { toRangeTabName } from '../sheets/rangeTabName'
+import { readForDisplay, withReadCache } from '../sheets/readCache'
 import type { CreateSheetsClient, SheetsClient } from '../sheets/sheetsClient'
 
 const HEADER_ROW_RANGE_END = 'Z1'
@@ -83,8 +84,19 @@ export const createResponseSheetAccess = ({
   accessToken: string
   createClient: CreateSheetsClient
 }): ResponseSheetAccess => {
-  const clientFor = (spreadsheetId: string): SheetsClient =>
-    createClient({ spreadsheetId, getAccessToken: () => accessToken })
+  /* One client per response spreadsheet, kept, so its display cache lives
+     across screens: the events list and an event's page read the same
+     registrants, and reading them twice spends the per-minute read quota. */
+  const clients = new Map<string, SheetsClient>()
+  const clientFor = (spreadsheetId: string): SheetsClient => {
+    const existing = clients.get(spreadsheetId)
+    if (existing !== undefined) {
+      return existing
+    }
+    const client = withReadCache(createClient({ spreadsheetId, getAccessToken: () => accessToken }))
+    clients.set(spreadsheetId, client)
+    return client
+  }
 
   return {
     pickSpreadsheet: toPickPromise({ pickSpreadsheet, accessToken }),
@@ -104,8 +116,13 @@ export const createResponseSheetAccess = ({
     },
 
     readRows: async ({ spreadsheetId, sheetName }) =>
-      await clientFor(spreadsheetId).readRange({
+      await readForDisplay({
+        sheetsClient: clientFor(spreadsheetId),
         range: `${toRangeTabName(sheetName)}!A1:${ROWS_RANGE_END}`,
       }),
+
+    forgetCachedReads: () => {
+      clients.forEach((client) => client.forgetCachedReads?.())
+    },
   }
 }

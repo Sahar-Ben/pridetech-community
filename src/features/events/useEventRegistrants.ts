@@ -155,5 +155,14 @@ export const useEventRegistrants = ({
     [entries],
   )
 
-  return { loads, request, reload: readEvent }
+  /* "Read again" means from Google, not from the few-seconds-old copy. */
+  const reload = useCallback(
+    (eventId: string) => {
+      access.forgetCachedReads?.()
+      readEvent(eventId)
+    },
+    [access, readEvent],
+  )
+
+  return { loads, request, reload }
 }

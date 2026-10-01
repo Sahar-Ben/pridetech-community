@@ -25,4 +25,6 @@ export type ResponseSheetAccess = {
     spreadsheetId: string
     sheetName: string
   }) => Promise<readonly (readonly string[])[]>
+  /* Drops remembered registrant reads (see readCache.ts), for "read again". */
+  forgetCachedReads?: () => void
 }

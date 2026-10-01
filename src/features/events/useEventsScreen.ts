@@ -41,9 +41,12 @@ export const useEventsScreen = ({
     onSessionExpiredRef.current = onSessionExpired
   }, [onSessionExpired])
 
+  /* Reload and Try again mean from Google: changes made in the sheet itself
+     must show, so the short display cache is dropped first (readCache.ts). */
   const reload = useCallback(() => {
+    sheetsClient.forgetCachedReads?.()
     setReloadCount((previousCount) => previousCount + 1)
-  }, [])
+  }, [sheetsClient])
 
   useEffect(() => {
     let isCurrent = true
