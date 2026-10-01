@@ -55,8 +55,12 @@ export const AppShell = ({
      panned -- it can pan even a page that does not scroll -- put it back once
      focus has left the field. */
   useEffect(() => {
+    /* The pending check is cancelled when the shell goes away: a timer left
+       running would touch a window that is no longer there. */
+    let pending: number | undefined
     const settleWindow = () => {
-      window.setTimeout(() => {
+      window.clearTimeout(pending)
+      pending = window.setTimeout(() => {
         if (window.scrollY !== 0 || window.scrollX !== 0) {
           window.scrollTo(0, 0)
         }
@@ -65,6 +69,7 @@ export const AppShell = ({
     document.addEventListener('focusout', settleWindow)
     return () => {
       document.removeEventListener('focusout', settleWindow)
+      window.clearTimeout(pending)
     }
   }, [])
 

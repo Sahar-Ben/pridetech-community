@@ -165,3 +165,46 @@ describe('AppShell, scrolling', () => {
     expect(main.scrollTop).toBe(0)
   })
 })
+
+describe('AppShell, leaving nothing behind', () => {
+  it('should cancel its pending window check once it is gone, after a field loses focus', () => {
+    vi.useFakeTimers()
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
+    const scrollY = vi.spyOn(window, 'scrollY', 'get').mockReturnValue(300)
+    try {
+      const { unmount } = renderShell()
+      const button = screen.getByRole('button', { name: 'Account' })
+      button.focus()
+      button.blur()
+
+      unmount()
+      vi.runAllTimers()
+
+      expect(scrollTo).not.toHaveBeenCalled()
+    } finally {
+      scrollTo.mockRestore()
+      scrollY.mockRestore()
+      vi.useRealTimers()
+    }
+  })
+
+  it('should still put a panned window back while it is on screen', () => {
+    vi.useFakeTimers()
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
+    const scrollY = vi.spyOn(window, 'scrollY', 'get').mockReturnValue(300)
+    try {
+      renderShell()
+      const button = screen.getByRole('button', { name: 'Account' })
+      button.focus()
+      button.blur()
+
+      vi.runAllTimers()
+
+      expect(scrollTo).toHaveBeenCalledWith(0, 0)
+    } finally {
+      scrollTo.mockRestore()
+      scrollY.mockRestore()
+      vi.useRealTimers()
+    }
+  })
+})
