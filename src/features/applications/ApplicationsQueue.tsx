@@ -1,4 +1,4 @@
-import { useId, useState } from 'react'
+import { useCallback, useId, useMemo, useRef, useState } from 'react'
 import { ApplicationCard } from './ApplicationCard'
 import {
   isDecliningOffered,
@@ -11,6 +11,15 @@ import type { LeadsReview } from './leadsReview'
 import { LeadsDataQualityNotes } from './LeadsDataQualityNotes'
 import { describeApplicationsCount, describeEmptyView } from './leadsReviewText'
 import { LeadsFilterChips } from './LeadsFilterChips'
+import { LeadsFilterSheet } from './LeadsFilterSheet'
+import {
+  applyLeadListQuery,
+  EMPTY_LEAD_LIST_QUERY,
+  listCityOptions,
+  listInterestOptions,
+  type LeadListQuery,
+} from './leadListQuery'
+import { LeadsToolbar } from './LeadsToolbar'
 import type { LeadDecisions } from './useLeadDecisions'
 import { SectionTitle } from '../../app/SectionTitle'
 import { COMPACT_BUTTON_SIZE_CLASSES, SHELL_BUTTON_CLASSES } from '../../theme/controls'
@@ -40,9 +49,30 @@ export const ApplicationsQueue = ({
   onReload,
 }: ApplicationsQueueProps) => {
   const [view, setView] = useState<LeadView>('Pending')
+  const [query, setQuery] = useState<LeadListQuery>(EMPTY_LEAD_LIST_QUERY)
+  const [isSheetOpen, setIsSheetOpen] = useState(false)
+  const toolbarRef = useRef<HTMLDivElement>(null)
   const baseId = useId()
   const panelId = `${baseId}-list`
-  const applications = selectApplicationsInView({ review, view })
+  const applicationsInView = selectApplicationsInView({ review, view })
+  /* The query follows the reviewer from tab to tab: a city they are working
+     through is still the city when they look at who was kept for later. */
+  const applications = useMemo(
+    () => applyLeadListQuery({ applications: applicationsInView, query }),
+    [applicationsInView, query],
+  )
+  const cityOptions = useMemo(() => listCityOptions(applicationsInView), [applicationsInView])
+  const interestOptions = useMemo(
+    () => listInterestOptions(applicationsInView),
+    [applicationsInView],
+  )
+  const clearQuery = useCallback(() => setQuery(EMPTY_LEAD_LIST_QUERY), [])
+  /* Focus goes back to the button that opened the sheet, which lives in the
+     toolbar; it is found there rather than threaded through as a ref. */
+  const closeSheet = useCallback(() => {
+    setIsSheetOpen(false)
+    toolbarRef.current?.querySelector<HTMLButtonElement>('[aria-haspopup="dialog"]')?.focus()
+  }, [])
   const countLine = describeApplicationsCount({ view, counts: review.counts })
   const cardDecisions = {
     onDecline: isDecliningOffered({ view }) ? decisions.decline : undefined,
@@ -74,9 +104,44 @@ export const ApplicationsQueue = ({
         view={view}
       />
 
+      <div ref={toolbarRef}>
+        <LeadsToolbar
+          isSheetOpen={isSheetOpen}
+          onClearAll={clearQuery}
+          onOpenSheet={() => setIsSheetOpen(true)}
+          onQueryChange={setQuery}
+          query={query}
+          shownCount={applications.length}
+          totalCount={applicationsInView.length}
+        />
+      </div>
+
+      {isSheetOpen && (
+        <LeadsFilterSheet
+          cityOptions={cityOptions}
+          interestOptions={interestOptions}
+          onClearAll={clearQuery}
+          onClose={closeSheet}
+          onQueryChange={setQuery}
+          query={query}
+          resultCount={applications.length}
+        />
+      )}
+
       <div aria-labelledby={toViewChipId({ baseId, view })} id={panelId} role="tabpanel">
-        {applications.length === 0 ? (
+        {applicationsInView.length === 0 ? (
           <p className={EMPTY_STATE_CLASSES}>{describeEmptyView({ view })}</p>
+        ) : applications.length === 0 ? (
+          <div className={`${EMPTY_STATE_CLASSES} flex flex-col items-center gap-3`}>
+            <p>No applications match this search and these filters.</p>
+            <button
+              className="min-h-11 rounded-2xl px-4 font-semibold text-accent hover:bg-surface"
+              onClick={clearQuery}
+              type="button"
+            >
+              Clear all
+            </button>
+          </div>
         ) : (
           /* One entrance animation on the list, not 256 of them: the cards are
              the work, and a stagger across them would be a wait before it. */

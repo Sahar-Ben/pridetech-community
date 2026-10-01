@@ -28,7 +28,7 @@ const AVATAR_CLASSES = [
 ].join(' ')
 
 const CHIP_CLASSES =
-  'rounded-full border border-card-strong-edge bg-surface px-2.5 py-1.5 text-xs text-neutral-ink'
+  'shrink-0 rounded-full border border-card-strong-edge bg-surface px-2.5 py-1.5 text-xs whitespace-nowrap text-neutral-ink'
 
 type ApplicationCardProps = {
   application: ReviewableApplication
@@ -72,7 +72,13 @@ export const ApplicationCard = ({
       </div>
 
       {(lead.city !== undefined || interests.shown.length > 0) && (
-        <ul aria-label="City and interests" className="flex flex-wrap gap-1.5">
+        /* One line that scrolls sideways on a phone, so a long list of
+           interests costs no height on a card read 255 times; it wraps from
+           `sm` up, where there is room. */
+        <ul
+          aria-label="City and interests"
+          className="-mx-[18px] flex gap-1.5 overflow-x-auto px-[18px] [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0"
+        >
           {lead.city !== undefined && <li className={`${CHIP_CLASSES} text-ink`}>{lead.city}</li>}
           {interests.shown.map((interest) => (
             <li className={CHIP_CLASSES} key={interest}>
