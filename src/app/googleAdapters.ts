@@ -4,10 +4,12 @@ import type { EnvironmentValues } from '../config/googleConfig'
 import { parseGoogleConfig } from '../config/googleConfig'
 import { createGoogleSpreadsheetPicker } from '../picker/googlePicker'
 import type { PickSpreadsheet } from '../picker/spreadsheetPicker'
+import { createWebAuthnDeviceLock, type DeviceLock } from '../lock/deviceLock'
 
 export type GoogleAdapters = {
   createAccessTokenRequester: CreateAccessTokenRequester
   pickSpreadsheet: PickSpreadsheet
+  deviceLock: DeviceLock
 }
 
 /* Neither adapter touches a Google global until it is called, so building them
@@ -25,5 +27,6 @@ export const buildGoogleAdapters = (
       apiKey: config.apiKey,
       appId: config.appId,
     }),
+    deviceLock: createWebAuthnDeviceLock(),
   }
 }

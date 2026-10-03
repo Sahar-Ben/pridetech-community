@@ -2,6 +2,7 @@ import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { CommunityApp } from './CommunityApp'
+import { createFakeDeviceLock, type FakeDeviceLock } from '../testing/deviceLockFactory'
 import type { CreateSheetsClient } from '../sheets/sheetsClient'
 import { SheetsRequestError } from '../sheets/sheetsRequestError'
 import {
@@ -24,9 +25,11 @@ const createClientFor = (rows: readonly string[][]): CreateSheetsClient => {
 const renderCommunityApp = ({
   spreadsheetIds = ['spreadsheet-1'],
   createClient = createClientFor(PENDING_ROWS),
+  deviceLock = createFakeDeviceLock(),
 }: {
   spreadsheetIds?: readonly string[]
   createClient?: CreateSheetsClient
+  deviceLock?: FakeDeviceLock
 } = {}) => {
   const google = createFakeGoogleTokenPort()
   render(
@@ -34,6 +37,7 @@ const renderCommunityApp = ({
       createAccessTokenRequester={google.createAccessTokenRequester}
       pickSpreadsheet={createFakeSpreadsheetPicker(spreadsheetIds)}
       createClient={createClient}
+      deviceLock={deviceLock}
     />,
   )
   return google
@@ -151,6 +155,51 @@ describe('CommunityApp', () => {
     await userEvent.click(screen.getByRole('button', { name: /sign out/i }))
 
     expect(screen.getByRole('button', { name: /sign in with google/i })).toBeInTheDocument()
+  })
+
+  it('should ask for Face ID before sign-in when the lock was set up earlier', async () => {
+    window.localStorage.setItem('pridetech.lockCredentialId', 'passkey-1')
+    renderCommunityApp({ deviceLock: createFakeDeviceLock({ available: true }) })
+
+    expect(screen.getByRole('heading', { name: 'The app is locked' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /sign in with google/i })).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Unlock with Face ID' }))
+
+    expect(
+      await screen.findByRole('button', { name: /sign in with google/i }),
+    ).toBeInTheDocument()
+  })
+
+  it('should keep the workspace where it was behind a lock after five minutes away', async () => {
+    window.localStorage.setItem('pridetech.spreadsheetId', 'remembered-sheet')
+    const google = renderCommunityApp({ deviceLock: createFakeDeviceLock({ available: true }) })
+    await signIn(google)
+    await screen.findByRole('heading', { name: 'Overview' })
+    await userEvent.click(screen.getByRole('button', { name: 'Account' }))
+    await userEvent.click(screen.getByRole('button', { name: /turn on face id lock/i }))
+    await screen.findByRole('button', { name: /turn off face id lock/i })
+
+    const now = vi.spyOn(Date, 'now')
+    now.mockReturnValue(0)
+    Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' })
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'))
+    })
+    now.mockReturnValue(5 * 60 * 1000)
+    Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' })
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'))
+    })
+    now.mockRestore()
+
+    expect(screen.getByRole('heading', { name: 'The app is locked' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Overview' })).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Unlock with Face ID' }))
+
+    expect(await screen.findByRole('heading', { name: 'Overview' })).toBeInTheDocument()
+    expect(google.requestAccessToken).toHaveBeenCalledTimes(1)
   })
 
   it('should let the reviewer swap to a different spreadsheet from the workspace', async () => {

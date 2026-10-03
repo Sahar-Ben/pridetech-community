@@ -55,6 +55,7 @@ test('the account menu opens, names the spreadsheet and closes on Escape', async
   const menu = page.getByRole('group', { name: 'Account' })
 
   await expect(menu.getByText('E2E HARNESS')).toBeVisible()
+  await expect(menu.getByRole('button', { name: /turn on face id lock/i })).toBeVisible()
   await expect(menu.getByRole('button', { name: 'Sign out' })).toBeVisible()
   await expect(menu).toBeInViewport({ ratio: 1 })
 

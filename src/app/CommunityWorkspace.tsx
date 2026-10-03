@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { WorkspaceSection } from './WorkspaceSection'
+import type { ScreenLock } from '../lock/useScreenLock'
 import type { ResponseSheetAccess } from '../features/events/responseSheetAccess'
 import type { SheetsClient } from '../sheets/sheetsClient'
 import { AppShell } from '../shell/AppShell'
@@ -9,6 +10,7 @@ type CommunityWorkspaceProps = {
   sheetsClient: SheetsClient
   responseSheetAccess: ResponseSheetAccess
   spreadsheetName: string | undefined
+  screenLock?: ScreenLock
   onSessionExpired: () => void
   onChangeSpreadsheet: () => void
   onSignOut: () => void
@@ -18,13 +20,14 @@ export const CommunityWorkspace = ({
   sheetsClient,
   responseSheetAccess,
   spreadsheetName,
+  screenLock,
   onSessionExpired,
   onChangeSpreadsheet,
   onSignOut,
 }: CommunityWorkspaceProps) => {
   const [activeSection, setActiveSection] = useState<Section>(DEFAULT_SECTION)
   const [waitingCount, setWaitingCount] = useState<number | undefined>(undefined)
-  const account = { spreadsheetName, onChangeSpreadsheet, onSignOut }
+  const account = { spreadsheetName, screenLock, onChangeSpreadsheet, onSignOut }
 
   return (
     <AppShell

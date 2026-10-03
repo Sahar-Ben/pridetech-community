@@ -18,6 +18,7 @@ export const App = () => {
       createAccessTokenRequester={googleAdapters.createAccessTokenRequester}
       pickSpreadsheet={googleAdapters.pickSpreadsheet}
       createClient={createSheetsClient}
+      deviceLock={googleAdapters.deviceLock}
     />
   )
 }

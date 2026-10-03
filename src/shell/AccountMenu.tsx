@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import type { WorkspaceAccount } from './workspaceAccount'
+import type { ScreenLock } from '../lock/useScreenLock'
 
-/* The two account actions live behind the header's one button rather than in
+/* The account actions live behind the header's one button rather than in
    the nav: one re-points the whole app and the other ends the session, both
    are used once a day at most, and the bottom bar has room for four thumbs and
    no more. */
@@ -26,6 +27,32 @@ const SIGN_OUT_BUTTON_CLASSES = [
   'min-h-11 rounded-2xl border border-danger-edge px-3 text-sm font-semibold text-danger-ink',
   'transition-colors duration-150 ease-brand hover:bg-danger-surface',
 ].join(' ')
+
+/* Stays open when pressed, unlike its neighbours: turning the lock on goes
+   through the device's Face ID sheet, and if that is cancelled the reason has
+   to be said somewhere the organiser is still looking. */
+const ScreenLockToggle = ({ screenLock }: { screenLock: ScreenLock }) => (
+  <>
+    <button
+      className={CHANGE_BUTTON_CLASSES}
+      disabled={screenLock.isBusy}
+      onClick={screenLock.isOn ? screenLock.turnOff : screenLock.turnOn}
+      type="button"
+    >
+      {screenLock.isOn ? 'Turn off Face ID lock' : 'Turn on Face ID lock'}
+      <span className="mt-0.5 block text-xs font-medium text-ink-muted">
+        {screenLock.isOn
+          ? 'Face ID is asked for on opening, and after 5 minutes away.'
+          : 'Ask for Face ID on opening, and after 5 minutes away.'}
+      </span>
+    </button>
+    {screenLock.message !== undefined && (
+      <p className="px-3 text-xs font-semibold text-danger-ink" role="alert">
+        {screenLock.message}
+      </p>
+    )}
+  </>
+)
 
 type AccountMenuProps = {
   account: WorkspaceAccount
@@ -121,6 +148,7 @@ export const AccountMenu = ({ account }: AccountMenuProps) => {
               </span>
             )}
           </button>
+          {account.screenLock !== undefined && <ScreenLockToggle screenLock={account.screenLock} />}
           <button
             className={SIGN_OUT_BUTTON_CLASSES}
             onClick={runAndClose(account.onSignOut)}

@@ -31,12 +31,26 @@ const sheet = createFakeSheet({
 
 const sheetsClient = withReadCache(sheet.client)
 
+/* Shown in the account menu as on a phone that can use Face ID, so the menu's
+   layout is checked with every control it can hold. */
+const screenLock = {
+  isAvailable: true,
+  isOn: false,
+  isLocked: false,
+  isBusy: false,
+  message: undefined,
+  unlock: () => undefined,
+  turnOn: () => undefined,
+  turnOff: () => undefined,
+}
+
 createRoot(rootElement).render(
   <CommunityWorkspace
     onChangeSpreadsheet={() => undefined}
     onSessionExpired={() => undefined}
     onSignOut={() => undefined}
     responseSheetAccess={createFakeResponseSheetAccess()}
+    screenLock={screenLock}
     sheetsClient={sheetsClient}
     spreadsheetName="E2E HARNESS"
   />,

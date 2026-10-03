@@ -6,6 +6,9 @@ import type { CreateAccessTokenRequester } from '../auth/accessTokenRequester'
 import { SignInScreen } from '../auth/SignInScreen'
 import { useGoogleAuth } from '../auth/useGoogleAuth'
 import { useStoredSpreadsheetId } from '../config/useStoredSpreadsheetId'
+import type { DeviceLock } from '../lock/deviceLock'
+import { LockScreen } from '../lock/LockScreen'
+import { useScreenLock } from '../lock/useScreenLock'
 import type { PickSpreadsheet } from '../picker/spreadsheetPicker'
 import { SpreadsheetPickerScreen } from '../picker/SpreadsheetPickerScreen'
 import { useSpreadsheetPicker } from '../picker/useSpreadsheetPicker'
@@ -16,13 +19,16 @@ type CommunityAppProps = {
   createAccessTokenRequester: CreateAccessTokenRequester
   pickSpreadsheet: PickSpreadsheet
   createClient: CreateSheetsClient
+  deviceLock: DeviceLock
 }
 
 export const CommunityApp = ({
   createAccessTokenRequester,
   pickSpreadsheet,
   createClient,
+  deviceLock,
 }: CommunityAppProps) => {
+  const screenLock = useScreenLock({ deviceLock })
   const { accessToken, errorMessage, signIn, signOut, reportExpiredSession } = useGoogleAuth({
     createAccessTokenRequester,
   })
@@ -56,26 +62,49 @@ export const CommunityApp = ({
 
   const connectionState = resolveConnectionState({ accessToken, spreadsheetId })
 
-  if (connectionState === 'signed-out') {
-    return <SignInScreen errorMessage={errorMessage} onSignIn={signIn} />
+  const renderScreen = () => {
+    if (connectionState === 'signed-out') {
+      return <SignInScreen errorMessage={errorMessage} onSignIn={signIn} />
+    }
+
+    if (
+      connectionState === 'needs-spreadsheet' ||
+      sheetsClient === undefined ||
+      responseSheetAccess === undefined
+    ) {
+      return <SpreadsheetPickerScreen message={picker.message} onChoose={picker.choose} />
+    }
+
+    return (
+      <CommunityWorkspace
+        sheetsClient={sheetsClient}
+        responseSheetAccess={responseSheetAccess}
+        spreadsheetName={spreadsheetName}
+        screenLock={screenLock.isAvailable || screenLock.isOn ? screenLock : undefined}
+        onSessionExpired={reportExpiredSession}
+        onChangeSpreadsheet={picker.choose}
+        onSignOut={signOut}
+      />
+    )
   }
 
-  if (
-    connectionState === 'needs-spreadsheet' ||
-    sheetsClient === undefined ||
-    responseSheetAccess === undefined
-  ) {
-    return <SpreadsheetPickerScreen message={picker.message} onChoose={picker.choose} />
-  }
-
+  /* Hidden, not unmounted, while locked (useScreenLock.ts): the screen behind
+     the lock is exactly where it was once Face ID lets the organiser back. */
   return (
-    <CommunityWorkspace
-      sheetsClient={sheetsClient}
-      responseSheetAccess={responseSheetAccess}
-      spreadsheetName={spreadsheetName}
-      onSessionExpired={reportExpiredSession}
-      onChangeSpreadsheet={picker.choose}
-      onSignOut={signOut}
-    />
+    <>
+      {screenLock.isLocked && (
+        <LockScreen
+          isBusy={screenLock.isBusy}
+          message={screenLock.message}
+          onUnlock={screenLock.unlock}
+        />
+      )}
+      <div
+        className={screenLock.isLocked ? undefined : 'contents'}
+        hidden={screenLock.isLocked}
+      >
+        {renderScreen()}
+      </div>
+    </>
   )
 }
