@@ -6,6 +6,8 @@ export type EventChange =
   | { kind: 'saved'; eventName: string }
   | { kind: 'archived'; eventName: string }
   | { kind: 'sheet-attached'; eventName: string }
+  | { kind: 'closed-out'; eventName: string }
+  | { kind: 'reopened'; eventName: string }
 
 export const describeEventChange = (change: EventChange): string => {
   if (change.kind === 'added') {
@@ -13,6 +15,12 @@ export const describeEventChange = (change: EventChange): string => {
   }
   if (change.kind === 'saved') {
     return `${change.eventName} was saved to the Events tab of your spreadsheet.`
+  }
+  if (change.kind === 'closed-out') {
+    return `${change.eventName} was closed out. Its attendance is now final.`
+  }
+  if (change.kind === 'reopened') {
+    return `Check-in for ${change.eventName} is open again.`
   }
   if (change.kind === 'sheet-attached') {
     return `The response sheet was recorded against ${change.eventName} on the Event sheets tab. Nothing in it has been read yet.`

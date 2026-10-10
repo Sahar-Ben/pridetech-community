@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import type { EventAttendanceSummary } from './eventAttendance'
-import { describeAttendanceForEvent, describeAttendanceForListing } from './eventAttendanceText'
+import {
+  describeAttendanceForEvent,
+  describeAttendanceForListing,
+  describeCloseOutConsequences,
+} from './eventAttendanceText'
 
 const summary = (overrides: Partial<EventAttendanceSummary> = {}): EventAttendanceSummary => ({
   registeredCount: 0,
@@ -68,5 +72,29 @@ describe('describeAttendanceForEvent', () => {
     expect(
       describeAttendanceForEvent(summary({ registeredCount: 3, checkedInCount: 1, noShowCount: 2 })),
     ).toMatch(/2 no-shows$/)
+  })
+})
+
+describe('describeCloseOutConsequences', () => {
+  it('should count who becomes attended and who becomes a no-show', () => {
+    expect(describeCloseOutConsequences({ checkedInCount: 12, noShowCount: 3 })).toEqual([
+      '12 people checked in will be recorded as attended.',
+      '3 people who registered but were not checked in will be recorded as no-shows.',
+      'Check-in closes for this event. You can reopen it from this page if somebody was missed.',
+    ])
+  })
+
+  it('should speak of one person as a person', () => {
+    expect(describeCloseOutConsequences({ checkedInCount: 1, noShowCount: 1 }).slice(0, 2)).toEqual([
+      '1 person checked in will be recorded as attended.',
+      '1 person who registered but was not checked in will be recorded as a no-show.',
+    ])
+  })
+
+  it('should say plainly when nobody was checked in and nobody is missing', () => {
+    expect(describeCloseOutConsequences({ checkedInCount: 0, noShowCount: 0 }).slice(0, 2)).toEqual([
+      'Nobody was checked in, so nobody will be recorded as attended.',
+      'Nobody who registered is still missing, so there will be no no-shows.',
+    ])
   })
 })

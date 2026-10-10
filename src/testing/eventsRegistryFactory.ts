@@ -13,7 +13,7 @@ import type { ResponseSheetAccess } from '../features/events/responseSheetAccess
 export const createFakeEventRegistryWriter = (
   overrides: Partial<EventRegistryWriter> = {},
 ): EventRegistryWriter => ({
-  addEvent: vi.fn(async () => await Promise.resolve()),
+  addEvent: vi.fn(async () => await Promise.resolve('new-event-id')),
   saveEvent: vi.fn(async () => await Promise.resolve()),
   attachSheet: vi.fn(async () => await Promise.resolve()),
   ...overrides,

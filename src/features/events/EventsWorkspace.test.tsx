@@ -177,6 +177,40 @@ describe('EventsWorkspace adding and editing', () => {
     })
   })
 
+  it('should open the new event once the registry holds it, with attaching its sheet next', async () => {
+    const writer = createFakeEventRegistryWriter()
+    const workspaceWith = (events: readonly CommunityEvent[]) => (
+      <EventsWorkspace
+        attachedSheets={[]}
+        attendanceStore={createFakeAttendanceStore()}
+        events={events}
+        members={[dana]}
+        onReloadRegistrants={vi.fn()}
+        onRequestRegistrants={vi.fn()}
+        onSessionExpired={vi.fn()}
+        registrantLoads={buildRegistrantLoads([])}
+        responseSheetAccess={createFakeResponseSheetAccess()}
+        today={TODAY}
+        writer={writer}
+      />
+    )
+    const { rerender } = render(workspaceWith([]))
+
+    await userEvent.click(screen.getByRole('button', { name: /add event/i }))
+    await userEvent.type(screen.getByLabelText(/^name/i), 'Board Games Night')
+    await userEvent.type(screen.getByLabelText(/^date/i), '2026-10-15')
+    await userEvent.type(screen.getByLabelText(/^location/i), 'Pell and Quarry, Haifa')
+    await userEvent.click(screen.getByRole('button', { name: /^save event$/i }))
+    rerender(
+      workspaceWith([
+        buildEvent({ id: 'new-event-id', name: 'Board Games Night', date: '2026-10-15' }),
+      ]),
+    )
+
+    expect(await screen.findByRole('button', { name: /back to events/i })).toBeInTheDocument()
+    expect(screen.getByText(/next, attach its response sheet/i)).toBeInTheDocument()
+  })
+
   it('should say the new event reached the Google Sheet', async () => {
     renderEvents({ events: [] })
 
@@ -397,11 +431,68 @@ describe('EventsWorkspace event detail', () => {
 
     await openPridePanel()
     await userEvent.click(screen.getByRole('button', { name: /close out attendance/i }))
+    await userEvent.click(screen.getByRole('button', { name: /^close out$/i }))
 
     expect(writer.saveEvent).toHaveBeenCalledWith({
       originalEvent: pridePanel,
       updatedEvent: { ...pridePanel, isClosedOut: true },
     })
+  })
+
+  it('should say what closing out will do, and write nothing until it is confirmed', async () => {
+    const { writer } = renderEvents({
+      events: [pridePanel],
+      registrants: [
+        buildRegistrant({ id: 'r1', eventId: 'a', name: 'Ronit Amsalem' }),
+        buildRegistrant({ id: 'r2', eventId: 'a', name: 'Nadav Peretz' }),
+      ],
+    })
+
+    await openPridePanel()
+    await userEvent.click(screen.getByRole('button', { name: /close out attendance/i }))
+
+    const dialog = screen.getByRole('dialog', { name: /close out pride panel/i })
+    expect(within(dialog).getByText(/2 people who registered but were not checked in/i)).toBeInTheDocument()
+    expect(within(dialog).getByRole('button', { name: /not yet/i })).toHaveFocus()
+
+    await userEvent.click(within(dialog).getByRole('button', { name: /not yet/i }))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(writer.saveEvent).not.toHaveBeenCalled()
+  })
+
+  it('should not offer to close out an event that has not happened yet', async () => {
+    renderEvents({ events: [buildEvent({ id: 'u', name: 'Winter Social', date: '2026-12-02' })] })
+
+    await userEvent.click(screen.getByRole('button', { name: 'Winter Social' }))
+
+    expect(screen.getByRole('button', { name: /check in at the door/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /close out attendance/i })).not.toBeInTheDocument()
+  })
+
+  it('should reopen check-in on an event that was closed out', async () => {
+    const closedPanel = { ...pridePanel, isClosedOut: true }
+    const { writer } = renderEvents({ events: [closedPanel] })
+
+    await openPridePanel()
+    await userEvent.click(screen.getByRole('button', { name: /reopen check-in/i }))
+
+    expect(writer.saveEvent).toHaveBeenCalledWith({
+      originalEvent: closedPanel,
+      updatedEvent: { ...closedPanel, isClosedOut: false },
+    })
+  })
+
+  it('should come back to the event after editing it from the event', async () => {
+    renderEvents({ events: [pridePanel] })
+
+    await openPridePanel()
+    await userEvent.click(screen.getByRole('button', { name: /^edit event$/i }))
+    await userEvent.click(screen.getByRole('button', { name: /^save event$/i }))
+
+    expect(await screen.findByRole('button', { name: /back to events/i })).toBeInTheDocument()
+    expect(screen.getByText(/pride panel was saved/i)).toBeInTheDocument()
+    expect(screen.queryByText(/next, attach its response sheet/i)).not.toBeInTheDocument()
   })
 
   it('should keep the event on screen with the reason when the close-out was refused', async () => {
@@ -414,6 +505,7 @@ describe('EventsWorkspace event detail', () => {
 
     await openPridePanel()
     await userEvent.click(screen.getByRole('button', { name: /close out attendance/i }))
+    await userEvent.click(screen.getByRole('button', { name: /^close out$/i }))
 
     expect(await screen.findByText(/row 2 no longer holds pride panel/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /close out attendance/i })).toBeInTheDocument()

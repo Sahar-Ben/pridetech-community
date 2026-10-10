@@ -1,11 +1,14 @@
+import { useState } from 'react'
 import { EventReconcileNotice } from './EventReconcileNotice'
 import { EventRegistrantsReadStatus } from './EventRegistrantsReadStatus'
 import { EventRegistrantsTable } from './EventRegistrantsTable'
 import { EventResponseSheetsPanel } from './EventResponseSheetsPanel'
-import { describeAttendanceForEvent } from './eventAttendanceText'
+import { describeAttendanceForEvent, describeCloseOutConsequences } from './eventAttendanceText'
+import { describeEventChange, type EventChange } from './eventChangeText'
 import { formatEventDate } from './eventDate'
 import { summariseEventAttendance } from './eventAttendance'
 import { useAsyncAction } from './useAsyncAction'
+import { ConfirmDialog } from '../../app/ConfirmDialog'
 import { NoticeBanner } from '../../app/NoticeBanner'
 import {
   COMPACT_BUTTON_SIZE_CLASSES,
@@ -28,6 +31,8 @@ const SEPARATOR = ' \u{00b7} '
 const CLOSE_OUT_FAILED_MESSAGE =
   'The event was not closed out, and the Events tab was not changed.'
 
+const REOPEN_FAILED_MESSAGE = 'Check-in was not reopened, and the Events tab was not changed.'
+
 const CHECK_IN_BUTTON_CLASSES = `${PRIMARY_BUTTON_CLASSES} ${TOUCH_BUTTON_SIZE_CLASSES}`
 
 const SECONDARY_ACTION_CLASSES = `${SECONDARY_BUTTON_CLASSES} ${COMPACT_BUTTON_SIZE_CLASSES}`
@@ -42,9 +47,16 @@ type EventDetailProps = {
   attachedSheets: readonly AttachedResponseSheet[]
   responseSheetAccess: ResponseSheetAccess
   onAttachSheet: (options: { attachment: ResponseSheetAttachment }) => Promise<void>
+  /* After today: the door has not opened, so there is nothing to close out yet. */
+  isUpcoming: boolean
+  /* The last change made from the events screens, said here when it was made
+     to this event, so adding one lands on it with its next step in view. */
+  change: EventChange | undefined
   onBack: () => void
+  onEdit: () => void
   onOpenCheckIn: () => void
   onCloseOut: () => Promise<void>
+  onReopen: () => Promise<void>
   onReloadRegistrants: () => void
 }
 
@@ -60,8 +72,10 @@ const describeEmptyList = ({
   hasAttachedSheet: boolean
   load: EventRegistrantsLoad | undefined
 }): string | undefined => {
+  /* The response sheets panel above already says there is none and offers to
+     attach one; saying it twice is only more to read. */
   if (!hasAttachedSheet) {
-    return 'No response sheet is attached yet. Attach one above to see who registered.'
+    return undefined
   }
   if (load?.read === undefined) {
     return undefined
@@ -80,38 +94,77 @@ export const EventDetail = ({
   attachedSheets,
   responseSheetAccess,
   onAttachSheet,
+  isUpcoming,
+  change,
   onBack,
+  onEdit,
   onOpenCheckIn,
   onCloseOut,
+  onReopen,
   onReloadRegistrants,
 }: EventDetailProps) => {
   const closingOut = useAsyncAction({ fallbackMessage: CLOSE_OUT_FAILED_MESSAGE })
+  const reopening = useAsyncAction({ fallbackMessage: REOPEN_FAILED_MESSAGE })
+  const [isConfirmingCloseOut, setIsConfirmingCloseOut] = useState(false)
   const summary = summariseEventAttendance({ registrants, isClosedOut: event.isClosedOut })
+  const noShowsIfClosed =
+    summariseEventAttendance({ registrants, isClosedOut: true }).noShowCount ?? 0
+  const placeLine = [formatEventDate(event.date), event.location.trim()]
+    .filter((part) => part !== '')
+    .join(SEPARATOR)
   const emptyListText = describeEmptyList({
     hasAttachedSheet: attachedSheets.length > 0,
     load: registrantLoad,
   })
 
+  /* The dialog comes down only once the sheet has the change; a refusal
+     leaves it up with the reason in it. */
   const closeOutEvent = () => {
     closingOut.run(async () => {
       await onCloseOut()
+      setIsConfirmingCloseOut(false)
+    })
+  }
+
+  const cancelCloseOut = () => {
+    setIsConfirmingCloseOut(false)
+    closingOut.forgetError()
+  }
+
+  const reopenEvent = () => {
+    reopening.run(async () => {
+      await onReopen()
     })
   }
 
   return (
     <article className={DETAIL_CLASSES}>
-      <button className={`${SECONDARY_ACTION_CLASSES} self-start`} onClick={onBack} type="button">
-        <span aria-hidden="true">{BACK_ARROW} </span>
-        Back to events
-      </button>
+      <div className="flex items-center justify-between gap-3">
+        <button className={SECONDARY_ACTION_CLASSES} onClick={onBack} type="button">
+          <span aria-hidden="true">{BACK_ARROW} </span>
+          Back to events
+        </button>
+        <button className={SECONDARY_ACTION_CLASSES} onClick={onEdit} type="button">
+          Edit event
+        </button>
+      </div>
+
+      {change !== undefined && change.eventName === event.name && (
+        <NoticeBanner
+          detail={
+            change.kind === 'added' && attachedSheets.length === 0
+              ? 'Next, attach its response sheet below to see who registered.'
+              : undefined
+          }
+          role="status"
+          title={describeEventChange(change)}
+          tone="success"
+        />
+      )}
 
       <div className="flex flex-col gap-1">
         <h3 className={RECORD_TITLE_CLASSES}>{event.name}</h3>
-        <p className="text-sm text-ink">
-          {formatEventDate(event.date)}
-          {SEPARATOR}
-          {event.location}
-        </p>
+        <p className="text-sm text-ink">{placeLine}</p>
         {event.host !== undefined && <p className="text-sm text-ink">Hosted by {event.host}</p>}
         <p className="text-sm text-ink">
           {event.isMembersOnly
@@ -122,35 +175,68 @@ export const EventDetail = ({
       </div>
 
       <div aria-live="polite">
-        {closingOut.errorMessage !== undefined && (
-          <NoticeBanner role="alert" title={closingOut.errorMessage} tone="danger" />
+        {reopening.errorMessage !== undefined && (
+          <NoticeBanner role="alert" title={reopening.errorMessage} tone="danger" />
         )}
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
         {event.isClosedOut ? (
-          <p className="text-sm text-ink">
-            Closed out. This is the final attendance for the event.
-          </p>
+          <>
+            <p className="text-sm text-ink">
+              Closed out. This is the final attendance for the event.
+            </p>
+            {/* The same cell closing out set, set back: a person found later
+                on somebody's list can still be checked in. */}
+            <button
+              className={SECONDARY_ACTION_CLASSES}
+              disabled={reopening.isRunning}
+              onClick={reopenEvent}
+              type="button"
+            >
+              {reopening.isRunning ? 'Reopening\u{2026}' : 'Reopen check-in'}
+            </button>
+          </>
         ) : (
           <>
             <button className={CHECK_IN_BUTTON_CLASSES} onClick={onOpenCheckIn} type="button">
               Check in at the door
             </button>
-            <button
-              className={SECONDARY_ACTION_CLASSES}
-              disabled={closingOut.isRunning}
-              onClick={closeOutEvent}
-              type="button"
-            >
-              Close out attendance
-            </button>
-            <p className="text-xs text-ink-muted">
-              Closing out records this as the final attendance, so do it after the door shuts.
-            </p>
+            {/* Not offered before the day: closing out turns everyone not yet
+                tapped in into a no-show, which before the door opens is
+                everyone. */}
+            {!isUpcoming && (
+              <button
+                className={SECONDARY_ACTION_CLASSES}
+                onClick={() => setIsConfirmingCloseOut(true)}
+                type="button"
+              >
+                Close out attendance
+              </button>
+            )}
           </>
         )}
       </div>
+
+      {isConfirmingCloseOut && (
+        <ConfirmDialog
+          busyLabel={'Closing out\u{2026}'}
+          cancelLabel="Not yet"
+          confirmLabel="Close out"
+          errorMessage={closingOut.errorMessage}
+          isBusy={closingOut.isRunning}
+          onCancel={cancelCloseOut}
+          onConfirm={closeOutEvent}
+          title={`Close out ${event.name}?`}
+        >
+          {describeCloseOutConsequences({
+            checkedInCount: summary.checkedInCount,
+            noShowCount: noShowsIfClosed,
+          }).map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+        </ConfirmDialog>
+      )}
 
       <EventResponseSheetsPanel
         access={responseSheetAccess}

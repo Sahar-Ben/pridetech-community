@@ -155,7 +155,8 @@ describe('CommunityWorkspace', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Events' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Pride Month Panel' }))
 
-    expect(screen.getByText(/no response sheet is attached yet/i)).toBeInTheDocument()
+    expect(screen.getByText(/no response sheet is attached to this event/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /attach a response sheet/i })).toBeInTheDocument()
   })
 
   it('should say the check-in screen saves to the Attendance tab', async () => {

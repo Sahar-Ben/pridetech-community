@@ -127,6 +127,22 @@ describe('buildCheckInBoard empty state', () => {
     expect(board.emptyState).toEqual({ kind: 'empty-tab' })
   })
 
+  it('should report an event with nobody on its list, rather than everybody arrived', () => {
+    const board = buildCheckInBoard({ registrants: [], searchText: '', activeTab: 'pending' })
+
+    expect(board.emptyState).toEqual({ kind: 'no-registrants' })
+  })
+
+  it('should still report everybody arrived when the list was there and is done', () => {
+    const board = buildCheckInBoard({
+      registrants: [talArrivedFirst, shaiArrivedLast],
+      searchText: '',
+      activeTab: 'pending',
+    })
+
+    expect(board.emptyState).toEqual({ kind: 'empty-tab' })
+  })
+
   it('should report a search that matches nobody anywhere', () => {
     const board = buildCheckInBoard({
       registrants: everyone,

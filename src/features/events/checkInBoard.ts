@@ -11,6 +11,7 @@ export type CheckInTab = (typeof CHECK_IN_TABS)[number]
    find them" and "they are already in" are different answers to the person at
    the front of the queue, and collapsing them stops the queue. */
 export type CheckInEmptyState =
+  | { kind: 'no-registrants' }
   | { kind: 'empty-tab' }
   | { kind: 'no-match' }
   | { kind: 'matched-on-other-tab'; matches: readonly Registrant[] }
@@ -32,6 +33,9 @@ const selectArrived = (registrants: readonly Registrant[]): readonly ArrivedRegi
     .filter(hasRegistrantArrived)
     .toSorted((earlier, later) => later.checkedInAt.localeCompare(earlier.checkedInAt))
 
+/* An event with nobody on its list at all is not one where "everybody has
+   arrived": the door is about to be all walk-ins, or the response sheet was
+   never attached, and the screen should say so. */
 const findEmptyState = ({
   visibleRegistrants,
   otherTabRegistrants,
@@ -43,6 +47,9 @@ const findEmptyState = ({
 }): CheckInEmptyState | undefined => {
   if (visibleRegistrants.length > 0) {
     return undefined
+  }
+  if (searchText.trim() === '' && otherTabRegistrants.length === 0) {
+    return { kind: 'no-registrants' }
   }
   if (searchText.trim() === '') {
     return { kind: 'empty-tab' }

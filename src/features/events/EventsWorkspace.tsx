@@ -26,7 +26,7 @@ import type { WalkInFields } from './walkInValidation'
 type EventsView =
   | { kind: 'list' }
   | { kind: 'add' }
-  | { kind: 'edit'; eventId: string }
+  | { kind: 'edit'; eventId: string; returnTo: 'list' | 'detail' }
   | { kind: 'detail'; eventId: string }
   | { kind: 'check-in'; eventId: string }
 
@@ -122,28 +122,47 @@ export const EventsWorkspace = ({
     })
   }
 
+  /* Straight on to the new event, where attaching its response sheet is the
+     next thing to do. Until the registry is read back with the new row in it
+     the event is not in `events`, and the listing shows meanwhile. */
   const saveNewEvent = async (draft: EventDraft): Promise<void> => {
-    await writer.addEvent({ draft })
+    const eventId = await writer.addEvent({ draft })
     setChange({ kind: 'added', eventName: draft.name.trim() })
+    openEventView({ kind: 'detail', eventId })
+  }
+
+  const leaveEdit = ({ eventId, returnTo }: { eventId: string; returnTo: 'list' | 'detail' }) => {
+    if (returnTo === 'detail') {
+      setView({ kind: 'detail', eventId })
+      return
+    }
     openList()
   }
 
   const saveEditedEvent = async ({
     event,
     draft,
+    returnTo,
   }: {
     event: CommunityEvent
     draft: EventDraft
+    returnTo: 'list' | 'detail'
   }): Promise<void> => {
     const updatedEvent = applyDraftToEvent({ event, draft })
     await writer.saveEvent({ originalEvent: event, updatedEvent })
     setChange({ kind: 'saved', eventName: updatedEvent.name })
-    openList()
+    leaveEdit({ eventId: event.id, returnTo })
   }
 
-  const closeOutEvent = async (event: CommunityEvent): Promise<void> => {
-    await writer.saveEvent({ originalEvent: event, updatedEvent: { ...event, isClosedOut: true } })
-    setChange({ kind: 'saved', eventName: event.name })
+  const setClosedOut = async ({
+    event,
+    isClosedOut,
+  }: {
+    event: CommunityEvent
+    isClosedOut: boolean
+  }): Promise<void> => {
+    await writer.saveEvent({ originalEvent: event, updatedEvent: { ...event, isClosedOut } })
+    setChange({ kind: isClosedOut ? 'closed-out' : 'reopened', eventName: event.name })
   }
 
   const attachSheetToEvent = async ({
@@ -213,11 +232,12 @@ export const EventsWorkspace = ({
   }
 
   if (openEvent !== undefined && view.kind === 'edit') {
+    const { returnTo } = view
     return (
       <EventForm
         initialDraft={toEventDraft(openEvent)}
-        onCancel={openList}
-        onSave={async (draft) => await saveEditedEvent({ event: openEvent, draft })}
+        onCancel={() => leaveEdit({ eventId: openEvent.id, returnTo })}
+        onSave={async (draft) => await saveEditedEvent({ event: openEvent, draft, returnTo })}
         title="Edit event"
       />
     )
@@ -227,13 +247,17 @@ export const EventsWorkspace = ({
     return (
       <EventDetail
         attachedSheets={selectSheetsForEvent({ sheets: attachedSheets, eventId: openEvent.id })}
+        change={change}
         event={openEvent}
+        isUpcoming={openEvent.date > today}
         members={members}
         onAttachSheet={async ({ attachment }) =>
           await attachSheetToEvent({ event: openEvent, attachment })
         }
         onBack={openList}
-        onCloseOut={async () => await closeOutEvent(openEvent)}
+        onCloseOut={async () => await setClosedOut({ event: openEvent, isClosedOut: true })}
+        onEdit={() => setView({ kind: 'edit', eventId: openEvent.id, returnTo: 'detail' })}
+        onReopen={async () => await setClosedOut({ event: openEvent, isClosedOut: false })}
         onOpenCheckIn={() => openEventView({ kind: 'check-in', eventId: openEvent.id })}
         onReloadRegistrants={() => onReloadRegistrants(openEvent.id)}
         registrantLoad={registrantLoads.get(openEvent.id)}
@@ -263,7 +287,7 @@ export const EventsWorkspace = ({
       change={change}
       describeAttendance={describeListedAttendance}
       onAddEvent={() => setView({ kind: 'add' })}
-      onEditEvent={(event) => setView({ kind: 'edit', eventId: event.id })}
+      onEditEvent={(event) => setView({ kind: 'edit', eventId: event.id, returnTo: 'list' })}
       onGiveSheetAccess={giveSheetAccess}
       onOpenEvent={(event) => openEventView({ kind: 'detail', eventId: event.id })}
       schedule={groupEventsForListing({ events, today })}

@@ -46,6 +46,15 @@ export const CheckInEmptyStateNote = ({
   activeTab,
   onShowOtherTab,
 }: CheckInEmptyStateNoteProps) => {
+  if (emptyState.kind === 'no-registrants') {
+    return (
+      <p className={NOTE_CLASSES}>
+        Nobody is on the list for this event yet. Add people as walk-ins with the button above, or
+        attach the event's response sheet from the event page.
+      </p>
+    )
+  }
+
   if (emptyState.kind === 'empty-tab') {
     return <p className={NOTE_CLASSES}>{EMPTY_TAB_MESSAGES[activeTab]}</p>
   }

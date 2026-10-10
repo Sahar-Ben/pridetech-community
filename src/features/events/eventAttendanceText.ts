@@ -51,3 +51,26 @@ export const describeUnreadRegistrantsForListing = ({
   hasAttachedSheet: boolean
 }): string =>
   hasAttachedSheet ? 'Reading registrants\u{2026}' : 'No response sheet attached yet'
+
+const describePeople = (count: number): string => `${count} ${count === 1 ? 'person' : 'people'}`
+
+/* What closing out will do, in the numbers it will do it to, said before it
+   happens: the arrivals become final, and everyone holding a place who was not
+   tapped in becomes a no-show on every profile they appear on. */
+export const describeCloseOutConsequences = ({
+  checkedInCount,
+  noShowCount,
+}: {
+  checkedInCount: number
+  noShowCount: number
+}): readonly string[] => [
+  checkedInCount === 0
+    ? 'Nobody was checked in, so nobody will be recorded as attended.'
+    : `${describePeople(checkedInCount)} checked in will be recorded as attended.`,
+  noShowCount === 0
+    ? 'Nobody who registered is still missing, so there will be no no-shows.'
+    : noShowCount === 1
+      ? '1 person who registered but was not checked in will be recorded as a no-show.'
+      : `${noShowCount} people who registered but were not checked in will be recorded as no-shows.`,
+  'Check-in closes for this event. You can reopen it from this page if somebody was missed.',
+]

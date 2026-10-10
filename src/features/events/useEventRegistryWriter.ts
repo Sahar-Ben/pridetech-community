@@ -45,14 +45,17 @@ export const useEventRegistryWriter = ({
 
   return useMemo(
     () => ({
-      addEvent: async ({ draft }) =>
+      addEvent: async ({ draft }) => {
+        const id = createEventId()
         await write(
           async () =>
             await addEventToRegistry({
               sheetsClient,
-              event: createEventFromDraft({ id: createEventId(), draft }),
+              event: createEventFromDraft({ id, draft }),
             }),
-        ),
+        )
+        return id
+      },
 
       saveEvent: async ({ originalEvent, updatedEvent }) =>
         await write(

@@ -6,7 +6,9 @@ import type { EventDraft } from './eventDraft'
    of these settles with the sheet before it resolves, and the screen reloads
    the registry afterwards rather than believing its own copy. */
 export type EventRegistryWriter = {
-  addEvent: (options: { draft: EventDraft }) => Promise<void>
+  /* Resolves to the new event's id, so the screen can open it once the
+     registry has been read back with its row in it. */
+  addEvent: (options: { draft: EventDraft }) => Promise<string>
   saveEvent: (options: {
     originalEvent: CommunityEvent
     updatedEvent: CommunityEvent
