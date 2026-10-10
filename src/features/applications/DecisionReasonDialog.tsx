@@ -1,5 +1,6 @@
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { isTouchFirstDevice, keepFocusInDialog } from '../../app/dialogFocus'
 import {
   isReasonChipSelected,
   REASON_CHIPS,
@@ -7,11 +8,11 @@ import {
   toggleReasonChip,
   type ReasonedDecisionKind,
 } from './decisionReason'
-import { describeReasonPrompt } from './decisionReasonText'
+import { describeDecisionButtons, describeReasonPrompt } from './decisionReasonText'
 import {
-  COMPACT_BUTTON_SIZE_CLASSES,
   PRIMARY_BUTTON_CLASSES,
   SECONDARY_BUTTON_CLASSES,
+  TOUCH_BUTTON_SIZE_CLASSES,
 } from '../../theme/controls'
 import {
   FIELD_BORDER_CLASSES,
@@ -32,15 +33,17 @@ const SCRIM_CLASSES = [
 
 /* Never taller than the screen: on a short phone it scrolls inside itself
    rather than pushing its buttons off the bottom. */
-const DIALOG_CLASSES = `${WORK_PANEL_CLASSES} flex max-h-[calc(100dvh-1.5rem)] w-full max-w-md flex-col gap-4 overflow-y-auto overscroll-contain rounded-[var(--radius-brand)] px-5 py-4`
+const DIALOG_CLASSES = `${WORK_PANEL_CLASSES} flex max-h-[calc(100dvh-1.5rem)] w-full max-w-md flex-col gap-4 overflow-y-auto overscroll-contain rounded-[var(--radius-brand)] px-5 py-4 focus:outline-none`
 
 /* The same shape as the view chips above the queue, and deliberately not the
    same component: those are a tablist, where one choice is always current and
    the arrow keys move between them. These are toggles, any number of them at
    once, and borrowing the tablist semantics would have told a screen reader the
-   reviewer was changing which list they were reading. */
+   reviewer was changing which list they were reading. Thumb-sized, because on
+   a phone the chips are the quick way through and a typed reason is the
+   exception. */
 const CHIP_CLASSES = [
-  'rounded-full border px-3 py-1 text-sm font-semibold',
+  'min-h-11 rounded-full border px-3.5 py-2 text-sm font-semibold',
   'transition-colors duration-150 ease-brand',
 ].join(' ')
 
@@ -49,17 +52,17 @@ const SELECTED_CHIP_CLASSES = 'border-accent-solid bg-accent-solid text-on-accen
 const UNSELECTED_CHIP_CLASSES = 'border-edge bg-surface text-ink hover:bg-surface-sunken'
 
 const CLOSE_BUTTON_CLASSES = [
-  'rounded-full border border-edge bg-surface px-2 py-0.5 text-base font-bold text-ink',
+  'flex size-11 shrink-0 items-center justify-center rounded-full border border-edge bg-surface text-lg font-bold text-ink',
   'transition-colors duration-150 ease-brand hover:bg-surface-sunken',
 ].join(' ')
 
-const SKIP_BUTTON_CLASSES = `${SECONDARY_BUTTON_CLASSES} ${COMPACT_BUTTON_SIZE_CLASSES}`
+const DECISION_BUTTON_SIZE_CLASSES = `${TOUCH_BUTTON_SIZE_CLASSES} px-3 text-[15px] leading-tight`
 
-const APPLY_BUTTON_CLASSES = `${PRIMARY_BUTTON_CLASSES} ${COMPACT_BUTTON_SIZE_CLASSES}`
+const SKIP_BUTTON_CLASSES = `${SECONDARY_BUTTON_CLASSES} ${DECISION_BUTTON_SIZE_CLASSES}`
+
+const APPLY_BUTTON_CLASSES = `${PRIMARY_BUTTON_CLASSES} ${DECISION_BUTTON_SIZE_CLASSES}`
 
 const REASON_FIELD_CLASSES = `${FIELD_CONTROL_CLASSES} ${FIELD_BORDER_CLASSES}`
-
-const FOCUSABLE_SELECTOR = 'button:not([disabled]), input:not([disabled])'
 
 type DecisionReasonDialogProps = {
   kind: ReasonedDecisionKind
@@ -72,7 +75,8 @@ type DecisionReasonDialogProps = {
 /* Nothing is written until the reviewer says so here, and cancelling writes
    nothing at all: the application is left undecided, exactly as it was before
    the button was pressed. Skip is not a cancel — it is the decision without a
-   reason, which is the case the owner asked for by name. */
+   reason, which is the case the owner asked for by name. Both buttons say the
+   decision they take, so neither reads as "close this". */
 export const DecisionReasonDialog = ({
   kind,
   applicantName,
@@ -88,42 +92,18 @@ export const DecisionReasonDialog = ({
 
   /* The field rather than the dialog itself: the reviewer opened this to write a
      sentence, and landing on the text they came to type saves them a Tab while
-     still putting focus inside the trap. */
+     still putting focus inside the trap. Not on a phone, where focusing the
+     field raises a keyboard over the chips that are the quick way through. */
   useEffect(() => {
+    if (isTouchFirstDevice()) {
+      dialogRef.current?.focus()
+      return
+    }
     reasonFieldRef.current?.focus()
   }, [])
 
   const appliedReason = toDecisionReason(reason)
-
-  /* Tab is handled here rather than by hiding the page behind the dialog,
-     because the card underneath is still mounted and its Approve button is one
-     Tab away from a reviewer who cannot see where their focus went. */
-  const keepFocusInDialog = (keyboardEvent: KeyboardEvent<HTMLDivElement>): void => {
-    if (keyboardEvent.key === 'Escape') {
-      onCancel()
-      return
-    }
-    if (keyboardEvent.key !== 'Tab') {
-      return
-    }
-    const focusable = [
-      ...(dialogRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR) ?? []),
-    ]
-    const first = focusable[0]
-    const last = focusable.at(-1)
-    if (first === undefined || last === undefined) {
-      return
-    }
-    if (keyboardEvent.shiftKey && document.activeElement === first) {
-      keyboardEvent.preventDefault()
-      last.focus()
-      return
-    }
-    if (!keyboardEvent.shiftKey && document.activeElement === last) {
-      keyboardEvent.preventDefault()
-      first.focus()
-    }
-  }
+  const buttons = describeDecisionButtons(kind)
 
   /* Rendered at the end of the page rather than where it is declared: a card
      in the list is animated in, and an animated ancestor becomes the frame a
@@ -134,9 +114,12 @@ export const DecisionReasonDialog = ({
         aria-labelledby={headingId}
         aria-modal="true"
         className={DIALOG_CLASSES}
-        onKeyDown={keepFocusInDialog}
+        onKeyDown={(keyboardEvent) =>
+          keepFocusInDialog({ keyboardEvent, dialog: dialogRef.current, onEscape: onCancel })
+        }
         ref={dialogRef}
         role="dialog"
+        tabIndex={-1}
       >
         <div className="flex items-start justify-between gap-3">
           <h2 className="text-base font-bold text-ink" id={headingId}>
@@ -173,7 +156,7 @@ export const DecisionReasonDialog = ({
 
         <div className="flex flex-col gap-1">
           <label className={FIELD_LABEL_CLASSES} htmlFor={reasonFieldId}>
-            Reason
+            Reason (optional)
           </label>
           <input
             className={REASON_FIELD_CLASSES}
@@ -192,14 +175,14 @@ export const DecisionReasonDialog = ({
           </p>
         )}
 
-        <div className="flex flex-wrap justify-end gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <button
             className={SKIP_BUTTON_CLASSES}
             disabled={isSaving}
             onClick={() => onSubmit(undefined)}
             type="button"
           >
-            Skip
+            {buttons.withoutReason}
           </button>
           <button
             className={APPLY_BUTTON_CLASSES}
@@ -207,7 +190,7 @@ export const DecisionReasonDialog = ({
             onClick={() => onSubmit(appliedReason)}
             type="button"
           >
-            Apply
+            {buttons.withReason}
           </button>
         </div>
       </div>

@@ -21,11 +21,13 @@ const stubDecisions = ({
   decline = vi.fn(),
   markMaybe = vi.fn(),
   stateByRowNumber = new Map<number, LeadDecisionState>(),
+  lastConfirmed = undefined,
 }: {
   approve?: LeadDecisions['approve']
   decline?: LeadDecisions['decline']
   markMaybe?: LeadDecisions['markMaybe']
   stateByRowNumber?: ReadonlyMap<number, LeadDecisionState>
+  lastConfirmed?: LeadDecisions['lastConfirmed']
 } = {}): LeadDecisions => ({
   decidedRowNumbers: new Set(),
   stateFor: (rowNumber) => stateByRowNumber.get(rowNumber) ?? IDLE,
@@ -33,6 +35,8 @@ const stubDecisions = ({
   decline,
   markMaybe,
   forgetDecisions: vi.fn(),
+  lastConfirmed,
+  dismissLastConfirmed: vi.fn(),
 })
 
 const renderQueue = ({
@@ -137,7 +141,7 @@ describe('ApplicationsQueue', () => {
     renderQueue({ decisions: stubDecisions({ decline: onDecline }) })
 
     await userEvent.click(screen.getByRole('button', { name: /decline/i }))
-    await userEvent.click(screen.getByRole('button', { name: /skip/i }))
+    await userEvent.click(screen.getByRole('button', { name: /no reason/i }))
 
     expect(onDecline).toHaveBeenCalledWith({
       lead: expect.objectContaining({ name: 'Dana Maman' }),
@@ -161,7 +165,7 @@ describe('ApplicationsQueue', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /decline/i }))
     await userEvent.click(screen.getByRole('button', { name: 'Not in Tech' }))
-    await userEvent.click(screen.getByRole('button', { name: /apply/i }))
+    await userEvent.click(screen.getByRole('button', { name: /with reason/i }))
 
     expect(onDecline).toHaveBeenCalledWith({
       lead: expect.objectContaining({ name: 'Dana Maman' }),
@@ -757,7 +761,7 @@ describe('ApplicationsQueue, applications kept for later', () => {
     renderQueue({ decisions: stubDecisions({ markMaybe: onMarkMaybe }), leads: [pending()] })
 
     await userEvent.click(screen.getByRole('button', { name: /^maybe$/i }))
-    await userEvent.click(screen.getByRole('button', { name: /skip/i }))
+    await userEvent.click(screen.getByRole('button', { name: /no reason/i }))
 
     expect(onMarkMaybe).toHaveBeenCalledWith({
       lead: expect.objectContaining({ name: 'Dana Maman' }),
@@ -781,7 +785,7 @@ describe('ApplicationsQueue, applications kept for later', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /^maybe$/i }))
     await userEvent.click(screen.getByRole('button', { name: 'Needs a second opinion' }))
-    await userEvent.click(screen.getByRole('button', { name: /apply/i }))
+    await userEvent.click(screen.getByRole('button', { name: /with reason/i }))
 
     expect(onMarkMaybe).toHaveBeenCalledWith({
       lead: expect.objectContaining({ name: 'Dana Maman' }),
@@ -854,5 +858,23 @@ describe('ApplicationsQueue, applications kept for later', () => {
     await showMaybe()
 
     expect(screen.queryByRole('button', { name: /pending/i })).not.toBeInTheDocument()
+  })
+})
+
+describe('ApplicationsQueue, once a decision is confirmed', () => {
+  it('should say who was just approved, since their card has left the queue', () => {
+    renderQueue({
+      decisions: stubDecisions({
+        lastConfirmed: { id: 1, kind: 'approve', applicantName: 'Bar Rosen' },
+      }),
+    })
+
+    expect(screen.getByText('Bar Rosen was approved and added to Members.')).toBeInTheDocument()
+  })
+
+  it('should say nothing before any decision is confirmed', () => {
+    renderQueue()
+
+    expect(screen.queryByText(/was approved/i)).not.toBeInTheDocument()
   })
 })

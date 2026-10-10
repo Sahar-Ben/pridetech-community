@@ -31,7 +31,7 @@ const renderDialog = ({
 
 const reasonField = (): HTMLElement => screen.getByLabelText(/reason/i)
 
-const applyButton = (): HTMLElement => screen.getByRole('button', { name: /apply/i })
+const applyButton = (): HTMLElement => screen.getByRole('button', { name: /with reason/i })
 
 describe('DecisionReasonDialog', () => {
   it('should be a modal dialog named by its own heading', () => {
@@ -72,6 +72,33 @@ describe('DecisionReasonDialog', () => {
   it('should not offer the declining reasons when somebody is being kept for later', () => {
     renderDialog({ kind: 'maybe' })
     expect(screen.queryByRole('button', { name: 'Not in Tech' })).not.toBeInTheDocument()
+  })
+
+  it('should not raise the phone keyboard over the reason chips when it opens', () => {
+    const matchMedia = vi.fn((query: string) => ({ matches: query === '(pointer: coarse)' }))
+    vi.stubGlobal('matchMedia', matchMedia)
+    try {
+      renderDialog()
+
+      expect(reasonField()).not.toHaveFocus()
+      expect(screen.getByRole('dialog')).toHaveFocus()
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it('should name the decision on both of its buttons when declining', () => {
+    renderDialog({ kind: 'decline' })
+
+    expect(screen.getByRole('button', { name: 'Decline, no reason' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Decline with reason' })).toBeInTheDocument()
+  })
+
+  it('should name the decision on both of its buttons when keeping for later', () => {
+    renderDialog({ kind: 'maybe' })
+
+    expect(screen.getByRole('button', { name: 'Keep, no reason' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Keep with reason' })).toBeInTheDocument()
   })
 
   it('should refuse to apply until there is a reason', () => {
@@ -177,7 +204,7 @@ describe('DecisionReasonDialog', () => {
   it('should take the decision with no reason when the reviewer skips', async () => {
     const { onSubmit } = renderDialog()
 
-    await userEvent.click(screen.getByRole('button', { name: /skip/i }))
+    await userEvent.click(screen.getByRole('button', { name: /no reason/i }))
 
     expect(onSubmit).toHaveBeenCalledWith(undefined)
   })
@@ -186,7 +213,7 @@ describe('DecisionReasonDialog', () => {
     const { onSubmit } = renderDialog()
 
     await userEvent.type(reasonField(), 'Moving abroad')
-    await userEvent.click(screen.getByRole('button', { name: /skip/i }))
+    await userEvent.click(screen.getByRole('button', { name: /no reason/i }))
 
     expect(onSubmit).toHaveBeenCalledWith(undefined)
   })
@@ -238,7 +265,7 @@ describe('DecisionReasonDialog', () => {
     renderDialog({ isSaving: true })
 
     expect(applyButton()).toBeDisabled()
-    expect(screen.getByRole('button', { name: /skip/i })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /no reason/i })).toBeDisabled()
     expect(reasonField()).toBeDisabled()
   })
 })

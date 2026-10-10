@@ -87,6 +87,63 @@ describe('useLeadDecisions', () => {
     expect(sheet.writes.map((write) => write.kind)).toEqual(['append', 'update'])
   })
 
+  it('should say who the sheet just confirmed a decision about, once it has', async () => {
+    const sheet = buildSheet()
+    const { result } = renderDecisions({ sheetsClient: sheet.client })
+
+    act(() => {
+      result.current.approve({ lead: dana(), gender: 'F' })
+    })
+    expect(result.current.lastConfirmed).toBeUndefined()
+
+    await waitFor(() => {
+      expect(result.current.lastConfirmed).toMatchObject({
+        kind: 'approve',
+        applicantName: 'Dana Maman',
+      })
+    })
+
+    act(() => {
+      result.current.dismissLastConfirmed()
+    })
+    expect(result.current.lastConfirmed).toBeUndefined()
+  })
+
+  it('should take the last confirmation down when the next decision starts', async () => {
+    const sheet = buildSheet()
+    const { result } = renderDecisions({ sheetsClient: sheet.client })
+    act(() => {
+      result.current.approve({ lead: dana(), gender: 'F' })
+    })
+    await waitFor(() => {
+      expect(result.current.lastConfirmed).toBeDefined()
+    })
+
+    act(() => {
+      void result.current.decline({ lead: dana({ rowNumber: 2, name: 'Noa Feldman' }), reason: undefined })
+    })
+
+    expect(result.current.lastConfirmed).toBeUndefined()
+  })
+
+  it('should not claim a decision the sheet refused', async () => {
+    const sheet = buildSheet()
+    const client: SheetsClient = {
+      ...sheet.client,
+      appendRow: vi.fn().mockRejectedValue(new Error('The Members tab is protected.')),
+    }
+    const { result } = renderDecisions({ sheetsClient: client })
+
+    act(() => {
+      result.current.approve({ lead: dana(), gender: 'F' })
+    })
+
+    await waitFor(() => {
+      expect(result.current.stateFor(DANA_ROW_NUMBER).errorMessage).toBeDefined()
+    })
+    expect(result.current.lastConfirmed).toBeUndefined()
+  })
+
   it('should stamp the approval with today date', async () => {
     const sheet = buildSheet()
     const { result } = renderDecisions({ sheetsClient: sheet.client })

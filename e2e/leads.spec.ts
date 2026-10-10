@@ -174,7 +174,7 @@ test.describe('deciding', () => {
     const dialog = page.getByRole('dialog')
     await expect(dialog).toBeVisible()
     await dialog
-      .getByRole('button', { name: /skip|decline without/i })
+      .getByRole('button', { name: 'Decline, no reason' })
       .first()
       .click()
 
@@ -193,4 +193,39 @@ test.describe('deciding', () => {
     await card.getByText('M', { exact: true }).click()
     await expect(card.getByRole('radio', { name: 'M' })).toBeChecked()
   })
+})
+
+test('approving says who was approved once their card has gone', async ({ page }) => {
+  const firstName = (await shownNames(page))[0] ?? ''
+  await cardOf(page, firstName).getByRole('button', { name: 'Approve' }).click()
+
+  const confirmation = page.getByRole('status').filter({ hasText: 'was approved' })
+  await expect(confirmation).toHaveText(new RegExp(`${firstName} was approved and added to Members`))
+  await expect(confirmation).toBeInViewport({ ratio: 1 })
+  await expect(cardOf(page, firstName)).toHaveCount(0)
+
+  await confirmation.getByRole('button', { name: 'Dismiss' }).click()
+  await expect(confirmation).toHaveCount(0)
+})
+
+test('the decline dialog names its decisions and its chips fit a thumb', async ({ page }) => {
+  const firstName = (await shownNames(page))[0] ?? ''
+  await cardOf(page, firstName).getByRole('button', { name: 'Decline' }).click()
+
+  const dialog = page.getByRole('dialog')
+  await expect(dialog.getByRole('button', { name: 'Decline, no reason' })).toBeVisible()
+  await expect(dialog.getByRole('button', { name: 'Decline with reason' })).toBeDisabled()
+  await expect(dialog).toBeInViewport({ ratio: 1 })
+
+  await dialog.getByRole('button', { name: 'Not in Tech' }).click()
+  await expect(dialog.getByRole('button', { name: 'Decline with reason' })).toBeEnabled()
+
+  for (const target of await dialog.getByRole('button').all()) {
+    const box = await target.boundingBox()
+    expect(box?.height ?? 0, (await target.textContent()) ?? '').toBeGreaterThanOrEqual(44)
+  }
+
+  await page.keyboard.press('Escape')
+  await expect(dialog).toHaveCount(0)
+  await expect(cardOf(page, firstName)).toHaveCount(1)
 })

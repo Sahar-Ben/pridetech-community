@@ -19,6 +19,15 @@ export type LeadDecisionState = {
   errorMessage: string | undefined
 }
 
+/* The decision the sheet last confirmed, so the screen can say who it was
+   about once their card has left the list. `id` changes with every decision,
+   so two in a row about the same person are still two announcements. */
+export type ConfirmedDecision = {
+  id: number
+  kind: DecisionKind
+  applicantName: string
+}
+
 /* The two decisions that are taken through a dialog answer when the sheet has
    answered, whichever way it answered: a refusal is recorded against the row
    rather than thrown, so awaiting one of these says the attempt is over and
@@ -32,6 +41,8 @@ export type LeadDecisions = {
   decline: (decision: DeclineDecision) => Promise<void>
   markMaybe: (decision: MaybeDecision) => Promise<void>
   forgetDecisions: () => void
+  lastConfirmed: ConfirmedDecision | undefined
+  dismissLastConfirmed: () => void
 }
 
 const IDLE: LeadDecisionState = { isSaving: false, errorMessage: undefined }
@@ -77,6 +88,8 @@ export const useLeadDecisions = ({
   const [savingRowNumbers, setSavingRowNumbers] = useState<ReadonlySet<number>>(new Set())
   const [decidedRowNumbers, setDecidedRowNumbers] = useState<ReadonlySet<number>>(new Set())
   const [errorByRowNumber, setErrorByRowNumber] = useState<ReadonlyMap<number, string>>(new Map())
+  const [lastConfirmed, setLastConfirmed] = useState<ConfirmedDecision | undefined>(undefined)
+  const confirmedCount = useRef(0)
   const onSessionExpiredRef = useRef(onSessionExpired)
 
   /* A ref, not the saving state: two clicks in the same tick both read the same
@@ -112,6 +125,9 @@ export const useLeadDecisions = ({
       rowNumbersInFlight.current.add(rowNumber)
       setSavingRowNumbers((rowNumbers) => withRowNumber({ rowNumbers, rowNumber }))
       setErrorByRowNumber((errors) => withoutError({ errors, rowNumber }))
+      /* The previous confirmation is about the previous card; left up, it
+         would sit beside this one's outcome as if it were about it. */
+      setLastConfirmed(undefined)
 
       /* Always run, whichever read this write belonged to: the row is being
          written to the sheet right now, and a guard left behind would block the
@@ -130,6 +146,12 @@ export const useLeadDecisions = ({
             return
           }
           setDecidedRowNumbers((rowNumbers) => withRowNumber({ rowNumbers, rowNumber }))
+          confirmedCount.current += 1
+          setLastConfirmed({
+            id: confirmedCount.current,
+            kind,
+            applicantName: lead.name ?? lead.email,
+          })
         })
         .catch((error: unknown) => {
           finish()
@@ -217,5 +239,18 @@ export const useLeadDecisions = ({
     [errorByRowNumber, savingRowNumbers],
   )
 
-  return { decidedRowNumbers, stateFor, approve, decline, markMaybe, forgetDecisions }
+  const dismissLastConfirmed = useCallback((): void => {
+    setLastConfirmed(undefined)
+  }, [])
+
+  return {
+    decidedRowNumbers,
+    stateFor,
+    approve,
+    decline,
+    markMaybe,
+    forgetDecisions,
+    lastConfirmed,
+    dismissLastConfirmed,
+  }
 }

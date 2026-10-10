@@ -58,12 +58,12 @@ const decide = async ({ applicant, action }: { applicant: string; action: RegExp
 /* Declining and keeping for later both go through the reason dialog now, so an
    end-to-end test has to answer it the way a reviewer would. */
 const skipTheReason = async () => {
-  await userEvent.click(screen.getByRole('button', { name: /skip/i }))
+  await userEvent.click(screen.getByRole('button', { name: /no reason/i }))
 }
 
 const applyTheReason = async (reason: string) => {
   await userEvent.type(screen.getByLabelText(/reason/i), reason)
-  await userEvent.click(screen.getByRole('button', { name: /apply/i }))
+  await userEvent.click(screen.getByRole('button', { name: /with reason/i }))
 }
 
 const memberCell = ({ row, heading }: { row: readonly string[]; heading: string }): string =>

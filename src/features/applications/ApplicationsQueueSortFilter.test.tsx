@@ -28,6 +28,8 @@ const decisions: LeadDecisions = {
   decline: vi.fn(),
   markMaybe: vi.fn(),
   forgetDecisions: vi.fn(),
+  lastConfirmed: undefined,
+  dismissLastConfirmed: vi.fn(),
 }
 
 const LEADS = [

@@ -1,5 +1,6 @@
 import { useCallback, useId, useMemo, useRef, useState } from 'react'
 import { ApplicationCard } from './ApplicationCard'
+import { describeConfirmedDecision } from './decisionConfirmationText'
 import {
   isDecliningOffered,
   isMaybeOffered,
@@ -21,6 +22,7 @@ import {
 } from './leadListQuery'
 import { LeadsToolbar } from './LeadsToolbar'
 import type { LeadDecisions } from './useLeadDecisions'
+import { ConfirmationToast } from '../../app/ConfirmationToast'
 import { SectionTitle } from '../../app/SectionTitle'
 import { COMPACT_BUTTON_SIZE_CLASSES, SHELL_BUTTON_CLASSES } from '../../theme/controls'
 import { EMPTY_STATE_CLASSES } from '../../theme/surfaces'
@@ -158,6 +160,14 @@ export const ApplicationsQueue = ({
           </ul>
         )}
       </div>
+
+      {decisions.lastConfirmed !== undefined && (
+        <ConfirmationToast
+          message={describeConfirmedDecision(decisions.lastConfirmed)}
+          messageKey={decisions.lastConfirmed.id}
+          onDismiss={decisions.dismissLastConfirmed}
+        />
+      )}
     </section>
   )
 }
