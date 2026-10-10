@@ -19,7 +19,7 @@ export const OverviewStats = ({ overview }: OverviewStatsProps) => (
     <StatTile
       featured
       label="Active members"
-      note={`${(overview.memberCount + overview.exMemberCount).toLocaleString('en-US')} total · ${overview.exMemberCount.toLocaleString('en-US')} ex-members, not counted in any chart below`}
+      note={`${(overview.memberCount + overview.exMemberCount).toLocaleString('en-US')} total · ${overview.exMemberCount.toLocaleString('en-US')} ${overview.exMemberCount === 1 ? 'ex-member' : 'ex-members'}, not counted in any chart below`}
       value={overview.memberCount}
     />
     <StatTile

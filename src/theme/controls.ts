@@ -31,3 +31,8 @@ export const COMPACT_BUTTON_SIZE_CLASSES = 'px-3.5 py-1.5 text-sm'
 
 /* `min-h-12` is a thumb, not a mouse pointer. */
 export const TOUCH_BUTTON_SIZE_CLASSES = 'min-h-[52px] px-5 py-2 text-base'
+
+/* A form's Cancel and Save, side by side at thumb size, Save on the right
+   where the thumb ends up. Not sticky: every form sits in a panel that clips
+   its contents, and a sticky bar inside one stops partway up the form. */
+export const FORM_ACTIONS_CLASSES = 'grid grid-cols-2 gap-2'

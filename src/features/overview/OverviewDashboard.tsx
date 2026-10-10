@@ -23,12 +23,14 @@ export const OverviewDashboard = ({ overview, onStartReviewing }: OverviewDashbo
     </header>
 
     <div className="flex flex-col gap-4">
-      <OverviewStats overview={overview} />
-
+      {/* The work first, then the numbers: on a phone the stats fill the first
+          screen, and the one button that starts the day was under them. */}
       <ReviewQueueCard
         onStartReviewing={onStartReviewing}
         waitingCount={overview.applications.waitingCount}
       />
+
+      <OverviewStats overview={overview} />
 
       <div className={GRID_CLASSES}>
         <ChartCard

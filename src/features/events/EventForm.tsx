@@ -4,9 +4,10 @@ import { FormTextField } from './FormTextField'
 import { useAsyncAction } from './useAsyncAction'
 import { NoticeBanner } from '../../app/NoticeBanner'
 import {
-  COMPACT_BUTTON_SIZE_CLASSES,
+  FORM_ACTIONS_CLASSES,
   PRIMARY_BUTTON_CLASSES,
   SECONDARY_BUTTON_CLASSES,
+  TOUCH_BUTTON_SIZE_CLASSES,
 } from '../../theme/controls'
 import {
   hasEventDraftErrors,
@@ -16,9 +17,9 @@ import {
 } from './eventDraft'
 import { DATA_PANEL_CLASSES } from '../../theme/surfaces'
 
-const SAVE_BUTTON_CLASSES = `${PRIMARY_BUTTON_CLASSES} ${COMPACT_BUTTON_SIZE_CLASSES}`
+const SAVE_BUTTON_CLASSES = `${PRIMARY_BUTTON_CLASSES} ${TOUCH_BUTTON_SIZE_CLASSES}`
 
-const CANCEL_BUTTON_CLASSES = `${SECONDARY_BUTTON_CLASSES} ${COMPACT_BUTTON_SIZE_CLASSES}`
+const CANCEL_BUTTON_CLASSES = `${SECONDARY_BUTTON_CLASSES} ${TOUCH_BUTTON_SIZE_CLASSES}`
 
 const FORM_CLASSES = `${DATA_PANEL_CLASSES} animate-rise flex flex-col gap-4 px-4 py-4 sm:px-6`
 
@@ -110,16 +111,16 @@ export const EventForm = ({ title, initialDraft, onSave, onCancel }: EventFormPr
         )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <button className={SAVE_BUTTON_CLASSES} disabled={saving.isRunning} type="submit">
-          {saving.isRunning ? 'Saving\u{2026}' : 'Save event'}
-        </button>
+      <p className="text-xs text-ink-muted">
+        Saving writes this event to the Events tab of your spreadsheet.
+      </p>
+      <div className={FORM_ACTIONS_CLASSES}>
         <button className={CANCEL_BUTTON_CLASSES} onClick={onCancel} type="button">
           Cancel
         </button>
-        <p className="text-xs text-ink-muted">
-          Saving writes this event to the Events tab of your spreadsheet.
-        </p>
+        <button className={SAVE_BUTTON_CLASSES} disabled={saving.isRunning} type="submit">
+          {saving.isRunning ? 'Saving\u{2026}' : 'Save event'}
+        </button>
       </div>
     </form>
   )

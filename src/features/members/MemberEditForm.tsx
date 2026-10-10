@@ -18,9 +18,10 @@ import {
 import { useMemberEditSubmit } from './useMemberEditSubmit'
 import { NoticeBanner } from '../../app/NoticeBanner'
 import {
-  COMPACT_BUTTON_SIZE_CLASSES,
+  FORM_ACTIONS_CLASSES,
   PRIMARY_BUTTON_CLASSES,
   SECONDARY_BUTTON_CLASSES,
+  TOUCH_BUTTON_SIZE_CLASSES,
 } from '../../theme/controls'
 
 const PLAIN_TEXT_FIELDS: ReadonlyArray<{ key: MemberDraftTextKey; label: string }> = [
@@ -35,9 +36,9 @@ const PLAIN_TEXT_FIELDS: ReadonlyArray<{ key: MemberDraftTextKey; label: string 
   { key: 'notes', label: 'Notes' },
 ]
 
-const SAVE_BUTTON_CLASSES = `${PRIMARY_BUTTON_CLASSES} ${COMPACT_BUTTON_SIZE_CLASSES}`
+const SAVE_BUTTON_CLASSES = `${PRIMARY_BUTTON_CLASSES} ${TOUCH_BUTTON_SIZE_CLASSES}`
 
-const CANCEL_BUTTON_CLASSES = `${SECONDARY_BUTTON_CLASSES} ${COMPACT_BUTTON_SIZE_CLASSES}`
+const CANCEL_BUTTON_CLASSES = `${SECONDARY_BUTTON_CLASSES} ${TOUCH_BUTTON_SIZE_CLASSES}`
 
 const WARNING_CLASSES = 'text-xs font-semibold text-warning-on-panel'
 
@@ -139,12 +140,12 @@ export const MemberEditForm = ({ member, onSave, onCancel }: MemberEditFormProps
         )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <button className={SAVE_BUTTON_CLASSES} disabled={isSaving} type="submit">
-          {isSaving ? 'Saving...' : 'Save'}
-        </button>
+      <div className={FORM_ACTIONS_CLASSES}>
         <button className={CANCEL_BUTTON_CLASSES} onClick={onCancel} type="button">
           Cancel
+        </button>
+        <button className={SAVE_BUTTON_CLASSES} disabled={isSaving} type="submit">
+          {isSaving ? 'Saving...' : 'Save'}
         </button>
       </div>
     </form>
