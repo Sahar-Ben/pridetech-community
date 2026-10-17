@@ -7,7 +7,8 @@ const BADGE_CLASSES: Readonly<Record<RegistrantStatus, string>> = {
   'no-show': 'bg-warning-surface text-warning-ink ring-warning-edge/50',
 }
 
-const BASE_CLASSES = 'inline-block rounded-full px-2.5 py-0.5 text-xs font-bold ring-1 ring-inset'
+const BASE_CLASSES =
+  'inline-block rounded-full px-2.5 py-0.5 text-xs font-bold whitespace-nowrap ring-1 ring-inset'
 
 const BADGE_LABELS: Readonly<Record<RegistrantStatus, string>> = {
   registered: 'Registered',

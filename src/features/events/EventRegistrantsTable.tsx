@@ -1,5 +1,10 @@
 import { EventRegistrantRow } from './EventRegistrantRow'
-import { REGISTRANT_COLUMN_CLASSES } from './registrantColumns'
+import {
+  REGISTRANT_BODY_CLASSES,
+  REGISTRANT_COLUMN_CLASSES,
+  REGISTRANT_HEAD_CLASSES,
+  REGISTRANT_TABLE_CLASSES,
+} from './registrantColumns'
 import { sortRegistrantsByName } from './eventRegistrants'
 import type { Member } from '../members/member'
 import type { Registrant } from './registrant'
@@ -29,27 +34,27 @@ export const EventRegistrantsTable = ({
   onLinkToMember,
 }: EventRegistrantsTableProps) => (
   <div className={WRAPPER_CLASSES}>
-    <table aria-label="Registrants" className="w-full table-fixed text-sm">
-      <thead className="bg-surface-raised">
-        <tr>
-          <th className={`${HEADER_CELL_CLASSES} ${REGISTRANT_COLUMN_CLASSES.name}`} scope="col">
+    <table aria-label="Registrants" className={REGISTRANT_TABLE_CLASSES} role="table">
+      <thead className={REGISTRANT_HEAD_CLASSES} role="rowgroup">
+        <tr role="row">
+          <th className={`${HEADER_CELL_CLASSES} ${REGISTRANT_COLUMN_CLASSES.name}`} role="columnheader" scope="col">
             Name
           </th>
-          <th className={`${HEADER_CELL_CLASSES} ${REGISTRANT_COLUMN_CLASSES.email}`} scope="col">
+          <th className={`${HEADER_CELL_CLASSES} ${REGISTRANT_COLUMN_CLASSES.email}`} role="columnheader" scope="col">
             Email
           </th>
-          <th className={`${HEADER_CELL_CLASSES} ${REGISTRANT_COLUMN_CLASSES.company}`} scope="col">
+          <th className={`${HEADER_CELL_CLASSES} ${REGISTRANT_COLUMN_CLASSES.company}`} role="columnheader" scope="col">
             Company
           </th>
-          <th className={`${HEADER_CELL_CLASSES} ${REGISTRANT_COLUMN_CLASSES.link}`} scope="col">
+          <th className={`${HEADER_CELL_CLASSES} ${REGISTRANT_COLUMN_CLASSES.link}`} role="columnheader" scope="col">
             Community
           </th>
-          <th className={`${HEADER_CELL_CLASSES} ${REGISTRANT_COLUMN_CLASSES.status}`} scope="col">
+          <th className={`${HEADER_CELL_CLASSES} ${REGISTRANT_COLUMN_CLASSES.status}`} role="columnheader" scope="col">
             Status
           </th>
         </tr>
       </thead>
-      <tbody>
+      <tbody className={REGISTRANT_BODY_CLASSES} role="rowgroup">
         {sortRegistrantsByName(registrants).map((registrant) => (
           <EventRegistrantRow
             eventRegistrants={eventRegistrants}

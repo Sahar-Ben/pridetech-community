@@ -115,6 +115,19 @@ test.describe('an event whose form asks which kind of guest each person is', () 
     await expect(page.getByRole('button', { name: /Grow Recruiter/ })).toContainText(GROW_RECRUITING)
   })
 
+  test('on a phone each person fills the width, with their status on one line', async ({
+    page,
+  }) => {
+    test.skip(!isPhone(page), 'the card layout is the phone layout')
+
+    const table = await page.getByRole('table', { name: 'Registrants' }).boundingBox()
+    const row = await registrantRows(page).first().boundingBox()
+    const badge = await registrantRows(page).first().getByText('Registered').boundingBox()
+
+    expect(row?.width ?? 0).toBeGreaterThanOrEqual((table?.width ?? 0) - 2)
+    expect(badge?.height ?? 0).toBeLessThan(32)
+  })
+
   test('the answer chips are big enough for a thumb', async ({ page }) => {
     test.skip(!isPhone(page), 'touch target sizes are a phone concern')
 
