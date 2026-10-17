@@ -1,4 +1,4 @@
-export type LeadStatus = 'pending' | 'approved' | 'declined' | 'maybe'
+export type LeadStatus = 'pending' | 'approved' | 'declined' | 'maybe' | 'duplicate'
 
 /* The exact words this app writes into the Status column, and the spellings
    `parseLeads` reads back canonically. Pending is absent on purpose: it is the
@@ -9,6 +9,10 @@ export const RECORDED_LEAD_STATUS = {
   approved: 'Approved',
   declined: 'Declined',
   maybe: 'Maybe in the future',
+  /* A later application from somebody whose earlier one is kept: not a
+     decision about the person, so it leaves the queue without saying yes or
+     no, and the row stays in the sheet with its history. */
+  duplicate: 'Duplicate',
 } as const
 
 export type RecordedLeadStatusValue =

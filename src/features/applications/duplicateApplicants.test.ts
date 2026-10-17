@@ -24,8 +24,50 @@ describe('groupDuplicateApplicants', () => {
     })
 
     expect(duplicates).toEqual([
-      { emailKey: 'dana@saltedmind.co', names: ['Dana Maman'], rowNumbers: [2, 9] },
+      expect.objectContaining({
+        emailKey: 'dana@saltedmind.co',
+        names: ['Dana Maman'],
+        rowNumbers: [2, 9],
+      }),
     ])
+  })
+
+  it('should keep the earliest application and offer the later ones as duplicates', () => {
+    const [duplicate] = groupDuplicateApplicants({
+      leads: [lead({ rowNumber: 9 }), lead({ rowNumber: 2 }), lead({ rowNumber: 14 })],
+    })
+
+    expect(duplicate?.keptLead.rowNumber).toBe(2)
+    expect(duplicate?.laterLeads.map(({ rowNumber }) => rowNumber)).toEqual([9, 14])
+  })
+
+  it('should keep the approved application over an earlier undecided one', () => {
+    const [duplicate] = groupDuplicateApplicants({
+      leads: [lead({ rowNumber: 2 }), lead({ rowNumber: 9, status: 'approved' })],
+    })
+
+    expect(duplicate?.keptLead.rowNumber).toBe(9)
+    expect(duplicate?.laterLeads.map(({ rowNumber }) => rowNumber)).toEqual([2])
+  })
+
+  it('should drop an address from the list once all but one of its rows are marked Duplicate', () => {
+    expect(
+      groupDuplicateApplicants({
+        leads: [lead({ rowNumber: 2 }), lead({ rowNumber: 9, status: 'duplicate' })],
+      }),
+    ).toEqual([])
+  })
+
+  it('should still list the rows not yet marked when only some of them are', () => {
+    const [duplicate] = groupDuplicateApplicants({
+      leads: [
+        lead({ rowNumber: 2 }),
+        lead({ rowNumber: 9, status: 'duplicate' }),
+        lead({ rowNumber: 14 }),
+      ],
+    })
+
+    expect(duplicate?.rowNumbers).toEqual([2, 14])
   })
 
   it('should leave out an address that was entered only once', () => {

@@ -229,3 +229,50 @@ test('the decline dialog names its decisions and its chips fit a thumb', async (
   await expect(dialog).toHaveCount(0)
   await expect(cardOf(page, firstName)).toHaveCount(1)
 })
+
+test.describe('folding a repeat application into one', () => {
+  const openRepeats = async (page: Page) => {
+    await page.getByRole('button', { name: /on more than one application/ }).click()
+  }
+
+  const markButton = (page: Page) =>
+    page.getByRole('button', {
+      name: 'Mark the later applications from twice@example.com as duplicates',
+    })
+
+  test('asks first, saying which row stays and which is marked', async ({ page }) => {
+    await openRepeats(page)
+    await markButton(page).click()
+
+    const dialog = page.getByRole('dialog', { name: 'Mark 1 row as duplicate?' })
+    await expect(dialog).toBeVisible()
+    await expect(dialog).toBeInViewport({ ratio: 1 })
+    await expect(dialog).toContainText(/Keeps\s+Row \d+/)
+    await expect(dialog).toContainText(/Nothing is deleted/)
+
+    await dialog.getByRole('button', { name: 'Not now' }).click()
+    await expect(dialog).toBeHidden()
+    await expect(markButton(page)).toBeVisible()
+  })
+
+  test('marks the later row and takes the address off the list', async ({ page }) => {
+    await openRepeats(page)
+    await markButton(page).click()
+    await page.getByRole('button', { name: 'Mark 1 row', exact: true }).click()
+
+    await expect(page.getByRole('dialog')).toBeHidden()
+    /* It was the only repeated address in the harness, so the note about
+       repeats goes with it. */
+    await expect(page.getByRole('button', { name: /on more than one application/ })).toHaveCount(0)
+    await expect(markButton(page)).toHaveCount(0)
+  })
+
+  test('the button is big enough for a thumb', async ({ page }) => {
+    test.skip((page.viewportSize()?.width ?? 1280) >= 768, 'touch target sizes are a phone concern')
+    await openRepeats(page)
+
+    const box = await markButton(page).boundingBox()
+    expect(box?.height ?? 0).toBeGreaterThanOrEqual(44)
+    expect(box?.width ?? 0).toBeGreaterThanOrEqual(44)
+  })
+})
