@@ -27,6 +27,7 @@ export const SAMPLE_MEMBERS: readonly Member[] = [
     status: 'Active',
     removalReason: undefined,
     approvedAt: '2023-02-14',
+    otherEmails: [],
   },
   {
     rowNumber: 3,
@@ -45,6 +46,7 @@ export const SAMPLE_MEMBERS: readonly Member[] = [
     status: 'Active',
     removalReason: undefined,
     approvedAt: '2023-02-14',
+    otherEmails: [],
   },
   {
     rowNumber: 4,
@@ -63,6 +65,7 @@ export const SAMPLE_MEMBERS: readonly Member[] = [
     status: 'Active',
     removalReason: undefined,
     approvedAt: '2023-03-02',
+    otherEmails: [],
   },
   {
     rowNumber: 5,
@@ -81,6 +84,7 @@ export const SAMPLE_MEMBERS: readonly Member[] = [
     status: 'Active',
     removalReason: undefined,
     approvedAt: '2023-03-02',
+    otherEmails: [],
   },
   {
     rowNumber: 6,
@@ -99,6 +103,7 @@ export const SAMPLE_MEMBERS: readonly Member[] = [
     status: 'Active',
     removalReason: undefined,
     approvedAt: undefined,
+    otherEmails: [],
   },
   {
     rowNumber: 7,
@@ -117,6 +122,7 @@ export const SAMPLE_MEMBERS: readonly Member[] = [
     status: 'Active',
     removalReason: undefined,
     approvedAt: '2023-06-19',
+    otherEmails: [],
   },
   {
     rowNumber: 8,
@@ -135,6 +141,7 @@ export const SAMPLE_MEMBERS: readonly Member[] = [
     status: 'Active',
     removalReason: undefined,
     approvedAt: '2023-06-19',
+    otherEmails: [],
   },
   {
     rowNumber: 9,
@@ -153,6 +160,7 @@ export const SAMPLE_MEMBERS: readonly Member[] = [
     status: 'Active',
     removalReason: undefined,
     approvedAt: '2023-07-04',
+    otherEmails: [],
   },
   {
     rowNumber: 10,
@@ -171,6 +179,7 @@ export const SAMPLE_MEMBERS: readonly Member[] = [
     status: 'Active',
     removalReason: undefined,
     approvedAt: '2023-09-11',
+    otherEmails: [],
   },
   {
     rowNumber: 11,
@@ -190,6 +199,7 @@ export const SAMPLE_MEMBERS: readonly Member[] = [
     status: 'Active',
     removalReason: undefined,
     approvedAt: '2023-09-11',
+    otherEmails: [],
   },
   {
     rowNumber: 12,
@@ -208,6 +218,7 @@ export const SAMPLE_MEMBERS: readonly Member[] = [
     status: 'Active',
     removalReason: undefined,
     approvedAt: undefined,
+    otherEmails: [],
   },
   {
     rowNumber: 13,
@@ -226,6 +237,7 @@ export const SAMPLE_MEMBERS: readonly Member[] = [
     status: 'Active',
     removalReason: undefined,
     approvedAt: '2024-01-08',
+    otherEmails: [],
   },
   {
     rowNumber: 14,
@@ -244,6 +256,7 @@ export const SAMPLE_MEMBERS: readonly Member[] = [
     status: 'Active',
     removalReason: undefined,
     approvedAt: '2024-01-08',
+    otherEmails: [],
   },
   {
     rowNumber: 15,
@@ -262,6 +275,7 @@ export const SAMPLE_MEMBERS: readonly Member[] = [
     status: 'Active',
     removalReason: undefined,
     approvedAt: '2024-02-19',
+    otherEmails: [],
   },
   {
     rowNumber: 16,
@@ -280,6 +294,7 @@ export const SAMPLE_MEMBERS: readonly Member[] = [
     status: 'Active',
     removalReason: undefined,
     approvedAt: '2024-02-19',
+    otherEmails: [],
   },
   {
     rowNumber: 17,
@@ -298,6 +313,7 @@ export const SAMPLE_MEMBERS: readonly Member[] = [
     status: 'Active',
     removalReason: undefined,
     approvedAt: '2024-04-30',
+    otherEmails: [],
   },
   {
     rowNumber: 18,
@@ -316,6 +332,7 @@ export const SAMPLE_MEMBERS: readonly Member[] = [
     status: 'Active',
     removalReason: undefined,
     approvedAt: '2024-04-30',
+    otherEmails: [],
   },
   {
     rowNumber: 19,
@@ -334,6 +351,7 @@ export const SAMPLE_MEMBERS: readonly Member[] = [
     status: 'Active',
     removalReason: undefined,
     approvedAt: '2024-08-06',
+    otherEmails: [],
   },
   {
     rowNumber: 20,
@@ -352,6 +370,7 @@ export const SAMPLE_MEMBERS: readonly Member[] = [
     status: 'Active',
     removalReason: undefined,
     approvedAt: '2024-08-06',
+    otherEmails: [],
   },
   {
     rowNumber: 21,
@@ -370,6 +389,7 @@ export const SAMPLE_MEMBERS: readonly Member[] = [
     status: 'Active',
     removalReason: undefined,
     approvedAt: '2025-01-21',
+    otherEmails: [],
   },
   {
     rowNumber: 22,
@@ -388,6 +408,7 @@ export const SAMPLE_MEMBERS: readonly Member[] = [
     status: 'Active',
     removalReason: undefined,
     approvedAt: '2025-01-21',
+    otherEmails: [],
   },
   {
     rowNumber: 23,
@@ -406,6 +427,7 @@ export const SAMPLE_MEMBERS: readonly Member[] = [
     status: 'Ex-member',
     removalReason: 'Moved abroad',
     approvedAt: '2023-03-02',
+    otherEmails: [],
   },
   {
     rowNumber: 24,
@@ -424,6 +446,7 @@ export const SAMPLE_MEMBERS: readonly Member[] = [
     status: 'Ex-member',
     removalReason: 'Left tech',
     approvedAt: '2023-06-19',
+    otherEmails: [],
   },
   {
     rowNumber: 25,
@@ -442,6 +465,7 @@ export const SAMPLE_MEMBERS: readonly Member[] = [
     status: 'Ex-member',
     removalReason: 'Requested removal',
     approvedAt: '2023-09-11',
+    otherEmails: [],
   },
   {
     rowNumber: 26,
@@ -460,5 +484,6 @@ export const SAMPLE_MEMBERS: readonly Member[] = [
     status: 'Ex-member',
     removalReason: 'Code of conduct',
     approvedAt: '2024-01-08',
+    otherEmails: [],
   },
 ]

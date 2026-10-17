@@ -3,6 +3,8 @@ import { EventReconcileNotice } from './EventReconcileNotice'
 import { EventRegistrantsReadStatus } from './EventRegistrantsReadStatus'
 import { EventRegistrantsTable } from './EventRegistrantsTable'
 import { EventResponseSheetsPanel } from './EventResponseSheetsPanel'
+import { LinkToMemberDialog } from './LinkToMemberDialog'
+import type { EmailLinkMode } from '../members/linkEmailToMember'
 import { AttendeeTypeFilter } from './AttendeeTypeFilter'
 import {
   ALL_ATTENDEE_TYPES,
@@ -66,7 +68,16 @@ type EventDetailProps = {
   onCloseOut: () => Promise<void>
   onReopen: () => Promise<void>
   onReloadRegistrants: () => void
+  /* Records the address a registrant used against the member they are, from
+     the row that did not match. */
+  onLinkEmailToMember: (options: {
+    member: Member
+    email: string
+    mode: EmailLinkMode
+  }) => Promise<void>
 }
+
+const LINK_FAILED_MESSAGE = 'The email was not saved, and the Members tab was not changed.'
 
 const EMPTY_LIST_CLASSES =
   'rounded-xl border border-dashed border-edge px-4 py-10 text-center text-sm text-ink-muted'
@@ -109,11 +120,16 @@ export const EventDetail = ({
   onOpenCheckIn,
   onCloseOut,
   onReopen,
+  onLinkEmailToMember,
   onReloadRegistrants,
 }: EventDetailProps) => {
   const closingOut = useAsyncAction({ fallbackMessage: CLOSE_OUT_FAILED_MESSAGE })
   const reopening = useAsyncAction({ fallbackMessage: REOPEN_FAILED_MESSAGE })
   const [isConfirmingCloseOut, setIsConfirmingCloseOut] = useState(false)
+  const linking = useAsyncAction({ fallbackMessage: LINK_FAILED_MESSAGE })
+  const [linkingRegistrant, setLinkingRegistrant] = useState<
+    (Registrant & { email: string }) | undefined
+  >(undefined)
   const [chosenAttendeeType, setChosenAttendeeType] =
     useState<AttendeeTypeFilterValue>(ALL_ATTENDEE_TYPES)
   const attendeeTypes = summariseAttendeeTypes(registrants)
@@ -144,6 +160,24 @@ export const EventDetail = ({
   const cancelCloseOut = () => {
     setIsConfirmingCloseOut(false)
     closingOut.forgetError()
+  }
+
+  /* The dialog comes down once the Members tab has the address, and the row
+     it was opened from reads as a member as soon as the tab is read again. */
+  const linkRegistrant = ({ member, mode }: { member: Member; mode: EmailLinkMode }) => {
+    if (linkingRegistrant === undefined) {
+      return
+    }
+    const { email } = linkingRegistrant
+    linking.run(async () => {
+      await onLinkEmailToMember({ member, email, mode })
+      setLinkingRegistrant(undefined)
+    })
+  }
+
+  const cancelLinking = () => {
+    setLinkingRegistrant(undefined)
+    linking.forgetError()
   }
 
   const reopenEvent = () => {
@@ -285,9 +319,21 @@ export const EventDetail = ({
             eventRegistrants={registrants}
             isClosedOut={event.isClosedOut}
             members={members}
+            onLinkToMember={setLinkingRegistrant}
             registrants={filterByAttendeeType({ registrants, filter: attendeeTypeFilter })}
           />
         </>
+      )}
+
+      {linkingRegistrant !== undefined && (
+        <LinkToMemberDialog
+          errorMessage={linking.errorMessage}
+          isBusy={linking.isRunning}
+          members={members}
+          onCancel={cancelLinking}
+          onLink={linkRegistrant}
+          registrant={linkingRegistrant}
+        />
       )}
 
       <EventReconcileNotice />

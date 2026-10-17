@@ -8,6 +8,13 @@ export type EventChange =
   | { kind: 'sheet-attached'; eventName: string }
   | { kind: 'closed-out'; eventName: string }
   | { kind: 'reopened'; eventName: string }
+  | {
+      kind: 'email-linked'
+      eventName: string
+      memberName: string
+      email: string
+      mode: 'add' | 'replace'
+    }
 
 export const describeEventChange = (change: EventChange): string => {
   if (change.kind === 'added') {
@@ -21,6 +28,11 @@ export const describeEventChange = (change: EventChange): string => {
   }
   if (change.kind === 'reopened') {
     return `Check-in for ${change.eventName} is open again.`
+  }
+  if (change.kind === 'email-linked') {
+    return change.mode === 'add'
+      ? `${change.email} was added to ${change.memberName}'s other emails on the Members tab. They are matched by it on every event from now on.`
+      : `${change.memberName}'s email on the Members tab is now ${change.email}.`
   }
   if (change.kind === 'sheet-attached') {
     return `The response sheet was recorded against ${change.eventName} on the Event sheets tab. Nothing in it has been read yet.`

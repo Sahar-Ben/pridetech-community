@@ -16,6 +16,7 @@ export const createFakeEventRegistryWriter = (
   addEvent: vi.fn(async () => await Promise.resolve('new-event-id')),
   saveEvent: vi.fn(async () => await Promise.resolve()),
   attachSheet: vi.fn(async () => await Promise.resolve()),
+  linkEmailToMember: vi.fn(async () => await Promise.resolve()),
   ...overrides,
 })
 

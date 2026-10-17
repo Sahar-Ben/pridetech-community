@@ -1,6 +1,6 @@
-import { doesEmailMatch } from './emailMatch'
+import { doesMemberHaveEmail } from './emailMatch'
 import { doesTextMatchSearch } from './searchWords'
-import type { Member } from '../members/member'
+import { listMemberEmails, type Member } from '../members/member'
 import type { Registrant } from './registrant'
 
 /* `existingRegistrant` is the duplicate guard: a member who is already on this
@@ -11,7 +11,8 @@ export type CommunitySearchResult = {
   existingRegistrant: Registrant | undefined
 }
 
-const toSearchableText = (member: Member): string => [member.name, member.mail].join(' ')
+const toSearchableText = (member: Member): string =>
+  [member.name, ...listMemberEmails(member)].join(' ')
 
 const findRegistrantForMember = ({
   member,
@@ -23,7 +24,7 @@ const findRegistrantForMember = ({
   registrants.find(
     (registrant) =>
       registrant.email !== undefined &&
-      doesEmailMatch({ left: registrant.email, right: member.mail }),
+      doesMemberHaveEmail({ member, email: registrant.email }),
   )
 
 export const searchCommunityMembers = ({

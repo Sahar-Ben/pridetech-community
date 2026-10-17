@@ -10,7 +10,7 @@ import type { SheetsClient } from '../../sheets/sheetsClient'
    against. Checking against the edit would ask whether the row already says
    what the edit is about to write, and every rename would look like the row
    having moved. */
-const toExpectedRow = (member: Member): MemberMatch => ({
+export const toExpectedMemberRow = (member: Member): MemberMatch => ({
   rowNumber: member.rowNumber,
   emailKey: toEmailKey(member.mail),
   name: member.name,
@@ -44,7 +44,7 @@ export const saveMemberEdit = async ({
 }): Promise<void> => {
   const { membersHeaderRow, existingRow } = await readVerifiedMemberRow({
     sheetsClient,
-    expectedMember: toExpectedRow(originalMember),
+    expectedMember: toExpectedMemberRow(originalMember),
   })
 
   const writes = buildMemberEditWrites({

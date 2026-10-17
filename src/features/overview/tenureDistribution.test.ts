@@ -24,6 +24,16 @@ describe('buildTenureDistribution', () => {
     expect(countOf({ distribution, key: 'four-years-or-more' })).toBe(1)
   })
 
+  it('should date a member from an application made under one of their other emails', () => {
+    const distribution = buildTenureDistribution({
+      members: [buildMember({ mail: 'dana@example.com', otherEmails: ['dana@work.example.com'] })],
+      leads: [buildLead({ email: 'dana@work.example.com', timestamp: '3/8/2022' })],
+      asOf,
+    })
+
+    expect(countOf({ distribution, key: 'four-years-or-more' })).toBe(1)
+  })
+
   it('should band a member with no matching application as unknown', () => {
     const distribution = buildTenureDistribution({
       members: [buildMember({ mail: 'dana@example.com' })],

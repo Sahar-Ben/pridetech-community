@@ -33,6 +33,7 @@ const MEMBER_COLUMNS = {
     aliases: COLUMN_ALIASES.previousRemovalReason,
   },
   rejoinedAt: { label: 'Rejoined at', aliases: COLUMN_ALIASES.rejoinedAt },
+  otherEmails: { label: 'Other emails', aliases: COLUMN_ALIASES.otherEmails },
 } as const satisfies Record<string, { label: string; aliases: readonly string[] }>
 
 export type MemberColumnTarget = keyof typeof MEMBER_COLUMNS

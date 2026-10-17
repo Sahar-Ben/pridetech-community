@@ -1,4 +1,4 @@
-import type { Member, MemberGender } from './member'
+import { parseOtherEmails, type Member, type MemberGender } from './member'
 import { toMemberStatus } from './memberStatus'
 import { sortMembersByName } from './sortMembersByName'
 import {
@@ -56,6 +56,7 @@ const toMember = ({
     status: toMemberStatus(cell('status')),
     removalReason: cell('removalReason'),
     approvedAt: cell('approvedAt'),
+    otherEmails: parseOtherEmails(cell('otherEmails')),
   }
 }
 

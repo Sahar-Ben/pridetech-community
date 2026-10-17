@@ -176,6 +176,18 @@ export const EventsWorkspace = ({
     setChange({ kind: 'sheet-attached', eventName: event.name })
   }
 
+  const linkEmailToMember = async ({
+    event,
+    member,
+    email,
+    mode,
+  }: {
+    event: CommunityEvent
+  } & Parameters<EventRegistryWriter['linkEmailToMember']>[0]): Promise<void> => {
+    await writer.linkEmailToMember({ member, email, mode })
+    setChange({ kind: 'email-linked', eventName: event.name, memberName: member.name, email, mode })
+  }
+
   const toggleCheckIn = (registrantId: string) => {
     const person = registrants.find((registrant) => registrant.id === registrantId)
     if (person === undefined) {
@@ -257,6 +269,9 @@ export const EventsWorkspace = ({
         onBack={openList}
         onCloseOut={async () => await setClosedOut({ event: openEvent, isClosedOut: true })}
         onEdit={() => setView({ kind: 'edit', eventId: openEvent.id, returnTo: 'detail' })}
+        onLinkEmailToMember={async (link) =>
+          await linkEmailToMember({ event: openEvent, ...link })
+        }
         onReopen={async () => await setClosedOut({ event: openEvent, isClosedOut: false })}
         onOpenCheckIn={() => openEventView({ kind: 'check-in', eventId: openEvent.id })}
         onReloadRegistrants={() => onReloadRegistrants(openEvent.id)}

@@ -8,6 +8,11 @@ import {
 } from '../../src/features/events/eventRegistryTabs'
 import { GROW_HEBREW_TYPE, GROW_RECRUITING, GROW_SEEKING } from './attendeeTypeCases'
 import { LINKEDIN_CASES } from './linkedInCases'
+import {
+  LINKABLE_MEMBER_MAIL,
+  LINKABLE_MEMBER_NAME,
+  LINKABLE_REGISTRATION_MAIL,
+} from './memberLinkCases'
 import { LEADS_HEADER_ROW, MEMBERS_HEADER_ROW } from '../../src/testing/sheetsClientFactory'
 
 /* Data chosen to break layouts, not to look real: the longest unbroken
@@ -185,6 +190,7 @@ const MEMBERS: readonly string[][] = [
   memberRow({ name: 'Former Member', status: 'Ex-member' }),
   /* A member who also applied, so the queue has someone to leave out. */
   memberRow({ name: 'Twice Applied Member', mail: 'lead5@example.com' }),
+  memberRow({ name: LINKABLE_MEMBER_NAME, mail: LINKABLE_MEMBER_MAIL }),
   ...Array.from({ length: 80 }, (_unused, index) =>
     memberRow({ name: nameAt(index), gender: index % 5 === 0 ? 'F' : index % 13 === 0 ? '' : 'M' }),
   ),
@@ -248,6 +254,7 @@ const GROW_ROWS: readonly string[][] = [
   ['10/1/2026 9:15:00', HEBREW_NAME, 'hebrew@example.com', GROW_HEBREW_TYPE, 'חברה בע"מ', ''],
   ['10/1/2026 9:20:00', 'Grow Unbroken', 'unbroken@example.com', UNBROKEN_TEXT, '', ''],
   ['10/1/2026 9:25:00', 'Grow No Answer', 'noanswer@example.com', '', '', ''],
+  ['10/1/2026 9:30:00', LINKABLE_MEMBER_NAME, LINKABLE_REGISTRATION_MAIL, GROW_SEEKING, '', ''],
 ]
 
 export const HARNESS_RESPONSE_SHEETS: Readonly<

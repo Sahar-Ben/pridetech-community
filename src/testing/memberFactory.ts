@@ -19,5 +19,6 @@ export const buildMember = (overrides: Partial<Member> = {}): Member => ({
   status: 'Active',
   removalReason: undefined,
   approvedAt: undefined,
+  otherEmails: [],
   ...overrides,
 })
