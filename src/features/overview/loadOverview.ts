@@ -29,6 +29,7 @@ export const loadOverview = async ({
   ])
 
   const parsedLeads = parseLeads({ rows: leadRows })
+  const members = parseMembers({ rows: memberRows })
   const { counts } = buildLeadsReview({
     parsedLeads,
     memberEmailIndex: buildMemberEmailIndex({ rows: memberRows }),
@@ -36,10 +37,11 @@ export const loadOverview = async ({
 
   return {
     ...buildOverview({
-      members: parseMembers({ rows: memberRows }),
+      members,
       leads: parsedLeads.leads,
       asOf,
     }),
     applications: counts,
+    members,
   }
 }

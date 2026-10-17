@@ -1,6 +1,10 @@
 import { MembersDirectory } from './MembersDirectory'
 import { MemberEventHistoryPanel } from '../eventHistory/MemberEventHistoryPanel'
-import { useCommunityEventHistory } from '../eventHistory/useCommunityEventHistory'
+import {
+  useCommunityEventHistory,
+  type CommunityEventHistoryResource,
+} from '../eventHistory/useCommunityEventHistory'
+import type { EventCountFilter } from '../eventHistory/memberEventCounts'
 import type { ResponseSheetAccess } from '../events/responseSheetAccess'
 import { useMemberSave } from './useMemberSave'
 import { useMembers } from './useMembers'
@@ -11,12 +15,21 @@ type MembersSectionProps = {
   sheetsClient: SheetsClient
   responseSheetAccess: ResponseSheetAccess
   onSessionExpired: () => void
+  /* The workspace's read of every event, shared with the Overview so moving
+     between the two reads the sheets once. Without one this screen keeps its
+     own, which reads nothing until it is asked. */
+  eventHistory?: CommunityEventHistoryResource
+  /* Opened from the Overview's events chart: the directory starts on active
+     members filtered to that band. */
+  initialEventCountFilter?: EventCountFilter
 }
 
 export const MembersSection = ({
   sheetsClient,
   responseSheetAccess,
   onSessionExpired,
+  eventHistory: sharedEventHistory,
+  initialEventCountFilter,
 }: MembersSectionProps) => {
   const { state, reload, replaceLoadedMember } = useMembers({ sheetsClient, onSessionExpired })
   const saveMember = useMemberSave({
@@ -24,11 +37,12 @@ export const MembersSection = ({
     onSessionExpired,
     onSaved: replaceLoadedMember,
   })
-  const eventHistory = useCommunityEventHistory({
+  const ownEventHistory = useCommunityEventHistory({
     sheetsClient,
     access: responseSheetAccess,
     onSessionExpired,
   })
+  const eventHistory = sharedEventHistory ?? ownEventHistory
 
   if (state.status === 'loading') {
     return (
@@ -48,6 +62,7 @@ export const MembersSection = ({
   return (
     <MembersDirectory
       eventHistory={eventHistory}
+      initialEventCountFilter={initialEventCountFilter}
       members={state.members}
       onSaveMember={saveMember}
       renderEventHistory={(member) => (

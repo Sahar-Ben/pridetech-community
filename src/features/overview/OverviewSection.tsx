@@ -3,12 +3,16 @@ import { OverviewDashboard } from './OverviewDashboard'
 import { useOverview } from './useOverview'
 import { SectionErrorNotice } from '../../app/SectionErrorNotice'
 import type { SheetsClient } from '../../sheets/sheetsClient'
+import type { EventCountFilter } from '../eventHistory/memberEventCounts'
+import type { CommunityEventHistoryResource } from '../eventHistory/useCommunityEventHistory'
 
 type OverviewSectionProps = {
   sheetsClient: SheetsClient
   onSessionExpired: () => void
   onStartReviewing?: () => void
   onWaitingCountRead?: (count: number) => void
+  eventHistory?: CommunityEventHistoryResource
+  onOpenMembersWithEvents?: (filter: EventCountFilter) => void
 }
 
 const ignore = () => undefined
@@ -18,6 +22,8 @@ export const OverviewSection = ({
   onSessionExpired,
   onStartReviewing = ignore,
   onWaitingCountRead,
+  eventHistory,
+  onOpenMembersWithEvents,
 }: OverviewSectionProps) => {
   const { state, reload } = useOverview({ sheetsClient, onSessionExpired })
   const waitingCount =
@@ -43,5 +49,12 @@ export const OverviewSection = ({
     return <SectionErrorNotice message={state.message} onRetry={reload} />
   }
 
-  return <OverviewDashboard onStartReviewing={onStartReviewing} overview={state.overview} />
+  return (
+    <OverviewDashboard
+      eventHistory={eventHistory}
+      onOpenMembersWithEvents={onOpenMembersWithEvents}
+      onStartReviewing={onStartReviewing}
+      overview={state.overview}
+    />
+  )
 }

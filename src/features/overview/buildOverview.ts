@@ -23,6 +23,9 @@ export type MemberOverview = {
    can never quote a different number of waiting applications than the queue. */
 export type Overview = MemberOverview & {
   applications: LeadsReviewCounts
+  /* The Members tab as read, for the chart that needs every event's
+     registrants as well: it is drawn once those arrive, after the rest. */
+  members: readonly Member[]
 }
 
 /* Active members only, and every chart on the same denominator. The members

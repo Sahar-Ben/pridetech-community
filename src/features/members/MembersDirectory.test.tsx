@@ -337,3 +337,25 @@ describe('MembersDirectory, filtering by events', () => {
     expect(screen.getByRole('button', { name: 'Copied 1 email' })).toBeInTheDocument()
   })
 })
+
+describe('MembersDirectory, opened from the Overview with an events band', () => {
+  it('should start on that band, read the events, and show only those members', () => {
+    const eventHistory = eventHistoryIn(HISTORY_READ)
+    render(
+      <MembersDirectory
+        eventHistory={eventHistory}
+        initialEventCountFilter="none"
+        members={everyone}
+        onSaveMember={vi.fn().mockResolvedValue(undefined)}
+        renderEventHistory={() => null}
+      />,
+    )
+
+    expect(eventHistory.request).toHaveBeenCalled()
+    expect(eventChips().getByRole('button', { name: /^No events/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(listedNames()).toEqual(['Roni Halperin'])
+  })
+})
