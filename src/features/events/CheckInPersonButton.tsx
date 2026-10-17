@@ -60,6 +60,9 @@ export const CheckInPersonButton = ({
           {registrant.email ?? 'No email on this sheet'}
         </span>
         <span className="flex flex-wrap gap-1.5">
+          {registrant.attendeeType !== undefined && (
+            <span className={`${TAG_CLASSES} wrap-anywhere`}>{registrant.attendeeType}</span>
+          )}
           {registrant.registration === 'waitlist' && <span className={TAG_CLASSES}>Waitlist</span>}
           {registrant.isWalkIn && <span className={TAG_CLASSES}>Walk-in</span>}
           {memberMarker !== undefined && (

@@ -32,6 +32,11 @@ export const EventRegistrantRow = ({
         {registrant.isWalkIn && (
           <span className="ml-1 text-xs text-ink-muted">(walk-in)</span>
         )}
+        {registrant.attendeeType !== undefined && (
+          <span className="mt-1 block text-xs font-semibold text-ink-muted">
+            {registrant.attendeeType}
+          </span>
+        )}
       </td>
       <td className={`${CELL_CLASSES} ${REGISTRANT_COLUMN_CLASSES.email} wrap-anywhere`}>
         {registrant.email ?? <EmptyValue />}

@@ -176,6 +176,7 @@ export const applyAttendance = ({
         email: entry.email,
         company: undefined,
         jobTitle: undefined,
+        attendeeType: undefined,
         registration: 'registered',
         checkedInAt: entry.at,
         guestOfEmail: undefined,

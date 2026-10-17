@@ -252,7 +252,7 @@ describe('attachResponseSheet', () => {
       'response-sheet-1',
       'Form Responses 1',
       'main',
-      '{"timestamp":"A","name":"B","email":"C","company":null,"jobTitle":null}',
+      '{"timestamp":"A","name":"B","email":"C","company":null,"jobTitle":null,"attendeeType":null}',
     ])
   })
 
@@ -285,6 +285,54 @@ describe('attachResponseSheet', () => {
       'main',
       'waiting list',
     ])
+  })
+
+  it('should change the columns of a tab already attached rather than record it twice', async () => {
+    const sheet = registrySheet({
+      attachedRows: [
+        ['evt-2', 'response-sheet-1', 'Form Responses 1', 'main', '{}'],
+        ['evt-1', 'response-sheet-1', 'Form Responses 1', 'main', '{"name":"B"}'],
+      ],
+    })
+
+    await attachResponseSheet({
+      sheetsClient: sheet.client,
+      attachment: { ...attachment, role: 'waiting list', mapping: { name: 1, attendeeType: 3 } },
+    })
+
+    expect(sheet.rowsOf(EVENT_SHEETS_TAB_NAME).slice(1)).toEqual([
+      ['evt-2', 'response-sheet-1', 'Form Responses 1', 'main', '{}'],
+      [
+        'evt-1',
+        'response-sheet-1',
+        'Form Responses 1',
+        'waiting list',
+        '{"timestamp":null,"name":"B","email":null,"company":null,"jobTitle":null,"attendeeType":"D"}',
+      ],
+    ])
+  })
+
+  it('should change only the role and the columns of a tab already attached', async () => {
+    const sheet = registrySheet({
+      attachedRows: [['evt-1', 'response-sheet-1', 'Form Responses 1', 'main', '{}']],
+    })
+
+    await attachResponseSheet({ sheetsClient: sheet.client, attachment })
+
+    expect(sheet.writes.map((write) => write.range)).toEqual([
+      `'${EVENT_SHEETS_TAB_NAME}'!D2`,
+      `'${EVENT_SHEETS_TAB_NAME}'!E2`,
+    ])
+  })
+
+  it('should attach another tab of the same spreadsheet as a sheet of its own', async () => {
+    const sheet = registrySheet({
+      attachedRows: [['evt-1', 'response-sheet-1', 'Waiting list', 'waiting list', '{}']],
+    })
+
+    await attachResponseSheet({ sheetsClient: sheet.client, attachment })
+
+    expect(sheet.rowsOf(EVENT_SHEETS_TAB_NAME)).toHaveLength(3)
   })
 
   it('should send the mapping as typed, so the spreadsheet cannot re-read the braces', async () => {

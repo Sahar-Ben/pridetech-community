@@ -3,6 +3,14 @@ import { EventReconcileNotice } from './EventReconcileNotice'
 import { EventRegistrantsReadStatus } from './EventRegistrantsReadStatus'
 import { EventRegistrantsTable } from './EventRegistrantsTable'
 import { EventResponseSheetsPanel } from './EventResponseSheetsPanel'
+import { AttendeeTypeFilter } from './AttendeeTypeFilter'
+import {
+  ALL_ATTENDEE_TYPES,
+  filterByAttendeeType,
+  keepAvailableFilter,
+  summariseAttendeeTypes,
+  type AttendeeTypeFilter as AttendeeTypeFilterValue,
+} from './attendeeTypes'
 import { describeAttendanceForEvent, describeCloseOutConsequences } from './eventAttendanceText'
 import { describeEventChange, type EventChange } from './eventChangeText'
 import { formatEventDate } from './eventDate'
@@ -106,6 +114,13 @@ export const EventDetail = ({
   const closingOut = useAsyncAction({ fallbackMessage: CLOSE_OUT_FAILED_MESSAGE })
   const reopening = useAsyncAction({ fallbackMessage: REOPEN_FAILED_MESSAGE })
   const [isConfirmingCloseOut, setIsConfirmingCloseOut] = useState(false)
+  const [chosenAttendeeType, setChosenAttendeeType] =
+    useState<AttendeeTypeFilterValue>(ALL_ATTENDEE_TYPES)
+  const attendeeTypes = summariseAttendeeTypes(registrants)
+  const attendeeTypeFilter = keepAvailableFilter({
+    filter: chosenAttendeeType,
+    summary: attendeeTypes,
+  })
   const summary = summariseEventAttendance({ registrants, isClosedOut: event.isClosedOut })
   const noShowsIfClosed =
     summariseEventAttendance({ registrants, isClosedOut: true }).noShowCount ?? 0
@@ -255,11 +270,24 @@ export const EventDetail = ({
       {registrants.length === 0 ? (
         emptyListText !== undefined && <p className={EMPTY_LIST_CLASSES}>{emptyListText}</p>
       ) : (
-        <EventRegistrantsTable
-          isClosedOut={event.isClosedOut}
-          members={members}
-          registrants={registrants}
-        />
+        <>
+          {/* Only for a sheet whose form asks the question: a list with one
+              chip on it would be a control that does nothing. */}
+          {attendeeTypes.types.length > 0 && (
+            <AttendeeTypeFilter
+              filter={attendeeTypeFilter}
+              onFilterChange={setChosenAttendeeType}
+              summary={attendeeTypes}
+              totalCount={registrants.length}
+            />
+          )}
+          <EventRegistrantsTable
+            eventRegistrants={registrants}
+            isClosedOut={event.isClosedOut}
+            members={members}
+            registrants={filterByAttendeeType({ registrants, filter: attendeeTypeFilter })}
+          />
+        </>
       )}
 
       <EventReconcileNotice />

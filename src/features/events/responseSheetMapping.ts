@@ -3,10 +3,20 @@ import { toColumnIndex } from '../../sheets/columnIndex'
 import { toColumnLetter } from '../../sheets/columnLetter'
 import { buildHeaderMap, findColumn } from '../../sheets/headerMap'
 
-/* The five fields a response sheet is read through, once phase two reads one.
-   The order is the order they are stored and shown in, so a mapping cell reads
-   the same way on every event. */
-export const MAPPED_FIELDS = ['timestamp', 'name', 'email', 'company', 'jobTitle'] as const
+/* The fields a response sheet is read through. The order is the order they are
+   stored and shown in, so a mapping cell reads the same way on every event.
+
+   `attendeeType` is the question some forms ask to split the room in two, such
+   as job seekers and the people recruiting them at a careers evening. It is
+   last so every mapping recorded before it existed still reads unchanged. */
+export const MAPPED_FIELDS = [
+  'timestamp',
+  'name',
+  'email',
+  'company',
+  'jobTitle',
+  'attendeeType',
+] as const
 
 export type MappedField = (typeof MAPPED_FIELDS)[number]
 
@@ -23,6 +33,9 @@ const ALIASES_BY_FIELD: Readonly<Record<MappedField, readonly string[]>> = {
   email: COLUMN_ALIASES.email,
   company: COLUMN_ALIASES.company,
   jobTitle: COLUMN_ALIASES.jobTitle,
+  /* Never guessed. Every form words this question its own way, and a guess
+     that picked the wrong column would sort the whole room by it. */
+  attendeeType: [],
 }
 
 type RecordedMapping = Readonly<Record<string, unknown>>

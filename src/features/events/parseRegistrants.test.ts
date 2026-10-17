@@ -38,6 +38,24 @@ describe('parseSheetRegistrants', () => {
     ])
   })
 
+  it('should read the attendee type as it was written when the sheet maps one', () => {
+    const { registrants } = parse(
+      [
+        ['9/1/2026 10:00:00', 'Dana Sorkin', 'dana@example.com', 'Fennimore Labs', 'Recruiting'],
+        ['9/1/2026 10:05:00', 'Noa Levi', 'noa@example.com', '', ''],
+      ],
+      { mapping: { name: 1, email: 2, company: 3, attendeeType: 4 } },
+    )
+
+    expect(registrants.map(({ attendeeType }) => attendeeType)).toEqual(['Recruiting', undefined])
+  })
+
+  it('should leave the attendee type empty on a sheet that does not ask it', () => {
+    const { registrants } = parse([['9/1/2026 10:00:00', 'Dana Sorkin', 'dana@example.com', '']])
+
+    expect(registrants[0]?.attendeeType).toBeUndefined()
+  })
+
   it('should read a waiting-list sheet as people on the waitlist', () => {
     const { registrants } = parse([['', 'Noa Feldman', 'noa@example.com', '']], {
       role: 'waiting list',

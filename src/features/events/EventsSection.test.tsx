@@ -270,7 +270,7 @@ describe('EventsSection, attaching a response sheet', () => {
       'responses-1',
       'Form Responses 1',
       'main',
-      '{"timestamp":"A","name":"B","email":"C","company":"D","jobTitle":null}',
+      '{"timestamp":"A","name":"B","email":"C","company":"D","jobTitle":null,"attendeeType":null}',
     ])
   })
 
@@ -287,7 +287,7 @@ describe('EventsSection, attaching a response sheet', () => {
     await userEvent.click(await screen.findByRole('button', { name: /attach this sheet/i }))
 
     expect(sheet.rowsOf(EVENT_SHEETS_TAB_NAME)[1]?.[4]).toBe(
-      '{"timestamp":null,"name":"B","email":"C","company":null,"jobTitle":null}',
+      '{"timestamp":null,"name":"B","email":"C","company":null,"jobTitle":null,"attendeeType":null}',
     )
   })
 
@@ -398,7 +398,7 @@ const ATTACHED_PANEL_SHEET = [
   'responses-1',
   'Form Responses 1',
   'main',
-  '{"timestamp":"A","name":"B","email":"C","company":"D","jobTitle":null}',
+  '{"timestamp":"A","name":"B","email":"C","company":"D","jobTitle":null,"attendeeType":null}',
 ]
 
 const RESPONSE_ROWS = [

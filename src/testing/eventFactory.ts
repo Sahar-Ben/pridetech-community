@@ -26,6 +26,7 @@ export const buildRegistrant = (overrides: Partial<Registrant> = {}): Registrant
   email: 'sample.person@example.com',
   company: undefined,
   jobTitle: undefined,
+  attendeeType: undefined,
   registration: 'registered',
   checkedInAt: undefined,
   guestOfEmail: undefined,

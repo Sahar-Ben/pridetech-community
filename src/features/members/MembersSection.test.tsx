@@ -350,7 +350,7 @@ describe('MembersSection event history', () => {
     spreadsheetId,
     'Form Responses 1',
     'main',
-    '{"timestamp":"A","name":"B","email":"C","company":null,"jobTitle":null}',
+    '{"timestamp":"A","name":"B","email":"C","company":null,"jobTitle":null,"attendeeType":null}',
   ]
   const communitySheet = (attendance: readonly (readonly string[])[] = []) =>
     createFakeSheet({
