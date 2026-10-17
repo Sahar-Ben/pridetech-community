@@ -255,6 +255,9 @@ const GROW_ROWS: readonly string[][] = [
   ['10/1/2026 9:20:00', 'Grow Unbroken', 'unbroken@example.com', UNBROKEN_TEXT, '', ''],
   ['10/1/2026 9:25:00', 'Grow No Answer', 'noanswer@example.com', '', '', ''],
   ['10/1/2026 9:30:00', LINKABLE_MEMBER_NAME, LINKABLE_REGISTRATION_MAIL, GROW_SEEKING, '', ''],
+  /* The one member who has been to an event, for the Members screen's filter
+     by how many events someone has been to. */
+  ['10/1/2026 9:35:00', 'Twice Applied Member', 'lead5@example.com', '', '', ''],
 ]
 
 export const HARNESS_RESPONSE_SHEETS: Readonly<

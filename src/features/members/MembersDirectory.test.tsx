@@ -1,8 +1,13 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
+import { buildEvent, buildRegistrant } from '../../testing/eventFactory'
 import { buildMember } from '../../testing/memberFactory'
 import { MembersDirectory } from './MembersDirectory'
+import type {
+  CommunityEventHistoryResource,
+  CommunityEventHistoryState,
+} from '../eventHistory/useCommunityEventHistory'
 
 const dana = buildMember({
   rowNumber: 2,
@@ -34,9 +39,39 @@ const formerMember = buildMember({
 
 const everyone = [dana, tomer, sparse, formerMember]
 
-const renderDirectory = (onSaveMember = vi.fn().mockResolvedValue(undefined)) => {
+const IDLE_HISTORY: CommunityEventHistoryState = { status: 'idle' }
+
+const eventHistoryIn = (state: CommunityEventHistoryState): CommunityEventHistoryResource => ({
+  state,
+  request: vi.fn(),
+  reload: vi.fn(),
+})
+
+/* Dana has been to two events and Tomer to one; Roni to none. Gaya is an
+   ex-member, off the default Active list. */
+const HISTORY_READ: CommunityEventHistoryState = {
+  status: 'ready',
+  history: {
+    events: [
+      buildEvent({ id: 'play', date: '2026-05-01' }),
+      buildEvent({ id: 'tiktok', date: '2026-06-01' }),
+    ],
+    registrants: [
+      buildRegistrant({ id: 'a', eventId: 'play', email: 'dana.sorkin@example.com' }),
+      buildRegistrant({ id: 'b', eventId: 'tiktok', email: 'dana.sorkin@example.com' }),
+      buildRegistrant({ id: 'c', eventId: 'tiktok', email: 'tomer.reznik@example.com' }),
+    ],
+    unreadSheets: [],
+  },
+}
+
+const renderDirectory = (
+  onSaveMember = vi.fn().mockResolvedValue(undefined),
+  eventHistory = eventHistoryIn(IDLE_HISTORY),
+) => {
   render(
     <MembersDirectory
+      eventHistory={eventHistory}
       members={everyone}
       onSaveMember={onSaveMember}
       renderEventHistory={(member) => <p>History of {member.name}</p>}
@@ -44,6 +79,8 @@ const renderDirectory = (onSaveMember = vi.fn().mockResolvedValue(undefined)) =>
   )
   return onSaveMember
 }
+
+const eventChips = () => within(screen.getByRole('group', { name: 'Events' }))
 
 const listedNames = (): readonly string[] =>
   within(screen.getByRole('table', { name: /members/i }))
@@ -250,5 +287,53 @@ describe('MembersDirectory', () => {
 
     expect(await screen.findByText(/saved to the google sheet/i)).toBeInTheDocument()
     expect(screen.queryByText(/in this browser only/i)).not.toBeInTheDocument()
+  })
+})
+
+describe('MembersDirectory, filtering by events', () => {
+  it('should not read every event until somebody filters by them', () => {
+    const eventHistory = eventHistoryIn(IDLE_HISTORY)
+    renderDirectory(undefined, eventHistory)
+
+    expect(eventHistory.request).not.toHaveBeenCalled()
+  })
+
+  it('should start reading the events when a count is chosen, and say it is counting', async () => {
+    const eventHistory = eventHistoryIn({ status: 'loading' })
+    renderDirectory(undefined, eventHistory)
+
+    await userEvent.click(eventChips().getByRole('button', { name: 'No events' }))
+
+    expect(eventHistory.request).toHaveBeenCalled()
+    expect(screen.getByRole('status')).toHaveTextContent(/counting/i)
+    expect(screen.queryByRole('table', { name: /members/i })).not.toBeInTheDocument()
+  })
+
+  it('should show only the active members who have been to no event', async () => {
+    renderDirectory(undefined, eventHistoryIn(HISTORY_READ))
+
+    await userEvent.click(eventChips().getByRole('button', { name: /^No events/ }))
+
+    expect(listedNames()).toEqual(['Roni Halperin'])
+  })
+
+  it('should count each chip from the members on screen', () => {
+    renderDirectory(undefined, eventHistoryIn(HISTORY_READ))
+
+    expect(eventChips().getByRole('button', { name: 'No events 1' })).toBeInTheDocument()
+    expect(eventChips().getByRole('button', { name: '1 event 1' })).toBeInTheDocument()
+    expect(eventChips().getByRole('button', { name: '2 events 1' })).toBeInTheDocument()
+    expect(eventChips().getByRole('button', { name: '3+ events 0' })).toBeInTheDocument()
+  })
+
+  it('should copy the emails of exactly the members on screen', async () => {
+    const user = userEvent.setup()
+    renderDirectory(undefined, eventHistoryIn(HISTORY_READ))
+
+    await user.click(eventChips().getByRole('button', { name: /^No events/ }))
+    await user.click(screen.getByRole('button', { name: 'Copy 1 email' }))
+
+    expect(await navigator.clipboard.readText()).toBe('roni@example.com')
+    expect(screen.getByRole('button', { name: 'Copied 1 email' })).toBeInTheDocument()
   })
 })
