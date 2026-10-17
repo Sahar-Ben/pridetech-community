@@ -1,5 +1,5 @@
 import { MemberDetailField } from './MemberDetailField'
-import { toRecordedMail, type Member } from './member'
+import { formatOtherEmails, toRecordedMail, type Member } from './member'
 import { toLinkedInHref } from '../../app/linkedInUrl'
 import { toTelHref } from '../../app/phoneLinks'
 
@@ -31,6 +31,15 @@ export const MemberDetailFields = ({ member }: MemberDetailFieldsProps) => {
             label="Email"
             value={recordedMail}
           />
+          {/* Only for a member who has any: an empty row here on every other
+              member would read as something missing. */}
+          {member.otherEmails.length > 0 && (
+            <MemberDetailField
+              isCopyable
+              label="Other emails"
+              value={formatOtherEmails(member.otherEmails)}
+            />
+          )}
           <MemberDetailField
             href={toTelHref(member.phone)}
             isCopyable

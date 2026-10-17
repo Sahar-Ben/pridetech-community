@@ -2,7 +2,7 @@ import { buildEarliestApplicationIndex } from './applicationDates'
 import { buildDistribution, type BucketTally, type Distribution } from './distribution'
 import { TENURE_BUCKETS, toTenureBucketKey, UNKNOWN_TENURE_BUCKET } from './tenure'
 import type { Lead } from '../applications/lead'
-import { hasRecordedMail, type Member } from '../members/member'
+import { listMemberEmails, type Member } from '../members/member'
 import { toEmailKey } from '../../sheets/emailKey'
 
 const EMPTY_TALLIES: readonly BucketTally[] = [
@@ -24,13 +24,21 @@ const toBucketKey = ({
   earliestApplicationByEmail: ReadonlyMap<string, Date>
   asOf: Date
 }): string => {
-  if (!hasRecordedMail(member)) {
+  /* The earliest application under any of their addresses: somebody who
+     applied from one and registers for events from another joined when the
+     first one did. */
+  const applicationDates = listMemberEmails(member).flatMap((email) => {
+    const appliedAt = earliestApplicationByEmail.get(toEmailKey(email))
+    return appliedAt === undefined ? [] : [appliedAt]
+  })
+  if (listMemberEmails(member).length === 0) {
     return UNKNOWN_TENURE_BUCKET.key
   }
-  return toTenureBucketKey({
-    appliedAt: earliestApplicationByEmail.get(toEmailKey(member.mail)),
-    asOf,
-  })
+  const appliedAt = applicationDates.reduce<Date | undefined>(
+    (earliest, date) => (earliest === undefined || date < earliest ? date : earliest),
+    undefined,
+  )
+  return toTenureBucketKey({ appliedAt, asOf })
 }
 
 /* Derived rather than measured: `Approved at` is blank on every row of the

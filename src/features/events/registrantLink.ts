@@ -1,4 +1,4 @@
-import { doesEmailMatch } from './emailMatch'
+import { doesEmailMatch, doesMemberHaveEmail } from './emailMatch'
 import type { Member } from '../members/member'
 import type { Registrant } from './registrant'
 
@@ -46,7 +46,7 @@ const findHostName = ({
   members: readonly Member[]
   eventRegistrants: readonly Registrant[]
 }): string => {
-  const hostMember = members.find((member) => doesEmailMatch({ left: member.mail, right: guestOfEmail }))
+  const hostMember = members.find((member) => doesMemberHaveEmail({ member, email: guestOfEmail }))
   if (hostMember !== undefined) {
     return hostMember.name
   }
@@ -78,7 +78,7 @@ export const resolveRegistrantLink = ({
       : { kind: 'member-by-name', memberName: namedMember.name, rowNumber: namedMember.rowNumber }
   }
 
-  const matchedMember = members.find((member) => doesEmailMatch({ left: member.mail, right: email }))
+  const matchedMember = members.find((member) => doesMemberHaveEmail({ member, email }))
   if (matchedMember === undefined) {
     return { kind: 'unmatched' }
   }

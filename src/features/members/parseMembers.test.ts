@@ -73,6 +73,23 @@ const parseOne = (row: readonly string[]): Member => {
 }
 
 describe('parseMembers', () => {
+  it('should read every address in the Other emails column, however they are separated', () => {
+    const [member] = parseMembers({
+      rows: [
+        ['Name', 'Mail', 'Other emails'],
+        ['Dana Sorkin', 'dana@example.com', 'dana@work.example.com, dana.s@example.org;\nd@x.io'],
+      ],
+    })
+
+    expect(member?.otherEmails).toEqual(['dana@work.example.com', 'dana.s@example.org', 'd@x.io'])
+  })
+
+  it('should read a tab with no Other emails column as members with no other addresses', () => {
+    const [member] = parseMembers({ rows: [['Name', 'Mail'], ['Dana Sorkin', 'dana@example.com']] })
+
+    expect(member?.otherEmails).toEqual([])
+  })
+
   it('should read a member out of the columns the real tab uses', () => {
     const member = parseOne(
       sheetRow({
@@ -110,6 +127,7 @@ describe('parseMembers', () => {
       status: 'Active',
       removalReason: undefined,
       approvedAt: '2024-01-01',
+      otherEmails: [],
     })
   })
 

@@ -5,6 +5,7 @@ import type { EventRegistryWriter } from './eventRegistryWriter'
 import { createEventFromDraft } from './eventDraft'
 import { createEventId } from './eventId'
 import { saveEventToRegistry } from './saveEventToRegistry'
+import { linkEmailToMember } from '../members/linkEmailToMember'
 import type { SheetsClient } from '../../sheets/sheetsClient'
 import { isExpiredSessionError } from '../../sheets/sheetsRequestError'
 
@@ -65,6 +66,9 @@ export const useEventRegistryWriter = ({
 
       attachSheet: async ({ attachment }) =>
         await write(async () => await attachResponseSheet({ sheetsClient, attachment })),
+
+      linkEmailToMember: async ({ member, email, mode }) =>
+        await write(async () => await linkEmailToMember({ sheetsClient, member, email, mode })),
     }),
     [sheetsClient, write],
   )

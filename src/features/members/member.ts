@@ -47,9 +47,31 @@ export type Member = {
   status: MemberStatus
   removalReason: string | undefined
   approvedAt: string | undefined
+  /* The addresses this person has registered for events with besides `mail`,
+     from the optional `Other emails` column. Every one of them identifies the
+     member at an event, so somebody who signs up with a work address one month
+     and a personal one the next is the same person both times. */
+  otherEmails: readonly string[]
 }
 
 export const hasRecordedMail = (member: Member): boolean => member.mail !== ''
 
 export const toRecordedMail = (member: Member): string | undefined =>
   hasRecordedMail(member) ? member.mail : undefined
+
+/* The `Other emails` cell is typed by hand as often as it is written by this
+   app, so any of the separators a person would reach for splits it. An address
+   never contains one of them. */
+export const parseOtherEmails = (cell: string | undefined): readonly string[] =>
+  (cell ?? '')
+    .split(/[\s,;]+/)
+    .map((email) => email.trim())
+    .filter((email) => email !== '')
+
+export const formatOtherEmails = (emails: readonly string[]): string => emails.join(', ')
+
+/* Every address that identifies this member, main one first. */
+export const listMemberEmails = (member: Member): readonly string[] => [
+  ...(hasRecordedMail(member) ? [member.mail] : []),
+  ...member.otherEmails,
+]

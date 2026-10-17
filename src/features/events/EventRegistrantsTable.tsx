@@ -18,6 +18,7 @@ type EventRegistrantsTableProps = {
   eventRegistrants: readonly Registrant[]
   members: readonly Member[]
   isClosedOut: boolean
+  onLinkToMember: (registrant: Registrant & { email: string }) => void
 }
 
 export const EventRegistrantsTable = ({
@@ -25,6 +26,7 @@ export const EventRegistrantsTable = ({
   eventRegistrants,
   members,
   isClosedOut,
+  onLinkToMember,
 }: EventRegistrantsTableProps) => (
   <div className={WRAPPER_CLASSES}>
     <table aria-label="Registrants" className="w-full table-fixed text-sm">
@@ -54,6 +56,7 @@ export const EventRegistrantsTable = ({
             isClosedOut={isClosedOut}
             key={registrant.id}
             members={members}
+            onLinkToMember={onLinkToMember}
             registrant={registrant}
           />
         ))}

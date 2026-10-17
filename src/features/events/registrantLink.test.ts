@@ -27,6 +27,15 @@ describe('resolveRegistrantLink', () => {
     })
   })
 
+  it('should match a registrant to a member through one of their other emails', () => {
+    const registrant = buildRegistrant({ email: 'Dana@Work.example.com' })
+    const withWorkAddress = buildMember({ ...dana, otherEmails: ['dana@work.example.com'] })
+
+    expect(
+      resolveRegistrantLink({ registrant, members: [withWorkAddress], eventRegistrants: [] }),
+    ).toEqual({ kind: 'member', memberName: 'Dana Sorkin', rowNumber: 2 })
+  })
+
   it('should say a registrant with no email and no member of that name cannot be matched', () => {
     const registrant = buildRegistrant({ name: 'Ronit Amsalem', email: undefined })
 

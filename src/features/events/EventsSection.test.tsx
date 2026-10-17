@@ -423,6 +423,9 @@ const registrantNames = async (): Promise<readonly string[]> => {
   return within(table)
     .getAllByRole('row')
     .slice(1)
+    /* The line offering to link an unmatched person sits under their row; it is
+       not another person. */
+    .filter((row) => row.dataset.row !== 'link')
     .map((row) => within(row).getAllByRole('cell')[0]?.textContent ?? '')
 }
 

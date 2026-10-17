@@ -64,6 +64,9 @@ export const applyDraftToMember = ({
 }): Member => ({
   rowNumber: member.rowNumber,
   approvedAt: member.approvedAt,
+  /* Not on the edit form: other addresses are added from an event, where the
+     address someone registered with is in front of the organiser. */
+  otherEmails: member.otherEmails,
   name: draft.name.trim(),
   mail: draft.mail.trim(),
   company: toRecordedValue(draft.company),

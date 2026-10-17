@@ -28,6 +28,7 @@ export const COLUMN_ALIASES = {
   approvedAt: ['approved at'],
   previousRemovalReason: ['previous removal reason'],
   rejoinedAt: ['rejoined at'],
+  otherEmails: ['other emails', 'other email', 'additional emails', 'secondary email'],
   // "Arrived to the bus" (Playtika) records shuttle passengers, not attendance — matching is exact, never substring.
   arrived: ['arrived'],
 } as const satisfies Record<string, readonly string[]>
