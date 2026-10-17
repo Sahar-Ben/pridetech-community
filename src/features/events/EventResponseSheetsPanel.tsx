@@ -40,7 +40,12 @@ export const EventResponseSheetsPanel = ({
       ) : (
         <ul className="flex flex-col gap-2">
           {attachedSheets.map((sheet) => (
-            <AttachedSheetRow key={`${sheet.spreadsheetId}-${sheet.sheetName}`} sheet={sheet} />
+            <AttachedSheetRow
+              isBusy={attach.isBusy || attach.step.kind !== 'closed'}
+              key={`${sheet.spreadsheetId}-${sheet.sheetName}`}
+              onChangeColumns={() => attach.changeColumns(sheet)}
+              sheet={sheet}
+            />
           ))}
         </ul>
       )}
@@ -66,6 +71,7 @@ export const EventResponseSheetsPanel = ({
           isSaving={attach.isBusy}
           onCancel={attach.cancel}
           onSave={attach.save}
+          recorded={attach.step.recorded}
           sheetName={attach.step.sheetName}
           spreadsheetName={attach.step.spreadsheetName}
         />

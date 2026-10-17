@@ -6,6 +6,7 @@ import {
   EVENTS_HEADINGS,
   EVENTS_TAB_NAME,
 } from '../../src/features/events/eventRegistryTabs'
+import { GROW_HEBREW_TYPE, GROW_RECRUITING, GROW_SEEKING } from './attendeeTypeCases'
 import { LINKEDIN_CASES } from './linkedInCases'
 import { LEADS_HEADER_ROW, MEMBERS_HEADER_ROW } from '../../src/testing/sheetsClientFactory'
 
@@ -227,12 +228,48 @@ const EVENTS: readonly string[][] = [
     '',
   ],
   ['evt-3', 'Moabet', '2026-11-14', '', '', '', 'No', 'No', 'No', ''],
+  ['evt-5', 'Grow Careers Evening', '2026-12-10', '', 'Grow, Tel Aviv', '', 'No', 'No', 'No', ''],
+]
+
+/* A careers evening whose form asks each guest which side of the room they
+   are on. The answers are the form's own wording, so they include a Hebrew
+   answer, one long unbroken answer, one typed twice in different case, and a
+   blank, which the registrant list has to count rather than drop. */
+export const GROW_SPREADSHEET_ID = 'grow-responses'
+
+export const GROW_SHEET_NAME = 'Form Responses 1'
+
+const GROW_HEADER = ['Timestamp', 'Full name', 'Email', 'I am coming as', 'Company', 'CV link']
+
+const GROW_ROWS: readonly string[][] = [
+  ['10/1/2026 9:00:00', 'Grow Seeker One', 'seeker1@example.com', GROW_SEEKING, '', ''],
+  ['10/1/2026 9:05:00', 'Grow Seeker Two', 'seeker2@example.com', 'looking for a job ', '', ''],
+  ['10/1/2026 9:10:00', 'Grow Recruiter', 'recruiter@example.com', GROW_RECRUITING, LONG_COMPANY, ''],
+  ['10/1/2026 9:15:00', HEBREW_NAME, 'hebrew@example.com', GROW_HEBREW_TYPE, 'חברה בע"מ', ''],
+  ['10/1/2026 9:20:00', 'Grow Unbroken', 'unbroken@example.com', UNBROKEN_TEXT, '', ''],
+  ['10/1/2026 9:25:00', 'Grow No Answer', 'noanswer@example.com', '', '', ''],
+]
+
+export const HARNESS_RESPONSE_SHEETS: Readonly<
+  Record<string, Readonly<Record<string, readonly (readonly string[])[]>>>
+> = {
+  [GROW_SPREADSHEET_ID]: { [GROW_SHEET_NAME]: [GROW_HEADER, ...GROW_ROWS] },
+}
+
+const EVENT_SHEETS: readonly string[][] = [
+  [
+    'evt-5',
+    GROW_SPREADSHEET_ID,
+    GROW_SHEET_NAME,
+    'main',
+    '{"timestamp":"A","name":"B","email":"C","company":"E","jobTitle":null,"attendeeType":"D"}',
+  ],
 ]
 
 export const HARNESS_TABS = {
   Leads: [LEADS_HEADER_ROW, ...PLAIN_LEADS, ...TRICKY_LEADS],
   Members: [MEMBERS_HEADER_ROW, ...MEMBERS],
   [EVENTS_TAB_NAME]: [[...EVENTS_HEADINGS], ...EVENTS],
-  [EVENT_SHEETS_TAB_NAME]: [[...EVENT_SHEETS_HEADINGS]],
+  [EVENT_SHEETS_TAB_NAME]: [[...EVENT_SHEETS_HEADINGS], ...EVENT_SHEETS],
   [ATTENDANCE_TAB_NAME]: [[...ATTENDANCE_HEADINGS]],
 }

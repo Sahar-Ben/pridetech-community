@@ -63,6 +63,26 @@ describe('guessResponseSheetMapping', () => {
 })
 
 describe('recordColumnMapping and parseColumnMapping', () => {
+  it('should read a mapping recorded before attendee type existed exactly as it was', () => {
+    const recorded = '{"timestamp":"A","name":"B","email":"C","company":null,"jobTitle":null}'
+
+    expect(parseColumnMapping(recorded)).toEqual({ timestamp: 0, name: 1, email: 2 })
+  })
+
+  it('should keep the attendee type column through a record and a read', () => {
+    const mapping = { name: 1, email: 2, attendeeType: 3 }
+
+    expect(parseColumnMapping(recordColumnMapping(mapping))).toEqual(mapping)
+  })
+
+  it('should never guess the attendee type column, however its heading is worded', () => {
+    const guessed = guessResponseSheetMapping({
+      headerRow: ['Timestamp', 'Name', 'Email', 'Attendee type', 'Type', 'Role'],
+    })
+
+    expect(guessed.attendeeType).toBeUndefined()
+  })
+
   it('should round-trip a full mapping through the cell it is stored in', () => {
     const mapping = { timestamp: 0, name: 1, jobTitle: 2, company: 3, email: 4 }
 
@@ -71,7 +91,7 @@ describe('recordColumnMapping and parseColumnMapping', () => {
 
   it('should record the mapping as the column letters the organiser sees in their own sheet', () => {
     expect(recordColumnMapping({ name: 1, email: 27 })).toBe(
-      '{"timestamp":null,"name":"B","email":"AB","company":null,"jobTitle":null}',
+      '{"timestamp":null,"name":"B","email":"AB","company":null,"jobTitle":null,"attendeeType":null}',
     )
   })
 

@@ -99,6 +99,19 @@ test.describe('screens opened on top of a section fit the screen too', () => {
     await expectNoHorizontalOverflow(page, 'the event detail')
   })
 
+  test('an event whose guests gave very long answers to its own question', async ({ page }) => {
+    await openWorkspace(page)
+    await goTo(page, 'Events')
+    await page.getByRole('button', { name: 'Open Grow Careers Evening' }).click()
+
+    await expect(page.getByRole('group', { name: 'Attendee type' })).toBeVisible()
+    await expectNoHorizontalOverflow(page, 'the event detail with attendee types')
+
+    await page.getByRole('button', { name: 'Check in at the door' }).click()
+    await expect(page.getByRole('button', { name: /Grow Unbroken/ })).toBeVisible()
+    await expectNoHorizontalOverflow(page, 'the door with attendee types')
+  })
+
   test('the sort and filter sheet sits inside the screen', async ({ page }) => {
     await openWorkspace(page)
     await goTo(page, 'Leads')

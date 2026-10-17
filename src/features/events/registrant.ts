@@ -3,6 +3,10 @@
    the earliest events never asked for an email at all, and only some ask for
    company and job title.
 
+   `attendeeType` is the answer to the form's own "which are you" question,
+   kept as it was written, because the answers are the form's wording rather
+   than this app's.
+
    `checkedInAt` is the only record that someone actually walked in. Nothing
    else in the row is evidence of attendance: `registration` is intent. */
 export const REGISTRATION_KINDS = ['registered', 'waitlist'] as const
@@ -16,6 +20,7 @@ export type Registrant = {
   email: string | undefined
   company: string | undefined
   jobTitle: string | undefined
+  attendeeType: string | undefined
   registration: RegistrationKind
   checkedInAt: string | undefined
   guestOfEmail: string | undefined

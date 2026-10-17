@@ -13,12 +13,16 @@ const WRAPPER_CLASSES = 'rounded-xl border border-hairline bg-surface'
 
 type EventRegistrantsTableProps = {
   registrants: readonly Registrant[]
+  /* Everybody on the event, which `registrants` may be a filtered part of: who
+     a guest came with is looked up across the whole event. */
+  eventRegistrants: readonly Registrant[]
   members: readonly Member[]
   isClosedOut: boolean
 }
 
 export const EventRegistrantsTable = ({
   registrants,
+  eventRegistrants,
   members,
   isClosedOut,
 }: EventRegistrantsTableProps) => (
@@ -46,7 +50,7 @@ export const EventRegistrantsTable = ({
       <tbody>
         {sortRegistrantsByName(registrants).map((registrant) => (
           <EventRegistrantRow
-            eventRegistrants={registrants}
+            eventRegistrants={eventRegistrants}
             isClosedOut={isClosedOut}
             key={registrant.id}
             members={members}

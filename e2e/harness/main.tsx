@@ -1,6 +1,6 @@
 import { createRoot } from 'react-dom/client'
 import './harness.css'
-import { HARNESS_TABS } from './fixtures'
+import { HARNESS_RESPONSE_SHEETS, HARNESS_TABS } from './fixtures'
 import { CommunityWorkspace } from '../../src/app/CommunityWorkspace'
 import { createFakeResponseSheetAccess } from '../../src/testing/eventsRegistryFactory'
 import { withReadCache } from '../../src/sheets/readCache'
@@ -44,12 +44,27 @@ const screenLock = {
   turnOff: () => undefined,
 }
 
+/* Response sheets kept in other Drive files, read by the spreadsheet and tab
+   they were attached under. One the harness does not hold reads as the fake's
+   default sheet, which is what attaching a freshly picked sheet sees. */
+const readResponseRows = ({ spreadsheetId, sheetName }: { spreadsheetId: string; sheetName: string }) =>
+  HARNESS_RESPONSE_SHEETS[spreadsheetId]?.[sheetName]
+
+const defaultAccess = createFakeResponseSheetAccess()
+
+const responseSheetAccess = createFakeResponseSheetAccess({
+  readHeaderRow: async (options) =>
+    readResponseRows(options)?.[0] ?? (await defaultAccess.readHeaderRow(options)),
+  readRows: async (options) =>
+    readResponseRows(options) ?? (await defaultAccess.readRows(options)),
+})
+
 createRoot(rootElement).render(
   <CommunityWorkspace
     onChangeSpreadsheet={() => undefined}
     onSessionExpired={() => undefined}
     onSignOut={() => undefined}
-    responseSheetAccess={createFakeResponseSheetAccess()}
+    responseSheetAccess={responseSheetAccess}
     screenLock={screenLock}
     sheetsClient={sheetsClient}
     spreadsheetName="E2E HARNESS"

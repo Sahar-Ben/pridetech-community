@@ -61,6 +61,7 @@ export const parseSheetRegistrants = ({
       email,
       company: readCell({ row, column: mapping.company }),
       jobTitle: readCell({ row, column: mapping.jobTitle }),
+      attendeeType: readCell({ row, column: mapping.attendeeType }),
       registration: REGISTRATION_BY_ROLE[sheet.role],
       checkedInAt: undefined,
       guestOfEmail: undefined,
