@@ -1,6 +1,7 @@
 import { ChartCard } from './ChartCard'
 import { DistributionBars } from './DistributionBars'
 import { DistributionTable } from './DistributionTable'
+import { EventsAttendedCard } from './EventsAttendedCard'
 import { GenderPie } from './GenderPie'
 import { IndustryNotBuiltCard } from './IndustryNotBuiltCard'
 import { OverviewStats } from './OverviewStats'
@@ -8,15 +9,26 @@ import { ReviewQueueCard } from './ReviewQueueCard'
 import type { Overview } from './buildOverview'
 import { describeCompanyCoverage, describeUnknownShare } from './overviewText'
 import { SectionTitle } from '../../app/SectionTitle'
+import type { EventCountFilter } from '../eventHistory/memberEventCounts'
+import type { CommunityEventHistoryResource } from '../eventHistory/useCommunityEventHistory'
 
 const GRID_CLASSES = 'grid grid-cols-1 gap-4 xl:grid-cols-2'
 
 type OverviewDashboardProps = {
   overview: Overview
   onStartReviewing: () => void
+  /* Both or neither: the events chart reads every event's sheets, and the
+     workspace that owns that read is also what can open the Members screen. */
+  eventHistory?: CommunityEventHistoryResource
+  onOpenMembersWithEvents?: (filter: EventCountFilter) => void
 }
 
-export const OverviewDashboard = ({ overview, onStartReviewing }: OverviewDashboardProps) => (
+export const OverviewDashboard = ({
+  overview,
+  onStartReviewing,
+  eventHistory,
+  onOpenMembersWithEvents,
+}: OverviewDashboardProps) => (
   <section className="mx-auto w-full max-w-4xl px-4 pb-12">
     <header className="pt-6 pb-4">
       <SectionTitle eyebrow="Community pulse" title="Overview" />
@@ -33,6 +45,14 @@ export const OverviewDashboard = ({ overview, onStartReviewing }: OverviewDashbo
       <OverviewStats overview={overview} />
 
       <div className={GRID_CLASSES}>
+        {eventHistory !== undefined && onOpenMembersWithEvents !== undefined && (
+          <EventsAttendedCard
+            members={overview.members}
+            onOpenMembers={onOpenMembersWithEvents}
+            resource={eventHistory}
+          />
+        )}
+
         <ChartCard
           chart={<GenderPie distribution={overview.gender} />}
           howItWasBuilt="Read from the Gender column on the Members tab, which is filled in by hand at approval."

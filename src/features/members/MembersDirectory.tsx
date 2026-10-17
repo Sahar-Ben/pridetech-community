@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { CopyEmailsButton } from './CopyEmailsButton'
 import { EventCountFilterChips } from './EventCountFilterChips'
 import { MemberDetail } from './MemberDetail'
@@ -31,6 +31,7 @@ type MembersDirectoryProps = {
   /* Every event's registrants, read only once somebody filters by events: it
      is a read per response sheet, and the directory is useful without it. */
   eventHistory: CommunityEventHistoryResource
+  initialEventCountFilter?: EventCountFilter
 }
 
 const TRY_AGAIN_CLASSES = `${SECONDARY_BUTTON_CLASSES} ${COMPACT_BUTTON_SIZE_CLASSES} min-h-11 self-start`
@@ -42,10 +43,11 @@ export const MembersDirectory = ({
   onSaveMember,
   renderEventHistory,
   eventHistory,
+  initialEventCountFilter = 'any',
 }: MembersDirectoryProps) => {
   const [searchText, setSearchText] = useState('')
   const [statusFilter, setStatusFilter] = useState<MemberStatusFilter>('Active')
-  const [eventCountFilter, setEventCountFilter] = useState<EventCountFilter>('any')
+  const [eventCountFilter, setEventCountFilter] = useState<EventCountFilter>(initialEventCountFilter)
   const [openRowNumber, setOpenRowNumber] = useState<number | undefined>(undefined)
   const [rowNumberToFocus, setRowNumberToFocus] = useState<number | undefined>(undefined)
 
@@ -108,6 +110,14 @@ export const MembersDirectory = ({
   const emailList = useMemo(() => buildMemberEmailList(visibleMembers), [visibleMembers])
 
   const { request: requestEventHistory } = eventHistory
+  /* Arriving already filtered, from the Overview, needs the events read just as
+     choosing a filter here does. */
+  useEffect(() => {
+    if (initialEventCountFilter !== 'any') {
+      requestEventHistory()
+    }
+  }, [initialEventCountFilter, requestEventHistory])
+
   const chooseEventCountFilter = useCallback(
     (filter: EventCountFilter) => {
       setEventCountFilter(filter)

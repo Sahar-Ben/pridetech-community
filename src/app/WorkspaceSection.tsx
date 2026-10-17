@@ -5,6 +5,8 @@ import { MembersSection } from '../features/members/MembersSection'
 import { OverviewSection } from '../features/overview/OverviewSection'
 import type { SheetsClient } from '../sheets/sheetsClient'
 import type { Section } from '../shell/section'
+import type { EventCountFilter } from '../features/eventHistory/memberEventCounts'
+import type { CommunityEventHistoryResource } from '../features/eventHistory/useCommunityEventHistory'
 
 type WorkspaceSectionProps = {
   section: Section
@@ -13,6 +15,9 @@ type WorkspaceSectionProps = {
   onSessionExpired: () => void
   onSelectSection: (section: Section) => void
   onWaitingCountRead: (count: number) => void
+  eventHistory: CommunityEventHistoryResource
+  membersEventCountFilter: EventCountFilter | undefined
+  onOpenMembersWithEvents: (filter: EventCountFilter) => void
 }
 
 export const WorkspaceSection = ({
@@ -22,10 +27,15 @@ export const WorkspaceSection = ({
   onSessionExpired,
   onSelectSection,
   onWaitingCountRead,
+  eventHistory,
+  membersEventCountFilter,
+  onOpenMembersWithEvents,
 }: WorkspaceSectionProps) => {
   if (section === 'overview') {
     return (
       <OverviewSection
+        eventHistory={eventHistory}
+        onOpenMembersWithEvents={onOpenMembersWithEvents}
         onSessionExpired={onSessionExpired}
         onStartReviewing={() => onSelectSection('leads')}
         onWaitingCountRead={onWaitingCountRead}
@@ -47,6 +57,8 @@ export const WorkspaceSection = ({
   if (section === 'members') {
     return (
       <MembersSection
+        eventHistory={eventHistory}
+        initialEventCountFilter={membersEventCountFilter}
         onSessionExpired={onSessionExpired}
         responseSheetAccess={responseSheetAccess}
         sheetsClient={sheetsClient}
