@@ -1,5 +1,6 @@
 import { useId } from 'react'
 import { MEMBER_STATUS_FILTERS, type MemberStatusFilter } from './memberFilters'
+import { SegmentedFilter, type SegmentedOption } from './SegmentedFilter'
 import { FIELD_BORDER_CLASSES } from '../../theme/fields'
 
 const SEARCH_CLASSES = [
@@ -9,27 +10,13 @@ const SEARCH_CLASSES = [
   FIELD_BORDER_CLASSES,
 ].join(' ')
 
-const CHIP_BASE_CLASSES = [
-  'min-h-11 rounded-full px-4 text-sm transition-colors duration-150 ease-brand',
-].join(' ')
-
-const chipClasses = (isSelected: boolean): string =>
-  [
-    CHIP_BASE_CLASSES,
-    isSelected
-      ? 'bg-accent-solid font-bold text-on-accent'
-      : 'border border-card-strong-edge bg-card text-neutral-ink hover:bg-surface',
-  ].join(' ')
-
 /* The design's order -- the everyday view, then everything, then the rare one
    -- and its plural wording, mapped onto the filter values the list uses. */
-const CHIP_ORDER: readonly MemberStatusFilter[] = ['Active', 'All', 'Ex-member']
-
-const CHIP_LABELS: Readonly<Record<MemberStatusFilter, string>> = {
-  Active: 'Active',
-  All: 'All',
-  'Ex-member': 'Ex-members',
-}
+const STATUS_OPTIONS: readonly SegmentedOption<MemberStatusFilter>[] = [
+  { value: 'Active', label: 'Active' },
+  { value: 'All', label: 'All' },
+  { value: 'Ex-member', label: 'Ex-members' },
+]
 
 type MembersFilterBarProps = {
   searchText: string
@@ -76,19 +63,12 @@ export const MembersFilterBar = ({
         />
       </div>
 
-      <div aria-label="Status" className="flex flex-wrap gap-2" role="group">
-        {CHIP_ORDER.filter((option) => MEMBER_STATUS_FILTERS.includes(option)).map((option) => (
-          <button
-            aria-pressed={statusFilter === option}
-            className={chipClasses(statusFilter === option)}
-            key={option}
-            onClick={() => onStatusFilterChange(option)}
-            type="button"
-          >
-            {CHIP_LABELS[option]}
-          </button>
-        ))}
-      </div>
+      <SegmentedFilter
+        label="Status"
+        onSelect={onStatusFilterChange}
+        options={STATUS_OPTIONS.filter((option) => MEMBER_STATUS_FILTERS.includes(option.value))}
+        selected={statusFilter}
+      />
     </div>
   )
 }
