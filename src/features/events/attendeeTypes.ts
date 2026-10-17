@@ -1,4 +1,4 @@
-import type { Registrant } from './registrant'
+import { hasRegistrantArrived, type Registrant } from './registrant'
 
 /* One answer to the form's "which are you" question, and how many people gave
    it. `label` is the spelling the first of them wrote, because the answer is
@@ -94,4 +94,31 @@ export const keepAvailableFilter = ({
     return ALL_ATTENDEE_TYPES
   }
   return filter
+}
+
+/* How many of each answer have come through the door, for the check-in screen:
+   midway through a careers evening the question is how many of the recruiters
+   are here, not how many registered. */
+export type AttendeeTypeArrivals = {
+  byKey: ReadonlyMap<string, number>
+  unansweredCount: number
+  totalCount: number
+}
+
+export const summariseArrivalsByType = (
+  registrants: readonly Registrant[],
+): AttendeeTypeArrivals => {
+  const byKey = new Map<string, number>()
+  let unansweredCount = 0
+  let totalCount = 0
+  registrants.filter(hasRegistrantArrived).forEach((registrant) => {
+    totalCount += 1
+    const key = readKey(registrant)
+    if (key === undefined) {
+      unansweredCount += 1
+      return
+    }
+    byKey.set(key, (byKey.get(key) ?? 0) + 1)
+  })
+  return { byKey, unansweredCount, totalCount }
 }
