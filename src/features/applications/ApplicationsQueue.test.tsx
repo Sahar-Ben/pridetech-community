@@ -59,6 +59,7 @@ const renderQueue = ({
       review={buildLeadsReviewFixture({ leads, memberRows, rowsWithoutEmail })}
       spreadsheetId={spreadsheetId}
       decisions={decisions}
+      onMarkDuplicates={vi.fn(async () => await Promise.resolve())}
       onReload={onReload}
     />,
   )
