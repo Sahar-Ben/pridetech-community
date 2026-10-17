@@ -1,4 +1,5 @@
 import { DuplicateApplicantRow } from './DuplicateApplicantRow'
+import type { DuplicateApplicant } from './duplicateApplicants'
 import type { LeadsReview } from './leadsReview'
 import {
   describeLeadsWithoutEmailNote,
@@ -11,6 +12,7 @@ import { SheetIssueDisclosure } from './SheetIssueDisclosure'
 type LeadsDataQualityNotesProps = {
   review: LeadsReview
   spreadsheetId: string
+  onMarkDuplicates: (duplicate: DuplicateApplicant) => Promise<void>
 }
 
 const ROW_LIST_CLASSES = 'flex flex-col gap-1.5'
@@ -25,7 +27,11 @@ const FOOTNOTE_CLASSES = 'flex items-start gap-2 text-xs text-ink-faint'
    but nothing in the app or the sheet shows which rows the reviewer can never
    match and which addresses were entered twice. They render whether or not the
    filter excluded anybody, because a clean filter does not mean a clean sheet. */
-export const LeadsDataQualityNotes = ({ review, spreadsheetId }: LeadsDataQualityNotesProps) => {
+export const LeadsDataQualityNotes = ({
+  review,
+  spreadsheetId,
+  onMarkDuplicates,
+}: LeadsDataQualityNotesProps) => {
   const { counts, leadsWithoutEmail, duplicateApplicants } = review
   const leadsWithoutEmailNote = describeLeadsWithoutEmailNote({
     count: counts.leadsWithoutEmailCount,
@@ -66,6 +72,7 @@ export const LeadsDataQualityNotes = ({ review, spreadsheetId }: LeadsDataQualit
               <DuplicateApplicantRow
                 key={duplicate.emailKey}
                 duplicate={duplicate}
+                onMarkDuplicates={onMarkDuplicates}
                 spreadsheetId={spreadsheetId}
               />
             ))}

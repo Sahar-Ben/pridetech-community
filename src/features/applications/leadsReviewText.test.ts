@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import type { DuplicateApplicant } from './duplicateApplicants'
 import type { LeadsReviewCounts } from './leadsReview'
+import { buildLead } from '../../testing/leadFactory'
 import {
   describeDuplicateApplicant,
   describeDuplicateNames,
@@ -21,6 +23,16 @@ const counts = (overrides: Partial<LeadsReviewCounts> = {}): LeadsReviewCounts =
   membersWithoutEmailCount: 0,
   repeatedLeadEmailCount: 0,
   ...overrides,
+})
+
+/* The text only reads the address, the names and the rows; which row would be
+   kept is the grouping's business. */
+const duplicateOf = (
+  fields: Pick<DuplicateApplicant, 'emailKey' | 'names' | 'rowNumbers'>,
+): DuplicateApplicant => ({
+  ...fields,
+  keptLead: buildLead({ rowNumber: fields.rowNumbers[0] ?? 2 }),
+  laterLeads: fields.rowNumbers.slice(1).map((rowNumber) => buildLead({ rowNumber })),
 })
 
 describe('describeApplicationsCount, under Pending', () => {
@@ -156,7 +168,7 @@ describe('describeLeadWithoutEmail', () => {
 describe('describeDuplicateApplicant', () => {
   it('should name the address and every row it was entered on, so the sheet can be fixed', () => {
     const description = describeDuplicateApplicant({
-      duplicate: { emailKey: 'dana@example.com', names: ['Dana Levi'], rowNumbers: [2, 9, 14] },
+      duplicate: duplicateOf({ emailKey: 'dana@example.com', names: ['Dana Levi'], rowNumbers: [2, 9, 14] }),
     })
 
     expect(description).toBe('dana@example.com \u{00b7} 3 applications \u{00b7} Leads rows 2, 9, 14')
@@ -167,7 +179,7 @@ describe('describeSharedAddressNote', () => {
   it('should say nothing when every row on the address carries the same name', () => {
     expect(
       describeSharedAddressNote({
-        duplicate: { emailKey: 'dana@example.com', names: ['Dana Levi'], rowNumbers: [2, 9] },
+        duplicate: duplicateOf({ emailKey: 'dana@example.com', names: ['Dana Levi'], rowNumbers: [2, 9] }),
       }),
     ).toBeUndefined()
   })
@@ -175,11 +187,11 @@ describe('describeSharedAddressNote', () => {
   it('should warn when the rows carry different names, since an inbox may be shared', () => {
     expect(
       describeSharedAddressNote({
-        duplicate: {
+        duplicate: duplicateOf({
           emailKey: 'office@example.com',
           names: ['Dana Levi', 'Ariel Cohen'],
           rowNumbers: [2, 9],
-        },
+        }),
       }),
     ).toBe(
       '2 different names use this address, so these may be different people sharing an inbox rather than one person applying twice.',
@@ -190,11 +202,11 @@ describe('describeSharedAddressNote', () => {
 describe('describeDuplicateNames', () => {
   it('should show every name on the address, so a shared inbox is not read as one person', () => {
     const names = describeDuplicateNames({
-      duplicate: {
+      duplicate: duplicateOf({
         emailKey: 'office@example.com',
         names: ['Dana Levi', 'Ariel Cohen'],
         rowNumbers: [2, 9],
-      },
+      }),
     })
 
     expect(names).toBe('Dana Levi \u{00b7} Ariel Cohen')
@@ -202,7 +214,7 @@ describe('describeDuplicateNames', () => {
 
   it('should fall back to the address when no row on it carried a name', () => {
     const names = describeDuplicateNames({
-      duplicate: { emailKey: 'office@example.com', names: [], rowNumbers: [2, 9] },
+      duplicate: duplicateOf({ emailKey: 'office@example.com', names: [], rowNumbers: [2, 9] }),
     })
 
     expect(names).toBe('office@example.com')

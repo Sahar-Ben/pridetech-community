@@ -31,6 +31,7 @@ const STATUS_BY_RECORDED_VALUE: ReadonlyMap<string, LeadStatus> = new Map([
   [toComparableStatus(RECORDED_LEAD_STATUS.approved), 'approved'],
   [toComparableStatus(RECORDED_LEAD_STATUS.declined), 'declined'],
   [toComparableStatus(RECORDED_LEAD_STATUS.maybe), 'maybe'],
+  [toComparableStatus(RECORDED_LEAD_STATUS.duplicate), 'duplicate'],
   ['maybe', 'maybe'],
 ])
 

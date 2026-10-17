@@ -314,7 +314,11 @@ describe('buildLeadsReview', () => {
     })
 
     expect(review.duplicateApplicants).toEqual([
-      { emailKey: 'twice@example.com', names: ['Dana Maman'], rowNumbers: [2, 3] },
+      expect.objectContaining({
+        emailKey: 'twice@example.com',
+        names: ['Dana Maman'],
+        rowNumbers: [2, 3],
+      }),
     ])
   })
 
