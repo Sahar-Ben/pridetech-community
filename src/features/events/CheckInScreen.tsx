@@ -5,6 +5,15 @@ import { CheckInTabPanel } from './CheckInTabPanel'
 import { CheckInTabs } from './CheckInTabs'
 import { DoorSearchField } from './DoorSearchField'
 import { WalkInPanel } from './WalkInPanel'
+import { AttendeeTypeFilter } from './AttendeeTypeFilter'
+import {
+  ALL_ATTENDEE_TYPES,
+  filterByAttendeeType,
+  keepAvailableFilter,
+  summariseArrivalsByType,
+  summariseAttendeeTypes,
+  type AttendeeTypeFilter as AttendeeTypeFilterValue,
+} from './attendeeTypes'
 import { buildCheckInBoard, otherCheckInTab, toTabButtonId, type CheckInTab } from './checkInBoard'
 import { describeCheckInToggle, describeWalkInAdded } from './checkInActionText'
 import { toWalkInFieldsFromMember } from './checkIn'
@@ -60,6 +69,8 @@ export const CheckInScreen = ({
   const [activeTab, setActiveTab] = useState<CheckInTab>('pending')
   const [isAddingWalkIn, setIsAddingWalkIn] = useState(false)
   const [lastAction, setLastAction] = useState<string | undefined>(undefined)
+  const [chosenAttendeeType, setChosenAttendeeType] =
+    useState<AttendeeTypeFilterValue>(ALL_ATTENDEE_TYPES)
 
   useEffect(() => {
     searchInputRef.current?.focus()
@@ -73,7 +84,19 @@ export const CheckInScreen = ({
   }, [onRefresh])
 
   const summary = summariseEventAttendance({ registrants, isClosedOut: false })
-  const board = buildCheckInBoard({ registrants, searchText, activeTab })
+  const attendeeTypes = summariseAttendeeTypes(registrants)
+  const attendeeTypeFilter = keepAvailableFilter({
+    filter: chosenAttendeeType,
+    summary: attendeeTypes,
+  })
+  /* The tabs, their counts and the list all follow the chosen answer, so
+     "Arrived 3" under Recruiting is three recruiters in the room. The running
+     total under them stays the whole event's. */
+  const board = buildCheckInBoard({
+    registrants: filterByAttendeeType({ registrants, filter: attendeeTypeFilter }),
+    searchText,
+    activeTab,
+  })
 
   /* Deliberately no tab switch here: the organiser is working down the pending
      list with a queue in front of them, and moving the screen under their thumb
@@ -134,6 +157,18 @@ export const CheckInScreen = ({
       </h3>
 
       <AttendanceSaveStatus state={attendanceStatus} />
+
+      {/* Only for an event whose form asks which kind of guest each person is:
+          each chip reads arrived/registered for its answer. */}
+      {attendeeTypes.types.length > 0 && (
+        <AttendeeTypeFilter
+          arrivals={summariseArrivalsByType(registrants)}
+          filter={attendeeTypeFilter}
+          onFilterChange={setChosenAttendeeType}
+          summary={attendeeTypes}
+          totalCount={registrants.length}
+        />
+      )}
 
       {/* Sticky: at a door the search box, the two tabs and the running total
           are the screen. Everything above them is read once and scrolled away. */}

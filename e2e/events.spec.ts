@@ -128,6 +128,21 @@ test.describe('an event whose form asks which kind of guest each person is', () 
     expect(badge?.height ?? 0).toBeLessThan(32)
   })
 
+  test('at the door, says how many of each kind have arrived and filters to them', async ({
+    page,
+  }) => {
+    await page.getByRole('button', { name: 'Check in at the door' }).click()
+    const doorChips = page.getByRole('group', { name: 'Attendee type' })
+
+    await expect(doorChips.getByRole('button', { name: `${GROW_RECRUITING} 0/1 arrived` })).toBeVisible()
+    await page.getByRole('button', { name: /Grow Recruiter/ }).click()
+    await expect(doorChips.getByRole('button', { name: `${GROW_RECRUITING} 1/1 arrived` })).toBeVisible()
+
+    await doorChips.getByRole('button', { name: new RegExp(`^${GROW_RECRUITING}`) }).click()
+    await expect(page.getByRole('tab', { name: /arrived/i })).toHaveAccessibleName('Arrived 1')
+    await expect(page.getByRole('tab', { name: /pending/i })).toHaveAccessibleName('Pending 0')
+  })
+
   test('the answer chips are big enough for a thumb', async ({ page }) => {
     test.skip(!isPhone(page), 'touch target sizes are a phone concern')
 
