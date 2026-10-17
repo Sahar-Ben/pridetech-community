@@ -89,11 +89,11 @@ test.describe('an event whose form asks which kind of guest each person is', () 
   test('counts each answer, with the blank ones as a group of their own', async ({ page }) => {
     const chips = attendeeTypes(page)
 
-    await expect(chips.getByRole('button', { name: 'All 7' })).toHaveAttribute('aria-pressed', 'true')
+    await expect(chips.getByRole('button', { name: 'All 8' })).toHaveAttribute('aria-pressed', 'true')
     await expect(chips.getByRole('button', { name: `${GROW_SEEKING} 3` })).toBeVisible()
     await expect(chips.getByRole('button', { name: `${GROW_RECRUITING} 1` })).toBeVisible()
     await expect(chips.getByRole('button', { name: `${GROW_HEBREW_TYPE} 1` })).toBeVisible()
-    await expect(chips.getByRole('button', { name: 'No answer 1' })).toBeVisible()
+    await expect(chips.getByRole('button', { name: 'No answer 2' })).toBeVisible()
   })
 
   test('shows only the people who gave the chosen answer', async ({ page }) => {
@@ -102,8 +102,8 @@ test.describe('an event whose form asks which kind of guest each person is', () 
     await expect(registrantRows(page)).toHaveCount(1)
     await expect(registrantRows(page).first()).toContainText('Grow Recruiter')
 
-    await attendeeTypes(page).getByRole('button', { name: 'All 7' }).click()
-    await expect(registrantRows(page)).toHaveCount(7)
+    await attendeeTypes(page).getByRole('button', { name: 'All 8' }).click()
+    await expect(registrantRows(page)).toHaveCount(8)
   })
 
   test('says each person\'s answer on their row and at the door', async ({ page }) => {

@@ -47,6 +47,7 @@ export const MembersSection = ({
 
   return (
     <MembersDirectory
+      eventHistory={eventHistory}
       members={state.members}
       onSaveMember={saveMember}
       renderEventHistory={(member) => (
