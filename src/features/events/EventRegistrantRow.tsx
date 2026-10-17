@@ -5,7 +5,11 @@ import { deriveRegistrantStatus } from './eventAttendance'
 import type { Member } from '../members/member'
 import type { Registrant } from './registrant'
 import { resolveRegistrantLink } from './registrantLink'
-import { REGISTRANT_COLUMN_CLASSES } from './registrantColumns'
+import {
+  REGISTRANT_CARD_PLACEMENT,
+  REGISTRANT_COLUMN_CLASSES,
+  REGISTRANT_ROW_CLASSES,
+} from './registrantColumns'
 
 import { COMPACT_BUTTON_SIZE_CLASSES, SECONDARY_BUTTON_CLASSES } from '../../theme/controls'
 
@@ -40,8 +44,11 @@ export const EventRegistrantRow = ({
 
   return (
     <>
-      <tr className="border-t border-hairline">
-        <td className={`${CELL_CLASSES} ${REGISTRANT_COLUMN_CLASSES.name} wrap-anywhere`}>
+      <tr className={REGISTRANT_ROW_CLASSES} role="row">
+        <td
+          className={`${CELL_CLASSES} ${REGISTRANT_COLUMN_CLASSES.name} ${REGISTRANT_CARD_PLACEMENT.name} wrap-anywhere`}
+          role="cell"
+        >
           <span className="font-semibold text-ink">{registrant.name}</span>
           {registrant.isWalkIn && (
             <span className="ml-1 text-xs text-ink-muted">(walk-in)</span>
@@ -52,16 +59,22 @@ export const EventRegistrantRow = ({
             </span>
           )}
         </td>
-        <td className={`${CELL_CLASSES} ${REGISTRANT_COLUMN_CLASSES.email} wrap-anywhere`}>
+        <td className={`${CELL_CLASSES} ${REGISTRANT_COLUMN_CLASSES.email} wrap-anywhere`} role="cell">
           {registrant.email ?? <EmptyValue />}
         </td>
-        <td className={`${CELL_CLASSES} ${REGISTRANT_COLUMN_CLASSES.company} wrap-anywhere`}>
+        <td className={`${CELL_CLASSES} ${REGISTRANT_COLUMN_CLASSES.company} wrap-anywhere`} role="cell">
           {registrant.company ?? <EmptyValue />}
         </td>
-        <td className={`${CELL_CLASSES} ${REGISTRANT_COLUMN_CLASSES.link} text-xs`}>
+        <td
+          className={`${CELL_CLASSES} ${REGISTRANT_COLUMN_CLASSES.link} ${REGISTRANT_CARD_PLACEMENT.link} text-xs`}
+          role="cell"
+        >
           <RegistrantLinkNote link={link} />
         </td>
-        <td className={`${CELL_CLASSES} ${REGISTRANT_COLUMN_CLASSES.status}`}>
+        <td
+          className={`${CELL_CLASSES} ${REGISTRANT_COLUMN_CLASSES.status} ${REGISTRANT_CARD_PLACEMENT.status}`}
+          role="cell"
+        >
           <RegistrantStatusBadge status={status} />
         </td>
       </tr>
@@ -70,10 +83,13 @@ export const EventRegistrantRow = ({
           could read. Only where there is an address to record: a row with no email
           has nothing to link by, and a guest is here as somebody's guest. */}
       {canLink && (
-        <tr data-row="link">
-          <td className="px-3 pb-3" colSpan={ALL_COLUMNS_SPAN}>
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-surface-raised px-3 py-2">
-              <span className="text-xs text-ink-muted">
+        <tr className="block sm:table-row" data-row="link" role="row">
+          <td className="block px-3 pb-3 sm:table-cell" colSpan={ALL_COLUMNS_SPAN} role="cell">
+            {/* On a phone the button alone, straight under "Not matched": with
+                many unmatched people a boxed question on every card is most of
+                the screen. The wider layout has room to say what it is for. */}
+            <div className="flex flex-wrap items-center justify-between gap-2 sm:rounded-xl sm:bg-surface-raised sm:px-3 sm:py-2">
+              <span className="text-xs text-ink-muted max-sm:hidden">
                 A member who registered with another email?
               </span>
               <button
