@@ -3,6 +3,7 @@ import {
   ALL_ATTENDEE_TYPES,
   filterByAttendeeType,
   keepAvailableFilter,
+  summariseArrivalsByType,
   summariseAttendeeTypes,
 } from './attendeeTypes'
 import { buildRegistrant } from '../../testing/eventFactory'
@@ -105,5 +106,22 @@ describe('keepAvailableFilter', () => {
     const filter = { kind: 'type', key: 'recruiting' } as const
 
     expect(keepAvailableFilter({ filter, summary })).toBe(filter)
+  })
+})
+
+describe('summariseArrivalsByType', () => {
+  it('should count who has arrived under each answer, and in all', () => {
+    const arrivals = summariseArrivalsByType([
+      buildRegistrant({ id: 'r1', attendeeType: RECRUITING, checkedInAt: '2026-10-01T19:00' }),
+      buildRegistrant({ id: 'r2', attendeeType: 'recruiting', checkedInAt: '2026-10-01T19:05' }),
+      buildRegistrant({ id: 'r3', attendeeType: RECRUITING }),
+      buildRegistrant({ id: 's1', attendeeType: SEEKING }),
+      buildRegistrant({ id: 'w1', attendeeType: undefined, checkedInAt: '2026-10-01T19:10' }),
+    ])
+
+    expect(arrivals.byKey.get('recruiting')).toBe(2)
+    expect(arrivals.byKey.get('looking for a job')).toBeUndefined()
+    expect(arrivals.unansweredCount).toBe(1)
+    expect(arrivals.totalCount).toBe(3)
   })
 })

@@ -89,3 +89,48 @@ test.describe('the member page', () => {
     expect(summary).toContain('LinkedIn: https://www.linkedin.com/in/member-without-scheme')
   })
 })
+
+test.describe('filtering by how many events someone has been to', () => {
+  const eventChips = (page: import('@playwright/test').Page) =>
+    page.getByRole('group', { name: 'Events' })
+
+  test('lists only the members who have been to the chosen number of events', async ({ page }) => {
+    await eventChips(page).getByRole('button', { name: /^1 event/ }).click()
+
+    await expect.poll(() => rowCount(page)).toBe(1)
+    await expect(page.getByRole('table', { name: 'Members' })).toContainText('Twice Applied Member')
+
+    await eventChips(page).getByRole('button', { name: /^No events/ }).click()
+    await expect.poll(() => rowCount(page)).toBeGreaterThan(1)
+    await expect(page.getByRole('table', { name: 'Members' })).not.toContainText(
+      'Twice Applied Member',
+    )
+  })
+
+  test('copies the emails of the filtered list, ready for Gmail', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+    await eventChips(page).getByRole('button', { name: /^1 event/ }).click()
+    await expect.poll(() => rowCount(page)).toBe(1)
+
+    await page.getByRole('button', { name: 'Copy 1 email' }).click()
+
+    await expect(page.getByRole('button', { name: 'Copied 1 email' })).toBeVisible()
+    expect(await page.evaluate(async () => await navigator.clipboard.readText())).toBe(
+      'lead5@example.com',
+    )
+  })
+
+  test('the event chips and the copy button are big enough for a thumb', async ({ page }) => {
+    test.skip((page.viewportSize()?.width ?? 1280) >= 768, 'touch target sizes are a phone concern')
+
+    const targets = [
+      ...(await eventChips(page).getByRole('button').all()),
+      page.getByRole('button', { name: /^Copy \d+ emails?$/ }),
+    ]
+    for (const target of targets) {
+      const box = await target.boundingBox()
+      expect(box?.height ?? 0).toBeGreaterThanOrEqual(44)
+      expect(box?.width ?? 0).toBeGreaterThanOrEqual(44)
+    }
+  })
+})

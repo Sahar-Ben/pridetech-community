@@ -16,7 +16,7 @@ export type MemberEventEntry = {
   isMatchedByName: boolean
 }
 
-const statusAt = ({
+export const statusAt = ({
   registrant,
   event,
   today,

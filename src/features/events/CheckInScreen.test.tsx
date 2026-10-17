@@ -709,3 +709,42 @@ describe('CheckInScreen saving to the Attendance tab', () => {
     expect(within(pendingTab()).getByText('3')).toBeInTheDocument()
   })
 })
+
+describe('CheckInScreen, an event whose form asks which kind of guest each person is', () => {
+  const recruiter = { ...ronit, attendeeType: 'Recruiting' }
+  const arrivedRecruiter = {
+    ...nadav,
+    attendeeType: 'Recruiting',
+    checkedInAt: '2026-09-24T19:00:00.000Z',
+  }
+  const seeker = { ...tal, attendeeType: 'Looking for a job' }
+
+  const typeChips = () => within(screen.getByRole('group', { name: 'Attendee type' }))
+
+  it('should say how many of each kind have arrived out of how many registered', async () => {
+    await openCheckIn({ registrants: [recruiter, arrivedRecruiter, seeker] })
+
+    expect(typeChips().getByRole('button', { name: 'Recruiting 1/2 arrived' })).toBeInTheDocument()
+    expect(
+      typeChips().getByRole('button', { name: 'Looking for a job 0/1 arrived' }),
+    ).toBeInTheDocument()
+    expect(typeChips().getByRole('button', { name: 'All 1/3 arrived' })).toBeInTheDocument()
+  })
+
+  it('should narrow the tabs and the list to the chosen kind', async () => {
+    await openCheckIn({ registrants: [recruiter, arrivedRecruiter, seeker] })
+
+    await userEvent.click(typeChips().getByRole('button', { name: /^Recruiting/ }))
+
+    expect(pendingTab()).toHaveAccessibleName('Pending 1')
+    expect(arrivedTab()).toHaveAccessibleName('Arrived 1')
+    expect(doorList().queryByText('Tal Rimon')).not.toBeInTheDocument()
+    expect(nameOnDoor(/Ronit Amsalem/)).toBeInTheDocument()
+  })
+
+  it('should not offer the chips at an event whose form never asked', async () => {
+    await openCheckIn()
+
+    expect(screen.queryByRole('group', { name: 'Attendee type' })).not.toBeInTheDocument()
+  })
+})
