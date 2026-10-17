@@ -80,7 +80,7 @@ const renderDirectory = (
   return onSaveMember
 }
 
-const eventChips = () => within(screen.getByRole('group', { name: 'Events' }))
+const eventChips = () => within(screen.getByRole('group', { name: 'Events attended' }))
 
 const listedNames = (): readonly string[] =>
   within(screen.getByRole('table', { name: /members/i }))

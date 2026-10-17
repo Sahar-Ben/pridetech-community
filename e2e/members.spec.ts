@@ -92,7 +92,7 @@ test.describe('the member page', () => {
 
 test.describe('filtering by how many events someone has been to', () => {
   const eventChips = (page: import('@playwright/test').Page) =>
-    page.getByRole('group', { name: 'Events' })
+    page.getByRole('group', { name: 'Events attended' })
 
   test('lists only the members who have been to the chosen number of events', async ({ page }) => {
     await eventChips(page).getByRole('button', { name: /^1 event/ }).click()
