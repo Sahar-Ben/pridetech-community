@@ -39,7 +39,7 @@ type ApplicationsQueueProps = {
   spreadsheetId: string
   decisions: LeadDecisions
   onReload: () => void
-  onMarkDuplicates: (duplicate: DuplicateApplicant) => Promise<void>
+  onMarkDuplicates: (options: { duplicate: DuplicateApplicant; keptRowNumber: number }) => Promise<void>
 }
 
 /* The queue renders the review exactly as it was computed at read time: the

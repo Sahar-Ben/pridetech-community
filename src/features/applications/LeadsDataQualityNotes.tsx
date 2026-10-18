@@ -12,7 +12,7 @@ import { SheetIssueDisclosure } from './SheetIssueDisclosure'
 type LeadsDataQualityNotesProps = {
   review: LeadsReview
   spreadsheetId: string
-  onMarkDuplicates: (duplicate: DuplicateApplicant) => Promise<void>
+  onMarkDuplicates: (options: { duplicate: DuplicateApplicant; keptRowNumber: number }) => Promise<void>
 }
 
 const ROW_LIST_CLASSES = 'flex flex-col gap-1.5'

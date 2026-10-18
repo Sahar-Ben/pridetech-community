@@ -1,21 +1,55 @@
 import { toEmailKey } from '../../sheets/emailKey'
 import type { Lead } from './lead'
 
-/* `keptLead` is the application this app would keep if the reviewer folds the
-   group into one: the earliest one that was approved, since that is the
-   person's membership, and otherwise the earliest one, since it dates when
-   they first applied. `laterLeads` are the rest, the rows that would be marked
-   Duplicate. */
+/* `leads` are the address's applications in sheet order, and
+   `suggestedKeptLead` is the one offered as the one to keep when the reviewer
+   folds them into one. It is only a suggestion: the reviewer picks, because
+   whether a later row is a slip of the form or a person asking again is
+   something only they can tell. */
 export type DuplicateApplicant = {
   emailKey: string
   names: readonly string[]
   rowNumbers: readonly number[]
-  keptLead: Lead
-  laterLeads: readonly Lead[]
+  leads: readonly Lead[]
+  suggestedKeptLead: Lead
 }
 
-const chooseKeptLead = (inSheetOrder: readonly [Lead, ...Lead[]]): Lead =>
-  inSheetOrder.find((lead) => lead.status === 'approved') ?? inSheetOrder[0]
+const RECONSIDERABLE_STATUSES: ReadonlySet<Lead['status']> = new Set(['declined', 'maybe'])
+
+/* In this order:
+   - an approved application, the earliest if there are several, because it is
+     the person's membership;
+   - an undecided application sent after one that was declined or kept for
+     later, the newest such, because that is somebody asking again and it is
+     owed a review rather than being filed away under the old answer;
+   - otherwise the earliest, because it dates when they first applied. */
+export const suggestKeptLead = (inSheetOrder: readonly [Lead, ...Lead[]]): Lead => {
+  const approved = inSheetOrder.find((lead) => lead.status === 'approved')
+  if (approved !== undefined) {
+    return approved
+  }
+  const firstReconsiderable = inSheetOrder.findIndex((lead) =>
+    RECONSIDERABLE_STATUSES.has(lead.status),
+  )
+  if (firstReconsiderable !== -1) {
+    const askingAgain = inSheetOrder
+      .slice(firstReconsiderable + 1)
+      .findLast((lead) => lead.status === 'pending')
+    if (askingAgain !== undefined) {
+      return askingAgain
+    }
+  }
+  return inSheetOrder[0]
+}
+
+/* Every application of the group except the one kept. */
+export const selectLeadsToMark = ({
+  duplicate,
+  keptRowNumber,
+}: {
+  duplicate: DuplicateApplicant
+  keptRowNumber: number
+}): readonly Lead[] => duplicate.leads.filter((lead) => lead.rowNumber !== keptRowNumber)
 
 /* Every name found is carried, not the first one: a couple and a shared work
    inbox look exactly like one person applying twice, and the differing names are
@@ -70,14 +104,13 @@ export const groupDuplicateApplicants = ({
       if (first === undefined || rest.length === 0) {
         return []
       }
-      const keptLead = chooseKeptLead([first, ...rest])
       return [
         {
           emailKey,
           names: distinctNames(inSheetOrder),
           rowNumbers: inSheetOrder.map((lead) => lead.rowNumber),
-          keptLead,
-          laterLeads: inSheetOrder.filter((lead) => lead !== keptLead),
+          leads: inSheetOrder,
+          suggestedKeptLead: suggestKeptLead([first, ...rest]),
         },
       ]
     },

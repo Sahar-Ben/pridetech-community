@@ -1,3 +1,4 @@
+import type { ComponentProps } from 'react'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
@@ -46,6 +47,7 @@ const renderQueue = ({
   spreadsheetId = 'picked-sheet-id',
   decisions = stubDecisions(),
   onReload = vi.fn(),
+  onMarkDuplicates = vi.fn(async () => await Promise.resolve()),
 }: {
   leads?: readonly Lead[]
   memberRows?: readonly string[][]
@@ -53,13 +55,14 @@ const renderQueue = ({
   spreadsheetId?: string
   decisions?: LeadDecisions
   onReload?: () => void
+  onMarkDuplicates?: ComponentProps<typeof ApplicationsQueue>['onMarkDuplicates']
 } = {}) =>
   render(
     <ApplicationsQueue
       review={buildLeadsReviewFixture({ leads, memberRows, rowsWithoutEmail })}
       spreadsheetId={spreadsheetId}
       decisions={decisions}
-      onMarkDuplicates={vi.fn(async () => await Promise.resolve())}
+      onMarkDuplicates={onMarkDuplicates}
       onReload={onReload}
     />,
   )
@@ -877,5 +880,51 @@ describe('ApplicationsQueue, once a decision is confirmed', () => {
     renderQueue()
 
     expect(screen.queryByText(/was approved/i)).not.toBeInTheDocument()
+  })
+})
+
+describe('ApplicationsQueue, folding repeat applications into one', () => {
+  const declined = pendingLead({ rowNumber: 2, status: 'declined', timestamp: '1/2/2025 10:00:00' })
+  const askingAgain = pendingLead({ rowNumber: 9, timestamp: '6/2/2025 10:00:00' })
+
+  const openDialog = async (leads: readonly Lead[], onMarkDuplicates = vi.fn(async () => await Promise.resolve())) => {
+    renderQueue({ leads, onMarkDuplicates })
+    await showRepeatedAddresses()
+    await userEvent.click(screen.getByRole('button', { name: /^Mark the repeat applications from/ }))
+    return { dialog: within(screen.getByRole('dialog', { name: 'Which application do you keep?' })), onMarkDuplicates }
+  }
+
+  it('should start on the suggested row, the new application after a decline', async () => {
+    const { dialog } = await openDialog([declined, askingAgain])
+
+    expect(dialog.getByRole('radio', { name: /^Row 9/ })).toBeChecked()
+    expect(dialog.getByText(/Marked Duplicate:/).closest('p')).toHaveTextContent(
+      'Marked Duplicate: row 2.',
+    )
+  })
+
+  it('should say a decision is about to be replaced', async () => {
+    const { dialog } = await openDialog([declined, askingAgain])
+
+    expect(dialog.getByText(/Row 2 is Declined\. That status is replaced by Duplicate/)).toBeInTheDocument()
+  })
+
+  it('should warn that keeping the old answer leaves the new application unreviewed', async () => {
+    const { dialog } = await openDialog([declined, askingAgain])
+
+    await userEvent.click(dialog.getByRole('radio', { name: /^Row 2/ }))
+
+    expect(dialog.getByText(/the newer application will not be reviewed/)).toBeInTheDocument()
+  })
+
+  it('should mark around the row the reviewer chose', async () => {
+    const { dialog, onMarkDuplicates } = await openDialog([declined, askingAgain])
+
+    await userEvent.click(dialog.getByRole('radio', { name: /^Row 2/ }))
+    await userEvent.click(dialog.getByRole('button', { name: 'Mark 1 row' }))
+
+    expect(onMarkDuplicates).toHaveBeenCalledWith(
+      expect.objectContaining({ keptRowNumber: 2 }),
+    )
   })
 })
