@@ -33,7 +33,7 @@ describe('markLeadsDuplicate', () => {
     const rows = [FIRST, SECOND, THIRD]
     const sheet = sheetWith(rows)
 
-    await markLeadsDuplicate({ sheetsClient: sheet.client, duplicate: readDuplicate(rows) })
+    await markLeadsDuplicate({ sheetsClient: sheet.client, duplicate: readDuplicate(rows), keptRowNumber: 2 })
 
     expect(statuses(sheet)).toEqual(['', 'Duplicate', 'Duplicate'])
   })
@@ -42,7 +42,7 @@ describe('markLeadsDuplicate', () => {
     const rows = [FIRST, SECOND]
     const sheet = sheetWith(rows)
 
-    await markLeadsDuplicate({ sheetsClient: sheet.client, duplicate: readDuplicate(rows) })
+    await markLeadsDuplicate({ sheetsClient: sheet.client, duplicate: readDuplicate(rows), keptRowNumber: 2 })
 
     expect(sheet.writes.map((write) => write.valueInputOption)).toEqual(['RAW'])
   })
@@ -52,7 +52,7 @@ describe('markLeadsDuplicate', () => {
     const duplicate = readDuplicate(rows)
     const sheet = sheetWith([leadRow({ name: 'Noa Levi', email: 'noa@example.com' }), FIRST, SECOND])
 
-    await expect(markLeadsDuplicate({ sheetsClient: sheet.client, duplicate })).rejects.toThrow()
+    await expect(markLeadsDuplicate({ sheetsClient: sheet.client, duplicate, keptRowNumber: 2 })).rejects.toThrow()
     expect(sheet.writes).toEqual([])
   })
 
@@ -61,9 +61,34 @@ describe('markLeadsDuplicate', () => {
     const duplicate = readDuplicate(rows)
     const sheet = sheetWith([FIRST, SECOND, leadRow({ name: 'Noa Levi', email: 'noa@example.com' })])
 
-    await expect(markLeadsDuplicate({ sheetsClient: sheet.client, duplicate })).rejects.toThrow(
+    await expect(markLeadsDuplicate({ sheetsClient: sheet.client, duplicate, keptRowNumber: 2 })).rejects.toThrow(
       /1 of 2 rows were marked Duplicate/,
     )
+  })
+})
+
+describe('markLeadsDuplicate, keeping the row the reviewer chose', () => {
+  it('should mark every other row, including earlier ones, and leave the chosen row alone', async () => {
+    const rows = [FIRST, SECOND, THIRD]
+    const sheet = sheetWith(rows)
+
+    await markLeadsDuplicate({
+      sheetsClient: sheet.client,
+      duplicate: readDuplicate(rows),
+      keptRowNumber: 4,
+    })
+
+    expect(statuses(sheet)).toEqual(['Duplicate', 'Duplicate', ''])
+  })
+
+  it('should refuse a row that is not one of these applications, and write nothing', async () => {
+    const rows = [FIRST, SECOND]
+    const sheet = sheetWith(rows)
+
+    await expect(
+      markLeadsDuplicate({ sheetsClient: sheet.client, duplicate: readDuplicate(rows), keptRowNumber: 40 }),
+    ).rejects.toThrow(/nothing was written/)
+    expect(sheet.writes).toEqual([])
   })
 })
 

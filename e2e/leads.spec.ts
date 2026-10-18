@@ -237,18 +237,19 @@ test.describe('folding a repeat application into one', () => {
 
   const markButton = (page: Page) =>
     page.getByRole('button', {
-      name: 'Mark the later applications from twice@example.com as duplicates',
+      name: 'Mark the repeat applications from twice@example.com as duplicates',
     })
 
-  test('asks first, saying which row stays and which is marked', async ({ page }) => {
+  test('asks which application to keep, with one suggested, before marking the rest', async ({ page }) => {
     await openRepeats(page)
     await markButton(page).click()
 
-    const dialog = page.getByRole('dialog', { name: 'Mark 1 row as duplicate?' })
+    const dialog = page.getByRole('dialog', { name: 'Which application do you keep?' })
     await expect(dialog).toBeVisible()
     await expect(dialog).toBeInViewport({ ratio: 1 })
-    await expect(dialog).toContainText(/Keeps\s+Row \d+/)
-    await expect(dialog).toContainText(/Nothing is deleted/)
+    await expect(dialog.getByRole('radio', { checked: true })).toHaveCount(1)
+    await expect(dialog.getByText('Suggested')).toBeVisible()
+    await expect(dialog).toContainText(/nothing is deleted/)
 
     await dialog.getByRole('button', { name: 'Not now' }).click()
     await expect(dialog).toBeHidden()

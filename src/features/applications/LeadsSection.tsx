@@ -30,9 +30,15 @@ export const LeadsSection = ({
      instead: reading the tab would take the dialog down with it, and trying
      again is safe, since a row already marked Duplicate is only marked again. */
   const markDuplicates = useCallback(
-    async (duplicate: DuplicateApplicant): Promise<void> => {
+    async ({
+      duplicate,
+      keptRowNumber,
+    }: {
+      duplicate: DuplicateApplicant
+      keptRowNumber: number
+    }): Promise<void> => {
       try {
-        await markLeadsDuplicate({ sheetsClient, duplicate })
+        await markLeadsDuplicate({ sheetsClient, duplicate, keptRowNumber })
       } catch (error: unknown) {
         if (isExpiredSessionError(error)) {
           onSessionExpired()

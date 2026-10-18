@@ -31,8 +31,8 @@ const duplicateOf = (
   fields: Pick<DuplicateApplicant, 'emailKey' | 'names' | 'rowNumbers'>,
 ): DuplicateApplicant => ({
   ...fields,
-  keptLead: buildLead({ rowNumber: fields.rowNumbers[0] ?? 2 }),
-  laterLeads: fields.rowNumbers.slice(1).map((rowNumber) => buildLead({ rowNumber })),
+  leads: fields.rowNumbers.map((rowNumber) => buildLead({ rowNumber })),
+  suggestedKeptLead: buildLead({ rowNumber: fields.rowNumbers[0] ?? 2 }),
 })
 
 describe('describeApplicationsCount, under Pending', () => {

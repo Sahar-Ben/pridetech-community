@@ -32,22 +32,61 @@ describe('groupDuplicateApplicants', () => {
     ])
   })
 
-  it('should keep the earliest application and offer the later ones as duplicates', () => {
+  it('should suggest keeping the earliest application, with every application in sheet order', () => {
     const [duplicate] = groupDuplicateApplicants({
       leads: [lead({ rowNumber: 9 }), lead({ rowNumber: 2 }), lead({ rowNumber: 14 })],
     })
 
-    expect(duplicate?.keptLead.rowNumber).toBe(2)
-    expect(duplicate?.laterLeads.map(({ rowNumber }) => rowNumber)).toEqual([9, 14])
+    expect(duplicate?.suggestedKeptLead.rowNumber).toBe(2)
+    expect(duplicate?.leads.map(({ rowNumber }) => rowNumber)).toEqual([2, 9, 14])
   })
 
-  it('should keep the approved application over an earlier undecided one', () => {
+  it('should suggest keeping the approved application over an earlier undecided one', () => {
     const [duplicate] = groupDuplicateApplicants({
       leads: [lead({ rowNumber: 2 }), lead({ rowNumber: 9, status: 'approved' })],
     })
 
-    expect(duplicate?.keptLead.rowNumber).toBe(9)
-    expect(duplicate?.laterLeads.map(({ rowNumber }) => rowNumber)).toEqual([2])
+    expect(duplicate?.suggestedKeptLead.rowNumber).toBe(9)
+  })
+
+  it('should suggest keeping a new application sent after a decline, so it is reviewed', () => {
+    const [duplicate] = groupDuplicateApplicants({
+      leads: [
+        lead({ rowNumber: 2, status: 'declined' }),
+        lead({ rowNumber: 9 }),
+        lead({ rowNumber: 14 }),
+      ],
+    })
+
+    expect(duplicate?.suggestedKeptLead.rowNumber).toBe(14)
+  })
+
+  it('should suggest keeping a new application sent after a maybe, so it is reviewed', () => {
+    const [duplicate] = groupDuplicateApplicants({
+      leads: [lead({ rowNumber: 2, status: 'maybe' }), lead({ rowNumber: 9 })],
+    })
+
+    expect(duplicate?.suggestedKeptLead.rowNumber).toBe(9)
+  })
+
+  it('should suggest keeping an earlier undecided application over a later decline', () => {
+    const [duplicate] = groupDuplicateApplicants({
+      leads: [lead({ rowNumber: 2 }), lead({ rowNumber: 9, status: 'declined' })],
+    })
+
+    expect(duplicate?.suggestedKeptLead.rowNumber).toBe(2)
+  })
+
+  it('should still suggest the approved application when a newer one came after a decline', () => {
+    const [duplicate] = groupDuplicateApplicants({
+      leads: [
+        lead({ rowNumber: 2, status: 'declined' }),
+        lead({ rowNumber: 9, status: 'approved' }),
+        lead({ rowNumber: 14 }),
+      ],
+    })
+
+    expect(duplicate?.suggestedKeptLead.rowNumber).toBe(9)
   })
 
   it('should drop an address from the list once all but one of its rows are marked Duplicate', () => {
