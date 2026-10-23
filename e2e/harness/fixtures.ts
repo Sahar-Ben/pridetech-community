@@ -71,6 +71,7 @@ const stamp = (index: number): string => `${(index % 9) + 1}/${(index % 27) + 1}
    LinkedIn, email, phone, city, interests, shirt size, status. */
 const leadRow = (cells: {
   index: number
+  timestamp?: string
   name?: string
   title?: string
   company?: string
@@ -81,7 +82,7 @@ const leadRow = (cells: {
   interests?: string
   status?: string
 }): string[] => [
-  stamp(cells.index),
+  cells.timestamp ?? stamp(cells.index),
   cells.name ?? nameAt(cells.index + 40),
   cells.title ?? 'Product Designer',
   cells.company ?? ['Lumen Labs', 'Orbit Cloud', 'Kite Health', 'Northwind'][cells.index % 4] ?? '',
@@ -140,6 +141,8 @@ const TRICKY_LEADS: readonly string[][] = [
     title: 'Head of Product',
     email: 'Twice@Example.com',
   }),
+  leadRow({ index: 925, name: 'No Timestamp', timestamp: '' }),
+  leadRow({ index: 926, name: 'Odd Timestamp', timestamp: 'sometime in spring' }),
   leadRow({ index: 930, name: 'Kept For Later', status: 'Maybe in the future' }),
   leadRow({ index: 931, name: 'Already Declined', status: 'Declined' }),
 ]

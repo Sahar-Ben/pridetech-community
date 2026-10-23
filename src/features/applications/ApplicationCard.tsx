@@ -4,6 +4,7 @@ import { ApplicationDecisionControls } from './ApplicationDecisionControls'
 import type { ApprovalDecision, DeclineDecision, MaybeDecision } from './decision'
 import type { ReviewableApplication } from './leadsReview'
 import { describeSubmissions } from './leadsReviewText'
+import { describeSubmittedAt } from './submittedAt'
 import { PriorMemberNotice } from './PriorMemberNotice'
 import type { LeadDecisionState } from './useLeadDecisions'
 import { CopyableValue } from '../../app/CopyableValue'
@@ -57,6 +58,7 @@ export const ApplicationCard = ({
   const roleLine = [lead.jobTitle, lead.company].filter((field) => field !== undefined).join(' · ')
   const interests = summariseInterests(lead.interests)
   const submissions = describeSubmissions(application)
+  const submittedAt = describeSubmittedAt(lead.timestamp)
 
   return (
     <li className={`${CARD_CLASSES} ${decisionState.isSaving ? SAVING_CLASSES : ''}`}>
@@ -69,6 +71,12 @@ export const ApplicationCard = ({
             {applicantName}
           </h3>
           {roleLine !== '' && <p className="text-[13px] text-ink-muted">{roleLine}</p>}
+          {submittedAt !== undefined && (
+            <p className="text-xs text-ink-muted">
+              {application.submissionCount > 1 ? 'Last applied ' : 'Applied '}
+              <time dateTime={submittedAt.dateTime}>{submittedAt.label}</time>
+            </p>
+          )}
           {/* One card per person: the newest submission is what it shows and
               where a decision is written, and this says the sheet has more. */}
           {submissions !== undefined && <p className={SUBMISSIONS_CLASSES}>{submissions}</p>}

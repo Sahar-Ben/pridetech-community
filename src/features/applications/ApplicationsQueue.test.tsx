@@ -345,6 +345,30 @@ describe('ApplicationsQueue', () => {
     expect(screen.getByText('Submitted 2 times \u{00b7} declined before')).toBeInTheDocument()
   })
 
+  it('should say when the application was sent, to the minute', () => {
+    renderQueue({ leads: [pendingLead({ timestamp: '3/8/2025 14:25:20' })] })
+
+    expect(screen.getByText('8 Mar 2025, 14:25')).toHaveAttribute('datetime', '2025-03-08T14:25')
+    expect(screen.getByText(/^Applied/)).toHaveTextContent('Applied 8 Mar 2025, 14:25')
+  })
+
+  it('should date a repeat applicant by their newest submission', () => {
+    renderQueue({
+      leads: [
+        pendingLead({ rowNumber: 2, timestamp: '1/2/2025 10:00:00' }),
+        pendingLead({ rowNumber: 9, timestamp: '6/2/2025 18:30:00' }),
+      ],
+    })
+
+    expect(screen.getByText(/^Last applied/)).toHaveTextContent('Last applied 2 Jun 2025, 18:30')
+  })
+
+  it('should leave the date out when the Timestamp cell is blank', () => {
+    renderQueue({ leads: [pendingLead({ timestamp: undefined })] })
+
+    expect(screen.queryByText(/^Applied/)).not.toBeInTheDocument()
+  })
+
   it('should say nothing about submissions for somebody who applied once', () => {
     renderQueue()
 
