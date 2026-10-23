@@ -46,6 +46,7 @@ export const useScreenLock = ({
   const [isBusy, setIsBusy] = useState(false)
   const [message, setMessage] = useState<string | undefined>(undefined)
   const hiddenAtRef = useRef<number | undefined>(undefined)
+  const hasAskedRef = useRef(false)
 
   useEffect(() => {
     let isCurrent = true
@@ -80,6 +81,33 @@ export const useScreenLock = ({
       document.removeEventListener('visibilitychange', relockAfterAbsence)
     }
   }, [credentialId, now, relockAfterMs])
+
+  /* Opens Face ID by itself, once each time the app locks, as soon as the
+     page is on screen. Safari may refuse to without a tap; that refusal looks
+     the same as a cancel, so it stays quiet and the button is the way in. */
+  useEffect(() => {
+    if (!isLocked || credentialId === undefined) {
+      hasAskedRef.current = false
+      return
+    }
+    const askOnce = () => {
+      if (hasAskedRef.current || document.visibilityState !== 'visible') {
+        return
+      }
+      hasAskedRef.current = true
+      deviceLock.verify(credentialId).then(
+        () => {
+          setIsLocked(false)
+        },
+        () => undefined,
+      )
+    }
+    askOnce()
+    document.addEventListener('visibilitychange', askOnce)
+    return () => {
+      document.removeEventListener('visibilitychange', askOnce)
+    }
+  }, [credentialId, deviceLock, isLocked])
 
   const run = useCallback((action: () => Promise<void>) => {
     setIsBusy(true)

@@ -157,12 +157,38 @@ describe('CommunityApp', () => {
     expect(screen.getByRole('button', { name: /sign in with google/i })).toBeInTheDocument()
   })
 
-  it('should ask for Face ID before sign-in when the lock was set up earlier', async () => {
+  it('should open Face ID by itself before sign-in when the lock was set up earlier', async () => {
     window.localStorage.setItem('pridetech.lockCredentialId', 'passkey-1')
-    renderCommunityApp({ deviceLock: createFakeDeviceLock({ available: true }) })
+    const deviceLock = createFakeDeviceLock({ available: true })
+    let answerFaceId: () => void = () => undefined
+    deviceLock.verify.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          answerFaceId = resolve
+        }),
+    )
+    renderCommunityApp({ deviceLock })
 
     expect(screen.getByRole('heading', { name: 'The app is locked' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /sign in with google/i })).not.toBeInTheDocument()
+    expect(deviceLock.verify).toHaveBeenCalledWith('passkey-1')
+
+    act(() => answerFaceId())
+
+    expect(
+      await screen.findByRole('button', { name: /sign in with google/i }),
+    ).toBeInTheDocument()
+  })
+
+  it('should unlock with the button when Face ID did not open by itself', async () => {
+    window.localStorage.setItem('pridetech.lockCredentialId', 'passkey-1')
+    const deviceLock = createFakeDeviceLock({ available: true })
+    deviceLock.verify.mockRejectedValueOnce(new Error('Not without a tap.'))
+    renderCommunityApp({ deviceLock })
+    await waitFor(() => expect(deviceLock.verify).toHaveBeenCalledTimes(1))
+
+    expect(screen.getByRole('heading', { name: 'The app is locked' })).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: 'Unlock with Face ID' }))
 
@@ -173,7 +199,9 @@ describe('CommunityApp', () => {
 
   it('should keep the workspace where it was behind a lock after five minutes away', async () => {
     window.localStorage.setItem('pridetech.spreadsheetId', 'remembered-sheet')
-    const google = renderCommunityApp({ deviceLock: createFakeDeviceLock({ available: true }) })
+    const deviceLock = createFakeDeviceLock({ available: true })
+    deviceLock.verify.mockRejectedValueOnce(new Error('Not without a tap.'))
+    const google = renderCommunityApp({ deviceLock })
     await signIn(google)
     await screen.findByRole('heading', { name: 'Overview' })
     await userEvent.click(screen.getByRole('button', { name: 'Account' }))

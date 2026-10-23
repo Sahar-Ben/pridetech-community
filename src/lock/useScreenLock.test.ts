@@ -10,6 +10,9 @@ const setVisibility = (state: DocumentVisibilityState) => {
   document.dispatchEvent(new Event('visibilitychange'))
 }
 
+/* Face ID left open: the sheet is up and nobody has looked at it yet. */
+const neverAnswered = () => new Promise<void>(() => undefined)
+
 const createClock = () => {
   let time = 1_000_000
   return {
@@ -43,28 +46,77 @@ describe('useScreenLock', () => {
 
   it('should start locked when a lock was set up in an earlier session', () => {
     window.localStorage.setItem(CREDENTIAL_KEY, 'passkey-1')
+    const deviceLock = createFakeDeviceLock()
+    deviceLock.verify.mockImplementation(neverAnswered)
 
-    const { result } = renderHook(() => useScreenLock({ deviceLock: createFakeDeviceLock() }))
+    const { result } = renderHook(() => useScreenLock({ deviceLock }))
 
     expect(result.current.isLocked).toBe(true)
   })
 
-  it('should unlock with the passkey it was set up with', async () => {
+  it('should open Face ID by itself when the app starts locked', async () => {
     window.localStorage.setItem(CREDENTIAL_KEY, 'passkey-1')
     const deviceLock = createFakeDeviceLock()
+
     const { result } = renderHook(() => useScreenLock({ deviceLock }))
 
-    act(() => result.current.unlock())
-
     await waitFor(() => expect(result.current.isLocked).toBe(false))
+    expect(deviceLock.verify).toHaveBeenCalledTimes(1)
     expect(deviceLock.verify).toHaveBeenCalledWith('passkey-1')
   })
 
-  it('should stay locked and say why when Face ID is cancelled', async () => {
+  it('should stay locked without a message when Face ID does not open by itself', async () => {
+    window.localStorage.setItem(CREDENTIAL_KEY, 'passkey-1')
+    const deviceLock = createFakeDeviceLock()
+    deviceLock.verify.mockRejectedValueOnce(new Error('Face ID was cancelled.'))
+
+    const { result } = renderHook(() => useScreenLock({ deviceLock }))
+
+    await waitFor(() => expect(deviceLock.verify).toHaveBeenCalledTimes(1))
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(result.current.isLocked).toBe(true)
+    expect(result.current.message).toBeUndefined()
+    expect(result.current.isBusy).toBe(false)
+  })
+
+  it('should wait until the app is on screen before opening Face ID', async () => {
+    window.localStorage.setItem(CREDENTIAL_KEY, 'passkey-1')
+    setVisibility('hidden')
+    const deviceLock = createFakeDeviceLock()
+    const { result } = renderHook(() => useScreenLock({ deviceLock }))
+
+    expect(deviceLock.verify).not.toHaveBeenCalled()
+
+    act(() => setVisibility('visible'))
+
+    await waitFor(() => expect(result.current.isLocked).toBe(false))
+    expect(deviceLock.verify).toHaveBeenCalledTimes(1)
+  })
+
+  it('should unlock with the passkey it was set up with when the button is tapped', async () => {
     window.localStorage.setItem(CREDENTIAL_KEY, 'passkey-1')
     const deviceLock = createFakeDeviceLock()
     deviceLock.verify.mockRejectedValueOnce(new Error('Face ID was cancelled.'))
     const { result } = renderHook(() => useScreenLock({ deviceLock }))
+    await waitFor(() => expect(deviceLock.verify).toHaveBeenCalledTimes(1))
+
+    act(() => result.current.unlock())
+
+    await waitFor(() => expect(result.current.isLocked).toBe(false))
+    expect(deviceLock.verify).toHaveBeenCalledTimes(2)
+    expect(deviceLock.verify).toHaveBeenLastCalledWith('passkey-1')
+  })
+
+  it('should stay locked and say why when Face ID is cancelled after a tap', async () => {
+    window.localStorage.setItem(CREDENTIAL_KEY, 'passkey-1')
+    const deviceLock = createFakeDeviceLock()
+    deviceLock.verify
+      .mockRejectedValueOnce(new Error('Not without a tap.'))
+      .mockRejectedValueOnce(new Error('Face ID was cancelled.'))
+    const { result } = renderHook(() => useScreenLock({ deviceLock }))
+    await waitFor(() => expect(deviceLock.verify).toHaveBeenCalledTimes(1))
 
     act(() => result.current.unlock())
 
@@ -108,11 +160,10 @@ describe('useScreenLock', () => {
   it('should lock again after the app has been away for five minutes', async () => {
     window.localStorage.setItem(CREDENTIAL_KEY, 'passkey-1')
     const clock = createClock()
-    const { result } = renderHook(() =>
-      useScreenLock({ deviceLock: createFakeDeviceLock(), now: clock.now }),
-    )
-    act(() => result.current.unlock())
+    const deviceLock = createFakeDeviceLock()
+    const { result } = renderHook(() => useScreenLock({ deviceLock, now: clock.now }))
     await waitFor(() => expect(result.current.isLocked).toBe(false))
+    deviceLock.verify.mockImplementation(neverAnswered)
 
     act(() => setVisibility('hidden'))
     clock.advance(RELOCK_AFTER_MS)
@@ -121,13 +172,26 @@ describe('useScreenLock', () => {
     expect(result.current.isLocked).toBe(true)
   })
 
+  it('should open Face ID by itself again when the app locks on return', async () => {
+    window.localStorage.setItem(CREDENTIAL_KEY, 'passkey-1')
+    const clock = createClock()
+    const deviceLock = createFakeDeviceLock()
+    const { result } = renderHook(() => useScreenLock({ deviceLock, now: clock.now }))
+    await waitFor(() => expect(result.current.isLocked).toBe(false))
+
+    act(() => setVisibility('hidden'))
+    clock.advance(RELOCK_AFTER_MS)
+    act(() => setVisibility('visible'))
+
+    await waitFor(() => expect(result.current.isLocked).toBe(false))
+    expect(deviceLock.verify).toHaveBeenCalledTimes(2)
+  })
+
   it('should not lock again after a shorter absence', async () => {
     window.localStorage.setItem(CREDENTIAL_KEY, 'passkey-1')
     const clock = createClock()
-    const { result } = renderHook(() =>
-      useScreenLock({ deviceLock: createFakeDeviceLock(), now: clock.now }),
-    )
-    act(() => result.current.unlock())
+    const deviceLock = createFakeDeviceLock()
+    const { result } = renderHook(() => useScreenLock({ deviceLock, now: clock.now }))
     await waitFor(() => expect(result.current.isLocked).toBe(false))
 
     act(() => setVisibility('hidden'))
@@ -135,6 +199,7 @@ describe('useScreenLock', () => {
     act(() => setVisibility('visible'))
 
     expect(result.current.isLocked).toBe(false)
+    expect(deviceLock.verify).toHaveBeenCalledTimes(1)
   })
 
   it('should not lock on return when the lock is off', () => {
