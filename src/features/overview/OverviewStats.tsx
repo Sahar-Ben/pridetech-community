@@ -39,9 +39,8 @@ export const OverviewStats = ({ overview }: OverviewStatsProps) => (
       value={overview.applications.waitingCount}
     />
     <StatTile
-      label="Duplicate emails"
-      note="Addresses on more than one application"
-      tone="warning"
+      label="Applied more than once"
+      note="People who sent the form twice or more, shown once on Leads"
       value={overview.applications.repeatedLeadEmailCount}
     />
   </dl>

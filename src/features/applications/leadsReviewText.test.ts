@@ -1,17 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import type { DuplicateApplicant } from './duplicateApplicants'
 import type { LeadsReviewCounts } from './leadsReview'
-import { buildLead } from '../../testing/leadFactory'
 import {
-  describeDuplicateApplicant,
-  describeDuplicateNames,
   describeLeadsWithoutEmailNote,
   describeLeadWithoutEmail,
   describeApplicationsCount,
   describeEmptyView,
   describeMembersWithoutEmailNote,
-  describeRepeatedEmailsNote,
-  describeSharedAddressNote,
+  describeSubmissions,
 } from './leadsReviewText'
 
 const counts = (overrides: Partial<LeadsReviewCounts> = {}): LeadsReviewCounts => ({
@@ -23,16 +18,6 @@ const counts = (overrides: Partial<LeadsReviewCounts> = {}): LeadsReviewCounts =
   membersWithoutEmailCount: 0,
   repeatedLeadEmailCount: 0,
   ...overrides,
-})
-
-/* The text only reads the address, the names and the rows; which row would be
-   kept is the grouping's business. */
-const duplicateOf = (
-  fields: Pick<DuplicateApplicant, 'emailKey' | 'names' | 'rowNumbers'>,
-): DuplicateApplicant => ({
-  ...fields,
-  leads: fields.rowNumbers.map((rowNumber) => buildLead({ rowNumber })),
-  suggestedKeptLead: buildLead({ rowNumber: fields.rowNumbers[0] ?? 2 }),
 })
 
 describe('describeApplicationsCount, under Pending', () => {
@@ -129,24 +114,6 @@ describe('describeMembersWithoutEmailNote', () => {
   })
 })
 
-describe('describeRepeatedEmailsNote', () => {
-  it('should say nothing when nobody applied twice', () => {
-    expect(describeRepeatedEmailsNote({ count: 0 })).toBeUndefined()
-  })
-
-  it('should report the people who applied more than once', () => {
-    expect(describeRepeatedEmailsNote({ count: 69 })).toBe(
-      '69 email addresses appear on more than one application.',
-    )
-  })
-
-  it('should keep the sentence readable when a single address repeats', () => {
-    expect(describeRepeatedEmailsNote({ count: 1 })).toBe(
-      '1 email address appears on more than one application.',
-    )
-  })
-})
-
 describe('describeLeadWithoutEmail', () => {
   it('should name the row and the applicant on it, so the right row is opened', () => {
     const description = describeLeadWithoutEmail({
@@ -165,59 +132,24 @@ describe('describeLeadWithoutEmail', () => {
   })
 })
 
-describe('describeDuplicateApplicant', () => {
-  it('should name the address and every row it was entered on, so the sheet can be fixed', () => {
-    const description = describeDuplicateApplicant({
-      duplicate: duplicateOf({ emailKey: 'dana@example.com', names: ['Dana Levi'], rowNumbers: [2, 9, 14] }),
-    })
-
-    expect(description).toBe('dana@example.com \u{00b7} 3 applications \u{00b7} Leads rows 2, 9, 14')
-  })
-})
-
-describe('describeSharedAddressNote', () => {
-  it('should say nothing when every row on the address carries the same name', () => {
-    expect(
-      describeSharedAddressNote({
-        duplicate: duplicateOf({ emailKey: 'dana@example.com', names: ['Dana Levi'], rowNumbers: [2, 9] }),
-      }),
-    ).toBeUndefined()
+describe('describeSubmissions', () => {
+  it('should say nothing for somebody who sent the form once', () => {
+    expect(describeSubmissions({ submissionCount: 1, earlierDecision: undefined })).toBeUndefined()
   })
 
-  it('should warn when the rows carry different names, since an inbox may be shared', () => {
-    expect(
-      describeSharedAddressNote({
-        duplicate: duplicateOf({
-          emailKey: 'office@example.com',
-          names: ['Dana Levi', 'Ariel Cohen'],
-          rowNumbers: [2, 9],
-        }),
-      }),
-    ).toBe(
-      '2 different names use this address, so these may be different people sharing an inbox rather than one person applying twice.',
+  it('should say how many times somebody sent the form', () => {
+    expect(describeSubmissions({ submissionCount: 3, earlierDecision: undefined })).toBe(
+      'Submitted 3 times',
     )
   })
-})
 
-describe('describeDuplicateNames', () => {
-  it('should show every name on the address, so a shared inbox is not read as one person', () => {
-    const names = describeDuplicateNames({
-      duplicate: duplicateOf({
-        emailKey: 'office@example.com',
-        names: ['Dana Levi', 'Ariel Cohen'],
-        rowNumbers: [2, 9],
-      }),
-    })
-
-    expect(names).toBe('Dana Levi \u{00b7} Ariel Cohen')
-  })
-
-  it('should fall back to the address when no row on it carried a name', () => {
-    const names = describeDuplicateNames({
-      duplicate: duplicateOf({ emailKey: 'office@example.com', names: [], rowNumbers: [2, 9] }),
-    })
-
-    expect(names).toBe('office@example.com')
+  it('should say what was decided on an earlier submission', () => {
+    expect(describeSubmissions({ submissionCount: 2, earlierDecision: 'declined' })).toBe(
+      'Submitted 2 times \u{00b7} declined before',
+    )
+    expect(describeSubmissions({ submissionCount: 2, earlierDecision: 'maybe' })).toBe(
+      'Submitted 2 times \u{00b7} kept for later before',
+    )
   })
 })
 

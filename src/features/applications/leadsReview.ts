@@ -1,15 +1,15 @@
-import { groupDuplicateApplicants, type DuplicateApplicant } from './duplicateApplicants'
 import type { Lead, LeadStatus } from './lead'
+import { groupSubmissionsByApplicant, newestFirst, type Applicant } from './leadSubmissions'
 import { isActiveMemberMatch, type MemberEmailIndex, type MemberMatch } from './memberEmailIndex'
 import type { LeadWithoutEmail, ParsedLeads } from './parseLeads'
-import { toApplicationDate } from '../overview/applicationTimestamp'
 
 /* `priorMember` is the row an ex-member already has on the Members tab. It rides
    along with the application because approving one of these reactivates that row
    instead of appending a new one, and the reviewer has to know which of the two
-   acts they are about to perform before they perform it. */
-export type ReviewableApplication = {
-  lead: Lead
+   acts they are about to perform before they perform it. `lead` is the
+   person's newest submission; the count and the earlier decision come from
+   `groupSubmissionsByApplicant`. */
+export type ReviewableApplication = Applicant & {
   priorMember: MemberMatch | undefined
 }
 
@@ -34,29 +34,7 @@ export type LeadsReview = {
   declinedApplications: readonly ReviewableApplication[]
   alreadyMemberLeads: readonly AlreadyMemberLead[]
   leadsWithoutEmail: readonly LeadWithoutEmail[]
-  duplicateApplicants: readonly DuplicateApplicant[]
   counts: LeadsReviewCounts
-}
-
-/* Newest submission first. The Timestamp column decides across days, so a
-   sheet somebody re-sorted by hand still lists the latest applicant on top;
-   within one day -- the column is only read to the day -- the later row wins,
-   because the form appends every submission at the bottom. A row whose
-   timestamp cannot be read goes after every dated one rather than being
-   guessed into place. */
-const newestFirst = (first: Lead, second: Lead): number => {
-  const firstTime = toApplicationDate(first.timestamp)?.getTime()
-  const secondTime = toApplicationDate(second.timestamp)?.getTime()
-  if (firstTime !== secondTime) {
-    if (firstTime === undefined) {
-      return 1
-    }
-    if (secondTime === undefined) {
-      return -1
-    }
-    return secondTime - firstTime
-  }
-  return second.rowNumber - first.rowNumber
 }
 
 /* An active member row is not a prior record to bring back, so it is not offered
@@ -82,7 +60,11 @@ const priorMemberOf = ({
    row, so a blank status alone cannot mean "waiting": an application whose email
    belongs to an active member was dealt with years ago. The excluded leads are
    returned alongside the waiting ones because the counts are drawn from the
-   partition: a queue cannot report what it removed without holding on to it. */
+   partition: a queue cannot report what it removed without holding on to it.
+
+   Everything below is one entry per person, not per row: somebody who sent the
+   form three times is one card that says so, decided by their newest
+   submission's Status. */
 export const buildLeadsReview = ({
   parsedLeads,
   memberEmailIndex,
@@ -90,20 +72,21 @@ export const buildLeadsReview = ({
   parsedLeads: ParsedLeads
   memberEmailIndex: MemberEmailIndex
 }): LeadsReview => {
-  const undecidedLeads = parsedLeads.leads.filter((lead) => lead.status === 'pending')
+  const applicants = groupSubmissionsByApplicant(parsedLeads.leads)
+  const undecidedApplicants = applicants.filter(({ lead }) => lead.status === 'pending')
 
-  const waitingApplications = undecidedLeads
-    .flatMap((lead) => {
-      const member = memberEmailIndex.matchByEmail.get(lead.email)
+  const waitingApplications = undecidedApplicants
+    .flatMap((applicant) => {
+      const member = memberEmailIndex.matchByEmail.get(applicant.lead.email)
       if (member !== undefined && isActiveMemberMatch(member)) {
         return []
       }
-      return [{ lead, priorMember: member }]
+      return [{ ...applicant, priorMember: member }]
     })
     .toSorted((first, second) => newestFirst(first.lead, second.lead))
 
-  const alreadyMemberLeads = undecidedLeads
-    .flatMap((lead) => {
+  const alreadyMemberLeads = undecidedApplicants
+    .flatMap(({ lead }) => {
       const member = memberEmailIndex.matchByEmail.get(lead.email)
       if (member === undefined || !isActiveMemberMatch(member)) {
         return []
@@ -117,9 +100,12 @@ export const buildLeadsReview = ({
      reason to open the list at all. Approved rows are not, and must not be —
      824 of them would turn a work queue into a browser of the Members tab. */
   const applicationsWithStatus = (status: LeadStatus): readonly ReviewableApplication[] =>
-    parsedLeads.leads
-      .filter((lead) => lead.status === status)
-      .map((lead) => ({ lead, priorMember: priorMemberOf({ lead, memberEmailIndex }) }))
+    applicants
+      .filter(({ lead }) => lead.status === status)
+      .map((applicant) => ({
+        ...applicant,
+        priorMember: priorMemberOf({ lead: applicant.lead, memberEmailIndex }),
+      }))
       .toSorted((first, second) => newestFirst(first.lead, second.lead))
 
   const declinedApplications = applicationsWithStatus('declined')
@@ -129,15 +115,12 @@ export const buildLeadsReview = ({
      back to it, so the applications are carried whole rather than counted. */
   const maybeApplications = applicationsWithStatus('maybe')
 
-  const duplicateApplicants = groupDuplicateApplicants({ leads: parsedLeads.leads })
-
   return {
     waitingApplications,
     maybeApplications,
     declinedApplications,
     alreadyMemberLeads,
     leadsWithoutEmail: parsedLeads.rowsWithoutEmail,
-    duplicateApplicants,
     counts: {
       waitingCount: waitingApplications.length,
       alreadyMemberCount: alreadyMemberLeads.length,
@@ -145,7 +128,7 @@ export const buildLeadsReview = ({
       declinedCount: declinedApplications.length,
       leadsWithoutEmailCount: parsedLeads.rowsWithoutEmail.length,
       membersWithoutEmailCount: memberEmailIndex.membersWithoutEmailCount,
-      repeatedLeadEmailCount: duplicateApplicants.length,
+      repeatedLeadEmailCount: applicants.filter(({ submissionCount }) => submissionCount > 1).length,
     },
   }
 }

@@ -205,9 +205,8 @@ describe('LeadsSection, reading the sheet', () => {
     })
   })
 
-  it('should link a repeated row to the spreadsheet the reviewer picked, not a fixed one', async () => {
+  it('should show somebody who sent the form twice as one card, however the address was typed', async () => {
     const sheetsClient = createFakeSheetsClient({
-      spreadsheetId: 'stored-sheet-id',
       rows: [
         LEADS_HEADER_ROW,
         leadRow({ name: 'Noa Feldman', email: 'noa@example.com' }),
@@ -217,14 +216,9 @@ describe('LeadsSection, reading the sheet', () => {
 
     renderSection({ sheetsClient })
 
-    await userEvent.click(
-      await screen.findByRole('button', { name: /appear.? on more than one application/i }),
-    )
-
-    expect(screen.getByRole('link', { name: 'Open row 2 in the sheet' })).toHaveAttribute(
-      'href',
-      'https://docs.google.com/spreadsheets/d/stored-sheet-id/edit?range=Leads!A2',
-    )
+    expect(await screen.findByText('Submitted 2 times')).toBeInTheDocument()
+    expect(screen.getAllByRole('heading', { level: 3, name: 'Noa Feldman' })).toHaveLength(1)
+    expect(screen.getByText('1 waiting')).toBeInTheDocument()
   })
 })
 
@@ -244,6 +238,29 @@ describe('LeadsSection, approving an application', () => {
     expect(memberCell({ row: appended, heading: 'Mail' })).toBe('noa@example.com')
     expect(memberCell({ row: appended, heading: 'Status' })).toBe('Active')
     expect(sheet.rowsOf('Leads')[1]?.[10]).toBe('Approved')
+  })
+
+  it('should mark the newest submission of somebody who applied twice, and leave the older row', async () => {
+    const sheet = createFakeSheet({
+      tabs: {
+        Leads: [
+          LEADS_HEADER_ROW,
+          leadRow({ name: 'Noa Feldman', email: 'noa@example.com', timestamp: '1/2/2025 10:00:00' }),
+          leadRow({ name: 'Noa Feldman', email: 'noa@example.com', timestamp: '6/2/2025 10:00:00' }),
+        ],
+        Members: [MEMBERS_HEADER_ROW],
+      },
+    })
+    renderSection({ sheetsClient: sheet.client })
+    await screen.findByText('Noa Feldman')
+
+    await decide({ applicant: 'Noa Feldman', action: /approve/i })
+
+    await waitFor(() => {
+      expect(sheet.rowsOf('Leads')[2]?.[10]).toBe('Approved')
+    })
+    expect(sheet.rowsOf('Leads')[1]?.[10]).toBe('')
+    expect(sheet.rowsOf('Members')).toHaveLength(2)
   })
 
   it('should take the approved application out of the queue and count down', async () => {

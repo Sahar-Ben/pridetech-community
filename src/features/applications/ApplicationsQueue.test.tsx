@@ -1,4 +1,3 @@
-import type { ComponentProps } from 'react'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
@@ -47,7 +46,6 @@ const renderQueue = ({
   spreadsheetId = 'picked-sheet-id',
   decisions = stubDecisions(),
   onReload = vi.fn(),
-  onMarkDuplicates = vi.fn(async () => await Promise.resolve()),
 }: {
   leads?: readonly Lead[]
   memberRows?: readonly string[][]
@@ -55,23 +53,15 @@ const renderQueue = ({
   spreadsheetId?: string
   decisions?: LeadDecisions
   onReload?: () => void
-  onMarkDuplicates?: ComponentProps<typeof ApplicationsQueue>['onMarkDuplicates']
 } = {}) =>
   render(
     <ApplicationsQueue
       review={buildLeadsReviewFixture({ leads, memberRows, rowsWithoutEmail })}
       spreadsheetId={spreadsheetId}
       decisions={decisions}
-      onMarkDuplicates={onMarkDuplicates}
       onReload={onReload}
     />,
   )
-
-const showRepeatedAddresses = async () => {
-  await userEvent.click(
-    screen.getByRole('button', { name: /appear.? on more than one application/i }),
-  )
-}
 
 const showApplicationsWithoutEmail = async () => {
   await userEvent.click(screen.getByRole('button', { name: /no email address/i }))
@@ -322,120 +312,69 @@ describe('ApplicationsQueue', () => {
     expect(screen.getByText(/1 member row has no email address/i)).toBeInTheDocument()
   })
 
-  it('should report the people who applied more than once even when nobody was set aside', () => {
+  it('should show somebody who sent the form twice as one card that says so', () => {
+    renderQueue({
+      leads: [pendingLead({ rowNumber: 2 }), pendingLead({ rowNumber: 9 })],
+    })
+
+    expect(screen.getAllByRole('heading', { level: 3, name: 'Dana Maman' })).toHaveLength(1)
+    expect(screen.getByText('Submitted 2 times')).toBeInTheDocument()
+    expect(screen.getByText('1 waiting')).toBeInTheDocument()
+  })
+
+  it('should show the newest submission on the card', () => {
     renderQueue({
       leads: [
-        pendingLead({ rowNumber: 2, name: 'First Try' }),
-        pendingLead({ rowNumber: 3, name: 'Second Try' }),
+        pendingLead({ rowNumber: 2, jobTitle: 'Analyst', timestamp: '1/2/2025 10:00:00' }),
+        pendingLead({ rowNumber: 9, jobTitle: 'Head of Data', timestamp: '6/2/2025 10:00:00' }),
       ],
     })
 
-    expect(screen.getByText(/1 email address appears on more than one application/i)).toBeInTheDocument()
+    expect(screen.getByText(/Head of Data/)).toBeInTheDocument()
+    expect(screen.queryByText(/Analyst/)).not.toBeInTheDocument()
   })
 
-  it('should keep the repeated addresses out of the way until the reviewer asks for them', () => {
-    renderQueue({
-      leads: [pendingLead({ rowNumber: 2 }), pendingLead({ rowNumber: 9 })],
-    })
-
-    expect(screen.queryByText(/Leads rows 2, 9/)).not.toBeInTheDocument()
-  })
-
-  it('should list a repeated address with every row it was entered on', async () => {
-    renderQueue({
-      leads: [pendingLead({ rowNumber: 2 }), pendingLead({ rowNumber: 9 })],
-    })
-
-    await showRepeatedAddresses()
-
-    expect(
-      screen.getByText('dana@saltedmind.co \u{00b7} 2 applications \u{00b7} Leads rows 2, 9'),
-    ).toBeInTheDocument()
-  })
-
-  it('should list a repeat that is already on the Members tab beside one that is still waiting', async () => {
+  it('should say when somebody asking again was declined before', () => {
     renderQueue({
       leads: [
-        pendingLead({ rowNumber: 2, email: 'member@example.com' }),
-        pendingLead({ rowNumber: 3, email: 'member@example.com' }),
-        pendingLead({ rowNumber: 4 }),
-        pendingLead({ rowNumber: 5 }),
-      ],
-      memberRows: [memberRow({ name: 'Dana Maman', mail: 'member@example.com' })],
-    })
-
-    await showRepeatedAddresses()
-
-    expect(screen.getByText(/member@example\.com.*Leads rows 2, 3/u)).toBeInTheDocument()
-    expect(screen.getByText(/dana@saltedmind\.co.*Leads rows 4, 5/u)).toBeInTheDocument()
-  })
-
-  it('should show every name found on a shared address, since two people may share an inbox', async () => {
-    renderQueue({
-      leads: [
-        pendingLead({ rowNumber: 2, name: 'Dana Maman' }),
-        pendingLead({ rowNumber: 9, name: 'Ariel Cohen' }),
+        pendingLead({ rowNumber: 2, status: 'declined', timestamp: '1/2/2025 10:00:00' }),
+        pendingLead({ rowNumber: 9, timestamp: '6/2/2025 10:00:00' }),
       ],
     })
 
-    await showRepeatedAddresses()
-
-    expect(screen.getByText('Dana Maman \u{00b7} Ariel Cohen')).toBeInTheDocument()
-    expect(screen.getByText(/2 different names use this address/i)).toBeInTheDocument()
+    expect(screen.getByText('Submitted 2 times \u{00b7} declined before')).toBeInTheDocument()
   })
 
-  it('should not warn about a shared inbox when one person simply applied twice', async () => {
-    renderQueue({
-      leads: [pendingLead({ rowNumber: 2 }), pendingLead({ rowNumber: 9 })],
-    })
-
-    await showRepeatedAddresses()
-
-    expect(screen.queryByText(/different names use this address/i)).not.toBeInTheDocument()
-  })
-
-  it('should let the reviewer put the repeated addresses away again', async () => {
-    renderQueue({
-      leads: [pendingLead({ rowNumber: 2 }), pendingLead({ rowNumber: 9 })],
-    })
-
-    await showRepeatedAddresses()
-    await showRepeatedAddresses()
-
-    expect(screen.queryByText(/Leads rows 2, 9/)).not.toBeInTheDocument()
-  })
-
-  it('should offer no repeated-address list when every applicant applied once', () => {
+  it('should say nothing about submissions for somebody who applied once', () => {
     renderQueue()
 
-    expect(
-      screen.queryByRole('button', { name: /appear.? on more than one application/i }),
-    ).not.toBeInTheDocument()
+    expect(screen.queryByText(/Submitted \d+ times/)).not.toBeInTheDocument()
   })
 
-  it('should link every row of a repeated address to that row in the sheet', async () => {
+  it('should decide the newest submission, the row the card shows', async () => {
+    const onApprove = vi.fn()
     renderQueue({
       leads: [
-        pendingLead({ rowNumber: 2 }),
-        pendingLead({ rowNumber: 9 }),
-        pendingLead({ rowNumber: 14 }),
+        pendingLead({ rowNumber: 2, timestamp: '1/2/2025 10:00:00' }),
+        pendingLead({ rowNumber: 9, timestamp: '6/2/2025 10:00:00' }),
       ],
+      decisions: stubDecisions({ approve: onApprove }),
     })
 
-    await showRepeatedAddresses()
+    await userEvent.click(screen.getByRole('radio', { name: 'F' }))
+    await userEvent.click(screen.getByRole('button', { name: /approve/i }))
 
-    expect(screen.getAllByRole('link', { name: /open row \d+ in the sheet/i })).toHaveLength(3)
-    expect(screen.getByRole('link', { name: 'Open row 9 in the sheet' })).toHaveAttribute(
-      'href',
-      'https://docs.google.com/spreadsheets/d/picked-sheet-id/edit?range=Leads!A9',
-    )
+    expect(onApprove).toHaveBeenCalledWith({
+      lead: expect.objectContaining({ rowNumber: 9 }),
+      gender: 'F',
+    })
   })
 
   it('should open a sheet row in its own tab, so the queue is not navigated away', async () => {
-    renderQueue({ leads: [pendingLead({ rowNumber: 2 }), pendingLead({ rowNumber: 9 })] })
+    renderQueue({ rowsWithoutEmail: [{ rowNumber: 412, name: 'Dana Levi' }] })
 
-    await showRepeatedAddresses()
-    const link = screen.getByRole('link', { name: 'Open row 2 in the sheet' })
+    await showApplicationsWithoutEmail()
+    const link = screen.getByRole('link', { name: 'Open row 412 in the sheet' })
 
     expect(link).toHaveAttribute('target', '_blank')
     expect(link).toHaveAttribute('rel', 'noopener noreferrer')
@@ -880,51 +819,5 @@ describe('ApplicationsQueue, once a decision is confirmed', () => {
     renderQueue()
 
     expect(screen.queryByText(/was approved/i)).not.toBeInTheDocument()
-  })
-})
-
-describe('ApplicationsQueue, folding repeat applications into one', () => {
-  const declined = pendingLead({ rowNumber: 2, status: 'declined', timestamp: '1/2/2025 10:00:00' })
-  const askingAgain = pendingLead({ rowNumber: 9, timestamp: '6/2/2025 10:00:00' })
-
-  const openDialog = async (leads: readonly Lead[], onMarkDuplicates = vi.fn(async () => await Promise.resolve())) => {
-    renderQueue({ leads, onMarkDuplicates })
-    await showRepeatedAddresses()
-    await userEvent.click(screen.getByRole('button', { name: /^Mark the repeat applications from/ }))
-    return { dialog: within(screen.getByRole('dialog', { name: 'Which application do you keep?' })), onMarkDuplicates }
-  }
-
-  it('should start on the suggested row, the new application after a decline', async () => {
-    const { dialog } = await openDialog([declined, askingAgain])
-
-    expect(dialog.getByRole('radio', { name: /^Row 9/ })).toBeChecked()
-    expect(dialog.getByText(/Marked Duplicate:/).closest('p')).toHaveTextContent(
-      'Marked Duplicate: row 2.',
-    )
-  })
-
-  it('should say a decision is about to be replaced', async () => {
-    const { dialog } = await openDialog([declined, askingAgain])
-
-    expect(dialog.getByText(/Row 2 is Declined\. That status is replaced by Duplicate/)).toBeInTheDocument()
-  })
-
-  it('should warn that keeping the old answer leaves the new application unreviewed', async () => {
-    const { dialog } = await openDialog([declined, askingAgain])
-
-    await userEvent.click(dialog.getByRole('radio', { name: /^Row 2/ }))
-
-    expect(dialog.getByText(/the newer application will not be reviewed/)).toBeInTheDocument()
-  })
-
-  it('should mark around the row the reviewer chose', async () => {
-    const { dialog, onMarkDuplicates } = await openDialog([declined, askingAgain])
-
-    await userEvent.click(dialog.getByRole('radio', { name: /^Row 2/ }))
-    await userEvent.click(dialog.getByRole('button', { name: 'Mark 1 row' }))
-
-    expect(onMarkDuplicates).toHaveBeenCalledWith(
-      expect.objectContaining({ keptRowNumber: 2 }),
-    )
   })
 })

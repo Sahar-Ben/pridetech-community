@@ -1,4 +1,4 @@
-import type { DuplicateApplicant } from './duplicateApplicants'
+import type { LeadStatus } from './lead'
 import type { LeadView } from './leadViews'
 import type { LeadsReviewCounts } from './leadsReview'
 import type { LeadWithoutEmail } from './parseLeads'
@@ -84,8 +84,8 @@ const EMPTY_VIEW_SENTENCES: Readonly<Record<LeadView, string>> = {
 export const describeEmptyView = ({ view }: { view: LeadView }): string =>
   EMPTY_VIEW_SENTENCES[view]
 
-/* Each note is its own function rather than one list of strings: the two that
-   name Leads rows open a list of those rows, and a caller cannot attach a list
+/* Each note is its own function rather than one list of strings: the one that
+   names Leads rows opens a list of those rows, and a caller cannot attach a list
    to a sentence it can only tell apart by reading it. */
 export const describeLeadsWithoutEmailNote = ({ count }: { count: number }): string | undefined => {
   if (count === 0) {
@@ -116,18 +116,6 @@ export const describeMembersWithoutEmailNote = ({
   return `${memberRows} no email address, so an application from them stays in the queue.`
 }
 
-export const describeRepeatedEmailsNote = ({ count }: { count: number }): string | undefined => {
-  if (count === 0) {
-    return undefined
-  }
-  const addresses = countPhrase({
-    count,
-    singular: 'email address appears',
-    plural: 'email addresses appear',
-  })
-  return `${addresses} on more than one application.`
-}
-
 export const describeLeadWithoutEmail = ({
   leadWithoutEmail,
 }: {
@@ -137,34 +125,26 @@ export const describeLeadWithoutEmail = ({
     .filter((part) => part !== undefined)
     .join(SEPARATOR)
 
-export const describeDuplicateNames = ({
-  duplicate,
-}: {
-  duplicate: DuplicateApplicant
-}): string =>
-  duplicate.names.length === 0 ? duplicate.emailKey : duplicate.names.join(SEPARATOR)
+const EARLIER_DECISION_PHRASE: Readonly<Partial<Record<LeadStatus, string>>> = {
+  approved: 'approved before',
+  declined: 'declined before',
+  maybe: 'kept for later before',
+}
 
-export const describeDuplicateApplicant = ({
-  duplicate,
+/* Undefined for somebody who sent the form once, which is nearly everybody:
+   the line is there to say a card stands for more than one row. */
+export const describeSubmissions = ({
+  submissionCount,
+  earlierDecision,
 }: {
-  duplicate: DuplicateApplicant
-}): string =>
-  [
-    duplicate.emailKey,
-    `${duplicate.rowNumbers.length} applications`,
-    `Leads rows ${duplicate.rowNumbers.join(', ')}`,
-  ].join(SEPARATOR)
-
-/* Silent above one name: the warning exists to stop a reviewer reading a shared
-   inbox as one person applying twice, and on the far commoner repeat-application
-   case it would be noise on every row. */
-export const describeSharedAddressNote = ({
-  duplicate,
-}: {
-  duplicate: DuplicateApplicant
+  submissionCount: number
+  earlierDecision: LeadStatus | undefined
 }): string | undefined => {
-  if (duplicate.names.length < 2) {
+  if (submissionCount < 2) {
     return undefined
   }
-  return `${duplicate.names.length} different names use this address, so these may be different people sharing an inbox rather than one person applying twice.`
+  const earlier = earlierDecision === undefined ? undefined : EARLIER_DECISION_PHRASE[earlierDecision]
+  return [`Submitted ${submissionCount} times`, earlier]
+    .filter((part) => part !== undefined)
+    .join(SEPARATOR)
 }

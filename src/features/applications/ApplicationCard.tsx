@@ -3,6 +3,7 @@ import { summariseInterests } from './applicantTags'
 import { ApplicationDecisionControls } from './ApplicationDecisionControls'
 import type { ApprovalDecision, DeclineDecision, MaybeDecision } from './decision'
 import type { ReviewableApplication } from './leadsReview'
+import { describeSubmissions } from './leadsReviewText'
 import { PriorMemberNotice } from './PriorMemberNotice'
 import type { LeadDecisionState } from './useLeadDecisions'
 import { CopyableValue } from '../../app/CopyableValue'
@@ -28,6 +29,9 @@ const AVATAR_CLASSES = [
   'bg-nav-active font-mono text-sm font-bold text-chart-1',
 ].join(' ')
 
+const SUBMISSIONS_CLASSES =
+  'mt-1 w-fit rounded-full border border-card-strong-edge bg-nav-active px-2.5 py-0.5 text-xs font-semibold text-chart-1'
+
 const CHIP_CLASSES =
   'shrink-0 rounded-full border border-card-strong-edge bg-surface px-2.5 py-1.5 text-xs whitespace-nowrap text-neutral-ink'
 
@@ -52,6 +56,7 @@ export const ApplicationCard = ({
   const applicantName = lead.name ?? lead.email
   const roleLine = [lead.jobTitle, lead.company].filter((field) => field !== undefined).join(' · ')
   const interests = summariseInterests(lead.interests)
+  const submissions = describeSubmissions(application)
 
   return (
     <li className={`${CARD_CLASSES} ${decisionState.isSaving ? SAVING_CLASSES : ''}`}>
@@ -64,6 +69,9 @@ export const ApplicationCard = ({
             {applicantName}
           </h3>
           {roleLine !== '' && <p className="text-[13px] text-ink-muted">{roleLine}</p>}
+          {/* One card per person: the newest submission is what it shows and
+              where a decision is written, and this says the sheet has more. */}
+          {submissions !== undefined && <p className={SUBMISSIONS_CLASSES}>{submissions}</p>}
         </div>
       </div>
 

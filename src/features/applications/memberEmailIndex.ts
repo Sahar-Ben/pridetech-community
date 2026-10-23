@@ -46,7 +46,7 @@ const toNameKey = (name: string | undefined): string =>
 
 /* An address on the Members tab is not proof of who is applying under it: a
    couple and a shared work inbox both look like one person applying twice, and
-   `duplicateApplicants` exists because this sheet has both. The name is the only
+   this sheet has both. The name is the only
    other thing the two records share, so a write that would otherwise be decided
    on the address alone asks this first. */
 export const doesMemberMatchName = ({
