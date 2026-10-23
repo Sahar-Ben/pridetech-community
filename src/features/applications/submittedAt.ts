@@ -40,3 +40,28 @@ export const describeSubmittedAt = (timestamp: string | undefined): SubmittedAt 
   const clock = `${twoDigits(hours)}:${twoDigits(minutes)}`
   return { label: `${day}, ${clock}`, dateTime: `${isoDay}T${clock}` }
 }
+
+/* The same day one calendar month back, or the month's last day when it is
+   shorter: a month before 31 March is 28 or 29 February, not 3 March. */
+const oneMonthBefore = (asOf: Date): Date => {
+  const lastDayOfPreviousMonth = new Date(asOf.getFullYear(), asOf.getMonth(), 0).getDate()
+  return new Date(
+    asOf.getFullYear(),
+    asOf.getMonth() - 1,
+    Math.min(asOf.getDate(), lastDayOfPreviousMonth),
+  )
+}
+
+/* Read to the day, like every other use of the stamp. A cell that is not a
+   date says nothing about how long somebody has waited, so it is never
+   flagged. */
+export const isOverAMonthOld = ({
+  timestamp,
+  asOf,
+}: {
+  timestamp: string | undefined
+  asOf: Date
+}): boolean => {
+  const submitted = toApplicationDate(timestamp?.trim())
+  return submitted !== undefined && submitted < oneMonthBefore(asOf)
+}

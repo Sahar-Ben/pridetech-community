@@ -30,14 +30,19 @@ const AVATAR_CLASSES = [
   'bg-nav-active font-mono text-sm font-bold text-chart-1',
 ].join(' ')
 
-const SUBMISSIONS_CLASSES =
-  'mt-1 w-fit rounded-full border border-card-strong-edge bg-nav-active px-2.5 py-0.5 text-xs font-semibold text-chart-1'
+const PILL_CLASSES = 'w-fit rounded-full border px-2.5 py-0.5 text-xs font-semibold'
+
+const SUBMISSIONS_CLASSES = `${PILL_CLASSES} border-card-strong-edge bg-nav-active text-chart-1`
+
+const OVERDUE_CLASSES = `${PILL_CLASSES} border-danger-edge bg-danger-surface text-danger-ink`
 
 const CHIP_CLASSES =
   'shrink-0 rounded-full border border-card-strong-edge bg-surface px-2.5 py-1.5 text-xs whitespace-nowrap text-neutral-ink'
 
 type ApplicationCardProps = {
   application: ReviewableApplication
+  /* Only ever true on Pending: the label is there to empty that list. */
+  isWaitingOverAMonth: boolean
   decisionState: LeadDecisionState
   onApprove: (decision: ApprovalDecision) => void
   decisions: {
@@ -48,6 +53,7 @@ type ApplicationCardProps = {
 
 export const ApplicationCard = ({
   application,
+  isWaitingOverAMonth,
   decisionState,
   onApprove,
   decisions,
@@ -77,9 +83,15 @@ export const ApplicationCard = ({
               <time dateTime={submittedAt.dateTime}>{submittedAt.label}</time>
             </p>
           )}
-          {/* One card per person: the newest submission is what it shows and
-              where a decision is written, and this says the sheet has more. */}
-          {submissions !== undefined && <p className={SUBMISSIONS_CLASSES}>{submissions}</p>}
+          {(isWaitingOverAMonth || submissions !== undefined) && (
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              {isWaitingOverAMonth && <p className={OVERDUE_CLASSES}>Over a month</p>}
+              {/* One card per person: the newest submission is what it shows
+                  and where a decision is written, and this says the sheet has
+                  more. */}
+              {submissions !== undefined && <p className={SUBMISSIONS_CLASSES}>{submissions}</p>}
+            </div>
+          )}
         </div>
       </div>
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { describeSubmittedAt } from './submittedAt'
+import { describeSubmittedAt, isOverAMonthOld } from './submittedAt'
 
 describe('describeSubmittedAt', () => {
   it('should spell the month out and keep the time to the minute', () => {
@@ -31,5 +31,33 @@ describe('describeSubmittedAt', () => {
   it('should show nothing for a blank cell', () => {
     expect(describeSubmittedAt(undefined)).toBeUndefined()
     expect(describeSubmittedAt('   ')).toBeUndefined()
+  })
+})
+
+describe('isOverAMonthOld', () => {
+  const asOf = new Date(2026, 9, 23, 15, 0)
+
+  it('should flag an application sent more than a month ago', () => {
+    expect(isOverAMonthOld({ timestamp: '9/22/2026 23:59:00', asOf })).toBe(true)
+  })
+
+  it('should not flag one sent exactly a month ago', () => {
+    expect(isOverAMonthOld({ timestamp: '9/23/2026 08:00:00', asOf })).toBe(false)
+  })
+
+  it('should not flag one sent this week', () => {
+    expect(isOverAMonthOld({ timestamp: '10/20/2026 10:00:00', asOf })).toBe(false)
+  })
+
+  it('should count back to the end of a shorter month', () => {
+    const endOfMarch = new Date(2026, 2, 31)
+
+    expect(isOverAMonthOld({ timestamp: '2/28/2026 10:00:00', asOf: endOfMarch })).toBe(false)
+    expect(isOverAMonthOld({ timestamp: '2/27/2026 10:00:00', asOf: endOfMarch })).toBe(true)
+  })
+
+  it('should never flag a cell that is not a date', () => {
+    expect(isOverAMonthOld({ timestamp: 'sometime in spring', asOf })).toBe(false)
+    expect(isOverAMonthOld({ timestamp: undefined, asOf })).toBe(false)
   })
 })
