@@ -12,6 +12,7 @@ import type { LeadsReview } from './leadsReview'
 import { LeadsDataQualityNotes } from './LeadsDataQualityNotes'
 import { describeApplicationsCount, describeEmptyView } from './leadsReviewText'
 import { LeadsFilterChips } from './LeadsFilterChips'
+import { isOverAMonthOld } from './submittedAt'
 import { LeadsFilterSheet } from './LeadsFilterSheet'
 import {
   applyLeadListQuery,
@@ -38,6 +39,8 @@ type ApplicationsQueueProps = {
   spreadsheetId: string
   decisions: LeadDecisions
   onReload: () => void
+  /* Today, for the "Over a month" label; a test pins it. */
+  asOf?: Date
 }
 
 /* The queue renders the review exactly as it was computed at read time: the
@@ -49,6 +52,7 @@ export const ApplicationsQueue = ({
   spreadsheetId,
   decisions,
   onReload,
+  asOf = new Date(),
 }: ApplicationsQueueProps) => {
   const [view, setView] = useState<LeadView>('Pending')
   const [query, setQuery] = useState<LeadListQuery>(EMPTY_LEAD_LIST_QUERY)
@@ -152,6 +156,10 @@ export const ApplicationsQueue = ({
               <ApplicationCard
                 key={application.lead.rowNumber}
                 application={application}
+                isWaitingOverAMonth={
+                  view === 'Pending' &&
+                  isOverAMonthOld({ timestamp: application.lead.timestamp, asOf })
+                }
                 decisionState={decisions.stateFor(application.lead.rowNumber)}
                 onApprove={decisions.approve}
                 decisions={cardDecisions}

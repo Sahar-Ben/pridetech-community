@@ -243,6 +243,20 @@ test('every card says when the application was sent, as the sheet has it', async
   await expect(cardOf(page, 'Twice Applied')).toContainText('Last applied 5 May 2026, 10:00')
 })
 
+test('a pending application waiting over a month is marked in red, and only on Pending', async ({
+  page,
+}) => {
+  const label = (name: string) => cardOf(page, name).getByText('Over a month', { exact: true })
+
+  await expect(label('Twice Applied')).toBeVisible()
+  await expect(label('Just Applied')).toHaveCount(0)
+  await expect(label('No Timestamp')).toHaveCount(0)
+
+  await page.getByRole('tab', { name: /^Maybe/ }).click()
+  await expect(cardOf(page, 'Kept For Later')).toBeVisible()
+  await expect(page.getByText('Over a month', { exact: true })).toHaveCount(0)
+})
+
 test.describe('somebody who sent the form more than once', () => {
   test('is one card, showing the newest submission and how many there were', async ({ page }) => {
     const card = cardOf(page, 'Twice Applied')

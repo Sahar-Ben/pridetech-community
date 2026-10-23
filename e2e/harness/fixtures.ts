@@ -65,6 +65,11 @@ export const UNBROKEN_TEXT =
 const nameAt = (index: number): string =>
   `${FIRST[index % FIRST.length] ?? 'Noa'} ${LAST[(index * 7) % LAST.length] ?? 'Levi'}`
 
+const todayStamp = (): string => {
+  const today = new Date()
+  return `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} 09:00:00`
+}
+
 const stamp = (index: number): string => `${(index % 9) + 1}/${(index % 27) + 1}/2026 10:00:00`
 
 /* The Leads tab's columns, in order: timestamp, name, title, company,
@@ -141,6 +146,8 @@ const TRICKY_LEADS: readonly string[][] = [
     title: 'Head of Product',
     email: 'Twice@Example.com',
   }),
+  /* Sent today, whenever the suite runs: the one card never "Over a month". */
+  leadRow({ index: 924, name: 'Just Applied', timestamp: todayStamp() }),
   leadRow({ index: 925, name: 'No Timestamp', timestamp: '' }),
   leadRow({ index: 926, name: 'Odd Timestamp', timestamp: 'sometime in spring' }),
   leadRow({ index: 930, name: 'Kept For Later', status: 'Maybe in the future' }),

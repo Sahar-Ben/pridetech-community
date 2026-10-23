@@ -46,6 +46,7 @@ const renderQueue = ({
   spreadsheetId = 'picked-sheet-id',
   decisions = stubDecisions(),
   onReload = vi.fn(),
+  asOf = new Date(2025, 2, 10),
 }: {
   leads?: readonly Lead[]
   memberRows?: readonly string[][]
@@ -53,6 +54,7 @@ const renderQueue = ({
   spreadsheetId?: string
   decisions?: LeadDecisions
   onReload?: () => void
+  asOf?: Date
 } = {}) =>
   render(
     <ApplicationsQueue
@@ -60,6 +62,7 @@ const renderQueue = ({
       spreadsheetId={spreadsheetId}
       decisions={decisions}
       onReload={onReload}
+      asOf={asOf}
     />,
   )
 
@@ -367,6 +370,24 @@ describe('ApplicationsQueue', () => {
     renderQueue({ leads: [pendingLead({ timestamp: undefined })] })
 
     expect(screen.queryByText(/^Applied/)).not.toBeInTheDocument()
+  })
+
+  it('should mark in red an application that has waited over a month', () => {
+    renderQueue({
+      leads: [pendingLead({ timestamp: '3/8/2025 14:25:20' })],
+      asOf: new Date(2025, 4, 1),
+    })
+
+    expect(screen.getByText('Over a month')).toBeInTheDocument()
+  })
+
+  it('should not mark an application sent within the month', () => {
+    renderQueue({
+      leads: [pendingLead({ timestamp: '3/8/2025 14:25:20' })],
+      asOf: new Date(2025, 3, 8),
+    })
+
+    expect(screen.queryByText('Over a month')).not.toBeInTheDocument()
   })
 
   it('should say nothing about submissions for somebody who applied once', () => {
@@ -722,6 +743,16 @@ describe('ApplicationsQueue, applications kept for later', () => {
 
   const renderBothStates = (decisions = stubDecisions()) =>
     renderQueue({ decisions, leads: [pending(), maybeLead()] })
+
+  it('should mark only the pending applications as waiting over a month', async () => {
+    renderQueue({ leads: [pending(), maybeLead()], asOf: new Date(2027, 0, 1) })
+    expect(screen.getByText('Over a month')).toBeInTheDocument()
+
+    await showMaybe()
+
+    expect(screen.getByRole('heading', { level: 3, name: 'Come Back Later' })).toBeInTheDocument()
+    expect(screen.queryByText('Over a month')).not.toBeInTheDocument()
+  })
 
   it('should offer keeping a pending application for later', async () => {
     const onMarkMaybe = vi.fn()
