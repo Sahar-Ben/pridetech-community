@@ -230,6 +230,19 @@ test('the decline dialog names its decisions and its chips fit a thumb', async (
   await expect(cardOf(page, firstName)).toHaveCount(1)
 })
 
+test('every card says when the application was sent, as the sheet has it', async ({ page }) => {
+  const cards = page.getByRole('main').getByRole('listitem').filter({
+    has: page.getByRole('heading', { level: 3 }),
+  })
+  const count = await cards.count()
+  expect(count).toBeGreaterThan(0)
+  /* Every card but the one whose Timestamp cell is blank. */
+  await expect(page.getByRole('main').locator('time')).toHaveCount(count - 1)
+  await expect(cardOf(page, 'No Timestamp')).not.toContainText(/applied/i)
+  await expect(cardOf(page, 'Odd Timestamp')).toContainText('Applied sometime in spring')
+  await expect(cardOf(page, 'Twice Applied')).toContainText('Last applied 5 May 2026, 10:00')
+})
+
 test.describe('somebody who sent the form more than once', () => {
   test('is one card, showing the newest submission and how many there were', async ({ page }) => {
     const card = cardOf(page, 'Twice Applied')
