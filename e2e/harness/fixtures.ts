@@ -130,8 +130,16 @@ const TRICKY_LEADS: readonly string[][] = [
       linkedIn: linkedInCase.cell,
     }),
   ),
-  leadRow({ index: 920, name: 'Twice Applied', email: 'twice@example.com' }),
+  /* One person, three submissions: declined the first time, and the newest
+     typed with capitals. The queue shows them once. */
+  leadRow({ index: 920, name: 'Twice Applied', email: 'twice@example.com', status: 'Declined' }),
   leadRow({ index: 921, name: 'Twice Applied', email: 'twice@example.com' }),
+  leadRow({
+    index: 922,
+    name: 'Twice Applied',
+    title: 'Head of Product',
+    email: 'Twice@Example.com',
+  }),
   leadRow({ index: 930, name: 'Kept For Later', status: 'Maybe in the future' }),
   leadRow({ index: 931, name: 'Already Declined', status: 'Declined' }),
 ]

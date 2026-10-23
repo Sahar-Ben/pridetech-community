@@ -1,13 +1,10 @@
-import { useCallback, useEffect, useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { ApplicationsQueue } from './ApplicationsQueue'
 import { withoutDecidedApplications } from './decidedApplications'
-import type { DuplicateApplicant } from './duplicateApplicants'
-import { markLeadsDuplicate } from './markLeadsDuplicate'
 import { useLeadDecisions } from './useLeadDecisions'
 import { useLeads } from './useLeads'
 import { SectionErrorNotice } from '../../app/SectionErrorNotice'
 import type { SheetsClient } from '../../sheets/sheetsClient'
-import { isExpiredSessionError } from '../../sheets/sheetsRequestError'
 
 type LeadsSectionProps = {
   sheetsClient: SheetsClient
@@ -24,31 +21,6 @@ export const LeadsSection = ({
   const decisions = useLeadDecisions({ sheetsClient, onSessionExpired })
   const loadedReview = state.status === 'ready' ? state.review : undefined
   const { forgetDecisions } = decisions
-
-  /* The tab is read again once every row is marked, which is what takes the
-     address off the list. A refusal leaves the dialog up with its reason
-     instead: reading the tab would take the dialog down with it, and trying
-     again is safe, since a row already marked Duplicate is only marked again. */
-  const markDuplicates = useCallback(
-    async ({
-      duplicate,
-      keptRowNumber,
-    }: {
-      duplicate: DuplicateApplicant
-      keptRowNumber: number
-    }): Promise<void> => {
-      try {
-        await markLeadsDuplicate({ sheetsClient, duplicate, keptRowNumber })
-      } catch (error: unknown) {
-        if (isExpiredSessionError(error)) {
-          onSessionExpired()
-        }
-        throw error
-      }
-      reload()
-    },
-    [onSessionExpired, reload, sheetsClient],
-  )
 
   /* Decisions are remembered by sheet row number, and a fresh read can hand the
      same number to a different person. */
@@ -101,7 +73,6 @@ export const LeadsSection = ({
       review={review}
       spreadsheetId={sheetsClient.spreadsheetId}
       decisions={decisions}
-      onMarkDuplicates={markDuplicates}
       onReload={reload}
     />
   )

@@ -304,25 +304,59 @@ describe('buildLeadsReview', () => {
     })
   })
 
-  it('should list the repeated addresses themselves, not only how many there are', () => {
+  it('should list somebody who sent the form twice once, with how many times', () => {
     const review = reviewOf({
       leads: [
-        lead({ rowNumber: 2, name: 'Dana Maman', email: 'twice@example.com' }),
-        lead({ rowNumber: 3, name: 'Dana Maman', email: 'twice@example.com' }),
+        lead({ rowNumber: 2, email: 'twice@example.com', timestamp: '1/2/2025 10:00:00' }),
+        lead({ rowNumber: 3, email: 'twice@example.com', timestamp: '6/2/2025 10:00:00' }),
         lead({ rowNumber: 4, email: 'once@example.com' }),
       ],
     })
 
-    expect(review.duplicateApplicants).toEqual([
-      expect.objectContaining({
-        emailKey: 'twice@example.com',
-        names: ['Dana Maman'],
-        rowNumbers: [2, 3],
-      }),
+    expect(review.waitingApplications).toEqual([
+      expect.objectContaining({ lead: expect.objectContaining({ rowNumber: 3 }), submissionCount: 2 }),
+      expect.objectContaining({ lead: expect.objectContaining({ rowNumber: 4 }), submissionCount: 1 }),
+    ])
+    expect(review.counts.waitingCount).toBe(2)
+  })
+
+  it('should file a repeat applicant by their newest submission, which a decision is written to', () => {
+    const review = reviewOf({
+      leads: [
+        lead({ rowNumber: 2, email: 'twice@example.com', timestamp: '1/2/2025 10:00:00' }),
+        lead({
+          rowNumber: 3,
+          email: 'twice@example.com',
+          timestamp: '6/2/2025 10:00:00',
+          status: 'declined',
+        }),
+      ],
+    })
+
+    expect(review.waitingApplications).toEqual([])
+    expect(review.declinedApplications.map(({ lead: { rowNumber } }) => rowNumber)).toEqual([3])
+  })
+
+  it('should put somebody declined before back in the queue when they ask again', () => {
+    const review = reviewOf({
+      leads: [
+        lead({
+          rowNumber: 2,
+          email: 'again@example.com',
+          timestamp: '1/2/2025 10:00:00',
+          status: 'declined',
+        }),
+        lead({ rowNumber: 3, email: 'again@example.com', timestamp: '6/2/2025 10:00:00' }),
+      ],
+    })
+
+    expect(review.declinedApplications).toEqual([])
+    expect(review.waitingApplications).toEqual([
+      expect.objectContaining({ submissionCount: 2, earlierDecision: 'declined' }),
     ])
   })
 
-  it('should list a repeat whose email is already on the Members tab, since the sheet still repeats', () => {
+  it('should keep a repeat whose email is already on the Members tab out of the queue', () => {
     const review = reviewOf({
       leads: [
         lead({ rowNumber: 2, email: 'member@example.com' }),
@@ -332,19 +366,9 @@ describe('buildLeadsReview', () => {
     })
 
     expect(review.waitingApplications).toEqual([])
-    expect(review.duplicateApplicants.map((duplicate) => duplicate.rowNumbers)).toEqual([[2, 3]])
+    expect(review.counts.alreadyMemberCount).toBe(1)
   })
 
-  it('should list a repeat whose rows were already decided, since they still clutter the sheet', () => {
-    const review = reviewOf({
-      leads: [
-        lead({ rowNumber: 2, email: 'twice@example.com', status: 'approved' }),
-        lead({ rowNumber: 3, email: 'twice@example.com', status: 'declined' }),
-      ],
-    })
-
-    expect(review.duplicateApplicants.map((duplicate) => duplicate.rowNumbers)).toEqual([[2, 3]])
-  })
   it('should keep an application in the queue when the matching member is an ex-member', () => {
     const review = reviewOf({
       leads: [lead({ email: 'dana@example.com' })],

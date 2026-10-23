@@ -50,7 +50,7 @@ describe('loadOverview', () => {
 
     const { applications } = await loadOverview({ sheetsClient: sheet.client, asOf })
 
-    expect(applications.waitingCount).toBe(3)
+    expect(applications.waitingCount).toBe(2)
     expect(applications.alreadyMemberCount).toBe(1)
     expect(applications.repeatedLeadEmailCount).toBe(1)
   })

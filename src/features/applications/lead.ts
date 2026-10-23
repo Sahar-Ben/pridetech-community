@@ -9,9 +9,9 @@ export const RECORDED_LEAD_STATUS = {
   approved: 'Approved',
   declined: 'Declined',
   maybe: 'Maybe in the future',
-  /* A later application from somebody whose earlier one is kept: not a
-     decision about the person, so it leaves the queue without saying yes or
-     no, and the row stays in the sheet with its history. */
+  /* Read, never written any more: rows marked this way, by hand or by an
+     earlier version of this app, still count as a submission but are never
+     the row a person's card shows (leadSubmissions.ts). */
   duplicate: 'Duplicate',
 } as const
 

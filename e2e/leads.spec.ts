@@ -230,50 +230,30 @@ test('the decline dialog names its decisions and its chips fit a thumb', async (
   await expect(cardOf(page, firstName)).toHaveCount(1)
 })
 
-test.describe('folding a repeat application into one', () => {
-  const openRepeats = async (page: Page) => {
-    await page.getByRole('button', { name: /on more than one application/ }).click()
-  }
+test.describe('somebody who sent the form more than once', () => {
+  test('is one card, showing the newest submission and how many there were', async ({ page }) => {
+    const card = cardOf(page, 'Twice Applied')
 
-  const markButton = (page: Page) =>
-    page.getByRole('button', {
-      name: 'Mark the repeat applications from twice@example.com as duplicates',
-    })
-
-  test('asks which application to keep, with one suggested, before marking the rest', async ({ page }) => {
-    await openRepeats(page)
-    await markButton(page).click()
-
-    const dialog = page.getByRole('dialog', { name: 'Which application do you keep?' })
-    await expect(dialog).toBeVisible()
-    await expect(dialog).toBeInViewport({ ratio: 1 })
-    await expect(dialog.getByRole('radio', { checked: true })).toHaveCount(1)
-    await expect(dialog.getByText('Suggested')).toBeVisible()
-    await expect(dialog).toContainText(/nothing is deleted/)
-
-    await dialog.getByRole('button', { name: 'Not now' }).click()
-    await expect(dialog).toBeHidden()
-    await expect(markButton(page)).toBeVisible()
+    await expect(card).toHaveCount(1)
+    await expect(card).toContainText('Head of Product')
+    await expect(card.getByText('Submitted 3 times \u{00b7} declined before')).toBeVisible()
   })
 
-  test('marks the later row and takes the address off the list', async ({ page }) => {
-    await openRepeats(page)
-    await markButton(page).click()
-    await page.getByRole('button', { name: 'Mark 1 row', exact: true }).click()
+  test('the submissions line stays inside the card', async ({ page }) => {
+    const card = cardOf(page, 'Twice Applied')
+    const line = card.getByText(/^Submitted 3 times/)
+    await line.scrollIntoViewIfNeeded()
 
-    await expect(page.getByRole('dialog')).toBeHidden()
-    /* It was the only repeated address in the harness, so the note about
-       repeats goes with it. */
+    const cardBox = await card.boundingBox()
+    const lineBox = await line.boundingBox()
+    expect(lineBox?.x ?? 0).toBeGreaterThanOrEqual(cardBox?.x ?? 0)
+    expect((lineBox?.x ?? 0) + (lineBox?.width ?? 0)).toBeLessThanOrEqual(
+      (cardBox?.x ?? 0) + (cardBox?.width ?? 0),
+    )
+  })
+
+  test('offers no list of repeated addresses to clean up', async ({ page }) => {
     await expect(page.getByRole('button', { name: /on more than one application/ })).toHaveCount(0)
-    await expect(markButton(page)).toHaveCount(0)
-  })
-
-  test('the button is big enough for a thumb', async ({ page }) => {
-    test.skip((page.viewportSize()?.width ?? 1280) >= 768, 'touch target sizes are a phone concern')
-    await openRepeats(page)
-
-    const box = await markButton(page).boundingBox()
-    expect(box?.height ?? 0).toBeGreaterThanOrEqual(44)
-    expect(box?.width ?? 0).toBeGreaterThanOrEqual(44)
+    await expect(page.getByRole('button', { name: /as duplicates/ })).toHaveCount(0)
   })
 })

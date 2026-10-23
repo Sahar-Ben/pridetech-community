@@ -37,7 +37,7 @@ const describeApplicant = (lead: Lead): string =>
    moved between them.
 
    The address alone does not identify the row. 69 addresses on this tab are on
-   more than one application, which is why `duplicateApplicants` exists: with a
+   more than one application. With a
    row deleted above, a re-read of the same number lands on the applicant's own
    second application, the address still matches, and `Approved` is written
    against an application nobody read while the one they did read stays pending.

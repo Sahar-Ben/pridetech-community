@@ -25,6 +25,8 @@ const application = (overrides: Partial<Lead> = {}): ReviewableApplication => ({
     status: 'pending',
     ...overrides,
   },
+  submissionCount: 1,
+  earlierDecision: undefined,
   priorMember: undefined,
 })
 

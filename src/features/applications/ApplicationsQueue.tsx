@@ -21,7 +21,6 @@ import {
   type LeadListQuery,
 } from './leadListQuery'
 import { LeadsToolbar } from './LeadsToolbar'
-import type { DuplicateApplicant } from './duplicateApplicants'
 import type { LeadDecisions } from './useLeadDecisions'
 import { ConfirmationToast } from '../../app/ConfirmationToast'
 import { SectionTitle } from '../../app/SectionTitle'
@@ -39,7 +38,6 @@ type ApplicationsQueueProps = {
   spreadsheetId: string
   decisions: LeadDecisions
   onReload: () => void
-  onMarkDuplicates: (options: { duplicate: DuplicateApplicant; keptRowNumber: number }) => Promise<void>
 }
 
 /* The queue renders the review exactly as it was computed at read time: the
@@ -51,7 +49,6 @@ export const ApplicationsQueue = ({
   spreadsheetId,
   decisions,
   onReload,
-  onMarkDuplicates,
 }: ApplicationsQueueProps) => {
   const [view, setView] = useState<LeadView>('Pending')
   const [query, setQuery] = useState<LeadListQuery>(EMPTY_LEAD_LIST_QUERY)
@@ -99,11 +96,7 @@ export const ApplicationsQueue = ({
         </div>
       </header>
 
-      <LeadsDataQualityNotes
-        onMarkDuplicates={onMarkDuplicates}
-        review={review}
-        spreadsheetId={spreadsheetId}
-      />
+      <LeadsDataQualityNotes review={review} spreadsheetId={spreadsheetId} />
 
       <LeadsFilterChips
         baseId={baseId}
