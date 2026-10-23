@@ -11,8 +11,9 @@ type LockScreenProps = {
   onUnlock: () => void
 }
 
-/* Built like the sign-in screen it sits in front of. Unlocking waits for a
-   tap: Safari only shows the Face ID sheet in answer to one. */
+/* Built like the sign-in screen it sits in front of. Face ID opens by itself
+   (useScreenLock.ts); the button is there for when Safari wants a tap first
+   or the first try was cancelled. */
 export const LockScreen = ({ message, isBusy, onUnlock }: LockScreenProps) => (
   <section className="mx-auto flex min-h-dvh w-full max-w-lg items-center px-4 py-16">
     <div
@@ -22,8 +23,8 @@ export const LockScreen = ({ message, isBusy, onUnlock }: LockScreenProps) => (
 
       <h2 className={`mt-5 ${SHELL_HERO_TITLE_CLASSES}`}>The app is locked</h2>
       <p className="mt-4 text-on-brand">
-        Unlock with Face ID to carry on. If Face ID does not work, your device offers its passcode
-        instead.
+        Face ID opens by itself. If it does not, tap the button below. If Face ID does not work,
+        your device offers its passcode instead.
       </p>
 
       {message !== undefined && (
