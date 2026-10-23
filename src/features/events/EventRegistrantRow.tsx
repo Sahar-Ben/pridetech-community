@@ -15,7 +15,9 @@ import { COMPACT_BUTTON_SIZE_CLASSES, SECONDARY_BUTTON_CLASSES } from '../../the
 
 const CELL_CLASSES = 'px-3 py-2.5 align-top text-ink'
 
-const LINK_BUTTON_CLASSES = `${SECONDARY_BUTTON_CLASSES} ${COMPACT_BUTTON_SIZE_CLASSES} min-h-11 shrink-0`
+/* 48px on a phone, not exactly 44: the row sits at a fractional offset in the
+   table, and Chromium can lay a 44px box out a hair under 44. */
+const LINK_BUTTON_CLASSES = `${SECONDARY_BUTTON_CLASSES} ${COMPACT_BUTTON_SIZE_CLASSES} min-h-12 shrink-0 sm:min-h-11`
 
 /* Every column there is, hidden or not: a span longer than the visible row is
    clipped to it, and a shorter one would leave the last cells empty. */
