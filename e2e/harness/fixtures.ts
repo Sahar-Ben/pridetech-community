@@ -7,6 +7,7 @@ import {
   EVENTS_TAB_NAME,
 } from '../../src/features/events/eventRegistryTabs'
 import { GROW_HEBREW_TYPE, GROW_RECRUITING, GROW_SEEKING } from './attendeeTypeCases'
+import { FUTURE_EVENT_NAME } from './firstEventCases'
 import { LINKEDIN_CASES } from './linkedInCases'
 import {
   LINKABLE_MEMBER_MAIL,
@@ -253,6 +254,10 @@ const EVENTS: readonly string[][] = [
   ],
   ['evt-3', 'Moabet', '2026-11-14', '', '', '', 'No', 'No', 'No', ''],
   ['evt-5', 'Grow Careers Evening', '2026-12-10', '', 'Grow, Tel Aviv', '', 'No', 'No', 'No', ''],
+  /* Far enough ahead that it is still to come whenever the suite runs: every
+     other event here has a fixed 2026 date, and a test about an event that
+     has not happened yet must not start failing the day it has. */
+  ['evt-6', FUTURE_EVENT_NAME, '2099-06-01', '', 'Yarkon Park, Tel Aviv', '', 'No', 'No', 'No', ''],
 ]
 
 /* A careers evening whose form asks each guest which side of the room they
@@ -278,10 +283,23 @@ const GROW_ROWS: readonly string[][] = [
   ['10/1/2026 9:35:00', 'Twice Applied Member', 'lead5@example.com', '', '', ''],
 ]
 
+/* Moabet is before the Grow evening, and two of the people on its list are on
+   Grow's too: one with the same address, one with it typed in other case and
+   with spaces round it. At Grow's door those two are known faces and everybody
+   else is at their first event. Neither is a member, so no member's event
+   count changes. */
+export const MOABET_SPREADSHEET_ID = 'moabet-responses'
+
+const MOABET_ROWS: readonly string[][] = [
+  ['9/20/2026 10:00:00', 'Grow Seeker One', 'seeker1@example.com'],
+  ['9/20/2026 10:05:00', 'Grow Recruiter', ' Recruiter@Example.com '],
+]
+
 export const HARNESS_RESPONSE_SHEETS: Readonly<
   Record<string, Readonly<Record<string, readonly (readonly string[])[]>>>
 > = {
   [GROW_SPREADSHEET_ID]: { [GROW_SHEET_NAME]: [GROW_HEADER, ...GROW_ROWS] },
+  [MOABET_SPREADSHEET_ID]: { 'Form Responses 1': [['Timestamp', 'Name', 'Email'], ...MOABET_ROWS] },
 }
 
 const EVENT_SHEETS: readonly string[][] = [
@@ -291,6 +309,13 @@ const EVENT_SHEETS: readonly string[][] = [
     GROW_SHEET_NAME,
     'main',
     '{"timestamp":"A","name":"B","email":"C","company":"E","jobTitle":null,"attendeeType":"D"}',
+  ],
+  [
+    'evt-3',
+    MOABET_SPREADSHEET_ID,
+    'Form Responses 1',
+    'main',
+    '{"timestamp":"A","name":"B","email":"C","company":null,"jobTitle":null,"attendeeType":null}',
   ],
 ]
 

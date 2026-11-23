@@ -19,7 +19,9 @@ export type RegistrantLink =
 
 const invisibleFormatting = /[\u{00ad}\u{200b}\u{200e}\u{200f}\u{2060}\u{feff}]/gu
 
-const toComparableName = (name: string): string =>
+/* Exported for telling two rows on two events apart (firstEvent.ts) by the same
+   rule this file matches a name to a member. */
+export const toComparableName = (name: string): string =>
   name.normalize('NFC').replace(invisibleFormatting, '').trim().replace(/\s+/g, ' ').toLowerCase()
 
 const findMemberByName = ({

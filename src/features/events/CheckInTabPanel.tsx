@@ -18,6 +18,7 @@ type CheckInTabPanelProps = {
   board: CheckInBoard
   members: readonly Member[]
   eventRegistrants: readonly Registrant[]
+  firstTimerIds: ReadonlySet<string> | undefined
   onToggle: (registrantId: string) => void
   onShowOtherTab: () => void
 }
@@ -33,6 +34,7 @@ export const CheckInTabPanel = ({
   board,
   members,
   eventRegistrants,
+  firstTimerIds,
   onToggle,
   onShowOtherTab,
 }: CheckInTabPanelProps) => (
@@ -40,6 +42,7 @@ export const CheckInTabPanel = ({
     {board.emptyState === undefined ? (
       <CheckInList
         eventRegistrants={eventRegistrants}
+        firstTimerIds={firstTimerIds}
         listLabel={LIST_LABELS[activeTab]}
         members={members}
         onToggle={onToggle}

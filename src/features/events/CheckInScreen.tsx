@@ -45,6 +45,9 @@ type CheckInScreenProps = {
   event: CommunityEvent
   registrants: readonly Registrant[]
   members: readonly Member[]
+  /* Who is at their first event, once every earlier event has been read, and
+     why the badges may be wrong when some could not be. */
+  firstEvent: { firstTimerIds: ReadonlySet<string> | undefined; note: string | undefined }
   onBack: () => void
   onToggleCheckIn: (registrantId: string) => void
   onAddWalkIn: (walkIn: WalkInFields) => void
@@ -56,6 +59,7 @@ export const CheckInScreen = ({
   event,
   registrants,
   members,
+  firstEvent,
   onBack,
   onToggleCheckIn,
   onAddWalkIn,
@@ -158,6 +162,10 @@ export const CheckInScreen = ({
 
       <AttendanceSaveStatus state={attendanceStatus} />
 
+      {firstEvent.note !== undefined && (
+        <p className="text-sm font-semibold text-warning-ink">{firstEvent.note}</p>
+      )}
+
       {/* Only for an event whose form asks which kind of guest each person is:
           each chip reads arrived/registered for its answer. */}
       {attendeeTypes.types.length > 0 && (
@@ -220,6 +228,7 @@ export const CheckInScreen = ({
         activeTab={activeTab}
         board={board}
         eventRegistrants={registrants}
+        firstTimerIds={firstEvent.firstTimerIds}
         labelledBy={toTabButtonId({ baseId: tabsBaseId, tab: activeTab })}
         members={members}
         onShowOtherTab={showOtherTab}

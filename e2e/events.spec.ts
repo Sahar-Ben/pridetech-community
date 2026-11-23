@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import { goTo, isPhone, openWorkspace } from './support'
 import { GROW_HEBREW_TYPE, GROW_RECRUITING, GROW_SEEKING } from './harness/attendeeTypeCases'
+import { FUTURE_EVENT_NAME, RETURNING_GUESTS } from './harness/firstEventCases'
 import {
   LINKABLE_MEMBER_MAIL,
   LINKABLE_MEMBER_NAME,
@@ -48,7 +49,7 @@ test('closing out asks first, says what it will do, and can be reopened', async 
 })
 
 test('an event that has not happened yet offers check-in but not close-out', async ({ page }) => {
-  await page.getByRole('button', { name: 'Open Moabet' }).click()
+  await page.getByRole('button', { name: `Open ${FUTURE_EVENT_NAME}` }).click()
 
   await expect(page.getByRole('button', { name: 'Check in at the door' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Close out attendance' })).toHaveCount(0)
@@ -251,5 +252,44 @@ test.describe('a member who registered with an address the Members tab does not 
     const box = await linkButton(page).boundingBox()
     expect(box?.height ?? 0).toBeGreaterThanOrEqual(44)
     expect(box?.width ?? 0).toBeGreaterThanOrEqual(44)
+  })
+})
+
+test.describe('the First event badge at the door', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.getByRole('button', { name: 'Open Grow Careers Evening' }).click()
+    await page.getByRole('button', { name: 'Check in at the door' }).click()
+  })
+
+  const personAtTheDoor = (page: Page, name: string) =>
+    page.getByRole('list', { name: 'People still to arrive' }).getByRole('button', { name: new RegExp(`^${name}`) })
+
+  test('marks the people on no earlier event, and not the ones who were', async ({ page }) => {
+    await expect(personAtTheDoor(page, 'Grow Seeker Two')).toContainText('First event')
+    await expect(personAtTheDoor(page, 'Grow No Answer')).toContainText('First event')
+    for (const name of RETURNING_GUESTS) {
+      await expect(personAtTheDoor(page, name)).not.toContainText('First event')
+    }
+  })
+
+  test('keeps the badge once they are checked in', async ({ page }) => {
+    await personAtTheDoor(page, 'Grow Seeker Two').click()
+    await page.getByRole('tab', { name: /arrived/i }).click()
+
+    await expect(
+      page.getByRole('list', { name: 'People already in' }).getByRole('button', { name: /^Grow Seeker Two/ }),
+    ).toContainText('First event')
+  })
+
+  test('marks somebody new added at the door', async ({ page }) => {
+    await page.getByRole('button', { name: 'Add someone not on the list' }).click()
+    await page.getByLabel('Not a PrideTech member').check()
+    await page.getByLabel('Name', { exact: true }).fill('Brand New Person')
+    await page.getByRole('button', { name: 'Add walk-in' }).click()
+    await page.getByRole('tab', { name: /arrived/i }).click()
+
+    await expect(
+      page.getByRole('list', { name: 'People already in' }).getByRole('button', { name: /^Brand New Person/ }),
+    ).toContainText('First event')
   })
 })

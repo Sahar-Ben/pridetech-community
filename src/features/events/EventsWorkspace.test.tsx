@@ -326,6 +326,19 @@ describe('EventsWorkspace event detail', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Pride Panel' }))
   }
 
+  it('should read every earlier event when the door opens, for the First event badges', async () => {
+    const spring = buildEvent({ id: 'spring', name: 'Spring Social', date: '2026-04-01' })
+    const winter = buildEvent({ id: 'winter', name: 'Winter Social', date: '2026-12-02' })
+    const { onRequestRegistrants } = renderEvents({ events: [pridePanel, spring, winter] })
+    await openPridePanel()
+    onRequestRegistrants.mockClear()
+
+    await userEvent.click(screen.getByRole('button', { name: /check in at the door/i }))
+
+    expect(onRequestRegistrants).toHaveBeenCalledWith('spring')
+    expect(onRequestRegistrants).not.toHaveBeenCalledWith('winter')
+  })
+
   it('should open an event from its Open button as well as its name', async () => {
     const { onRequestRegistrants } = renderEvents({ events: [pridePanel] })
 

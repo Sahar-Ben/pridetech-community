@@ -27,6 +27,12 @@ const TAG_CLASSES =
 const MEMBER_MARKER_CLASSES =
   'rounded-full border border-warning-edge px-2.5 py-0.5 text-xs font-bold text-warning-ink'
 
+/* Loud on purpose, unlike the member marker: it is the one tag on the row that
+   changes what the person at the door says, and it should be seen before the
+   name is read out. */
+const FIRST_EVENT_BADGE_CLASSES =
+  'rounded-full bg-accent-solid px-2.5 py-0.5 text-xs font-bold text-on-accent'
+
 const STATE_CLASSES = {
   checkedIn: 'text-arrived-ink',
   unarrived: 'text-ink-muted',
@@ -35,12 +41,14 @@ const STATE_CLASSES = {
 type CheckInPersonButtonProps = {
   registrant: Registrant
   memberMarker: string | undefined
+  isFirstEvent: boolean
   onToggle: (registrantId: string) => void
 }
 
 export const CheckInPersonButton = ({
   registrant,
   memberMarker,
+  isFirstEvent,
   onToggle,
 }: CheckInPersonButtonProps) => {
   const isCheckedIn = registrant.checkedInAt !== undefined
@@ -60,6 +68,12 @@ export const CheckInPersonButton = ({
           {registrant.email ?? 'No email on this sheet'}
         </span>
         <span className="flex flex-wrap gap-1.5">
+          {isFirstEvent && (
+            <span className={FIRST_EVENT_BADGE_CLASSES}>
+              <span aria-hidden="true">{'\u{2605}'} </span>
+              First event
+            </span>
+          )}
           {registrant.attendeeType !== undefined && (
             <span className={`${TAG_CLASSES} wrap-anywhere`}>{registrant.attendeeType}</span>
           )}

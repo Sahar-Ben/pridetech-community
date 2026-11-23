@@ -12,6 +12,12 @@ import {
 } from './eventAttendanceText'
 import { EMPTY_EVENT_DRAFT, toEventDraft, applyDraftToEvent, type EventDraft } from './eventDraft'
 import { groupEventsForListing } from './eventSchedule'
+import {
+  checkFirstEventReadiness,
+  describeUnreadHistory,
+  findFirstTimers,
+  selectEarlierEvents,
+} from './firstEvent'
 import { selectEventRegistrants } from './eventRegistrants'
 import { selectSheetsForEvent, type AttachedResponseSheet } from './parseAttachedSheets'
 import type { CommunityEvent } from './communityEvent'
@@ -99,6 +105,20 @@ export const EventsWorkspace = ({
       .filter((event) => !event.isArchived)
       .forEach((event) => onRequestRegistrants(event.id))
   }, [events, isListing, onRequestRegistrants, requestAttendance])
+
+  /* The door marks who is at their first event, which takes every earlier
+     event's list. Each is read once and kept, and coming through the listing
+     has usually read them all already. */
+  const checkInEventId = view.kind === 'check-in' ? view.eventId : undefined
+  useEffect(() => {
+    const checkInEvent = events.find((event) => event.id === checkInEventId)
+    if (checkInEvent === undefined) {
+      return
+    }
+    selectEarlierEvents({ event: checkInEvent, events }).forEach((earlier) =>
+      onRequestRegistrants(earlier.id),
+    )
+  }, [checkInEventId, events, onRequestRegistrants])
 
   const openEventView = ({ kind, eventId }: { kind: 'detail' | 'check-in'; eventId: string }) => {
     onRequestRegistrants(eventId)
@@ -283,10 +303,24 @@ export const EventsWorkspace = ({
   }
 
   if (openEvent !== undefined && view.kind === 'check-in') {
+    const readiness = checkFirstEventReadiness({
+      event: openEvent,
+      events,
+      loads: registrantLoads,
+      hasReadAttendance: attendance.hasRead,
+    })
+    const firstEvent =
+      readiness.kind === 'reading'
+        ? { firstTimerIds: undefined, note: undefined }
+        : {
+            firstTimerIds: findFirstTimers({ event: openEvent, events, registrants, members }),
+            note: describeUnreadHistory(readiness.unreadEventCount),
+          }
     return (
       <CheckInScreen
         attendanceStatus={attendance}
         event={openEvent}
+        firstEvent={firstEvent}
         members={members}
         onAddWalkIn={(walkIn) => addWalkIn({ eventId: openEvent.id, walkIn })}
         onBack={() => openEventView({ kind: 'detail', eventId: openEvent.id })}
