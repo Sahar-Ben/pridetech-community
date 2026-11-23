@@ -272,6 +272,27 @@ test.describe('the First event badge at the door', () => {
     }
   })
 
+  test('gives the name and the address the card\'s full width, with the state underneath', async ({
+    page,
+  }) => {
+    const card = personAtTheDoor(page, 'Grow Seeker Two')
+    const cardBox = await card.boundingBox()
+    const nameBox = await card.getByText('Grow Seeker Two', { exact: true }).boundingBox()
+    const emailBox = await card.getByText('seeker2@example.com').boundingBox()
+    const stateBox = await card.getByText('Tap to check in').boundingBox()
+
+    expect(nameBox?.width ?? 0).toBeGreaterThan((cardBox?.width ?? 0) - 48)
+    expect(emailBox?.width ?? 0).toBeGreaterThan((cardBox?.width ?? 0) - 48)
+    expect(stateBox?.y ?? 0).toBeGreaterThan((emailBox?.y ?? 0) + (emailBox?.height ?? 0) - 1)
+  })
+
+  test('keeps each tab\'s label on one line, even on a small phone', async ({ page }) => {
+    for (const tab of await page.getByRole('tab').all()) {
+      const box = await tab.boundingBox()
+      expect(box?.height ?? 0, (await tab.textContent()) ?? '').toBeLessThanOrEqual(60)
+    }
+  })
+
   test('keeps the badge once they are checked in', async ({ page }) => {
     await personAtTheDoor(page, 'Grow Seeker Two').click()
     await page.getByRole('tab', { name: /arrived/i }).click()
