@@ -23,6 +23,10 @@ export const COLUMN_ALIASES = {
      on every Maybe row; the older wordings stay here because a copy of the sheet
      may still carry one. */
   decisionReason: ['reason', 'declined reason', 'decline reason', 'decision reason'],
+  /* The day a reviewer decided an application, whichever way: what the weekly
+     decisions email (apps-script/weeklyDecisionsEmail.gs) picks the week's
+     applications by. */
+  decidedOn: ['decided on', 'decided at', 'decision date', 'date decided'],
   gender: ['gender'],
   removalReason: ['removal reason'],
   approvedAt: ['approved at'],

@@ -197,7 +197,12 @@ export const useLeadDecisions = ({
       await write({
         kind: 'decline',
         lead: decision.lead,
-        toSheet: async () => await declineLead({ sheetsClient, decision }),
+        toSheet: async () =>
+          await declineLead({
+            sheetsClient,
+            decision,
+            decidedOn: formatApprovalDate(new Date()),
+          }),
       }),
     [sheetsClient, write],
   )
@@ -207,7 +212,12 @@ export const useLeadDecisions = ({
       await write({
         kind: 'maybe',
         lead: decision.lead,
-        toSheet: async () => await markLeadMaybe({ sheetsClient, decision }),
+        toSheet: async () =>
+          await markLeadMaybe({
+            sheetsClient,
+            decision,
+            decidedOn: formatApprovalDate(new Date()),
+          }),
       }),
     [sheetsClient, write],
   )

@@ -11,25 +11,43 @@ import type { CellWrite, SheetsClient } from '../../sheets/sheetsClient'
    of it: nothing is written, and the reviewer is told which heading the tab
    needs. Skipping the reason is not that case — there is nothing to lose, so the
    decision goes through on the status alone. */
+/* The Decided on date goes in the same request as the status, so a decision
+   is never recorded without its day where the tab has a column for one. It is
+   written as the plain text the app writes every date it makes (2026-11-23),
+   which sorts as text and reads the same in every locale. */
+export const buildDecidedOnWrites = ({
+  statusCell,
+  decidedOn,
+}: {
+  statusCell: LeadStatusCell
+  decidedOn: string
+}): readonly CellWrite[] =>
+  statusCell.decidedOnRange === undefined
+    ? []
+    : [{ range: statusCell.decidedOnRange, value: decidedOn }]
+
 const buildDecisionWrites = ({
   statusCell,
   status,
   reason,
+  decidedOn,
 }: {
   statusCell: LeadStatusCell
   status: RecordedLeadStatusValue
   reason: string | undefined
+  decidedOn: string
 }): readonly CellWrite[] => {
   const statusWrite = { range: statusCell.range, value: status }
+  const dateWrites = buildDecidedOnWrites({ statusCell, decidedOn })
   if (reason === undefined) {
-    return [statusWrite]
+    return [statusWrite, ...dateWrites]
   }
   if (statusCell.reasonRange === undefined) {
     throw new Error(
       `The ${LEADS_TAB_NAME} tab has no Reason column to write the reason into, so the decision and the reason could not be recorded together — nothing was written. Add a column headed Reason, or take the decision without a reason.`,
     )
   }
-  return [statusWrite, { range: statusCell.reasonRange, value: reason }]
+  return [statusWrite, { range: statusCell.reasonRange, value: reason }, ...dateWrites]
 }
 
 /* The whole of a decline, and the whole of a maybe: two cells on the Leads tab,
@@ -51,15 +69,17 @@ export const writeLeadStatus = async ({
   lead,
   status,
   reason,
+  decidedOn,
 }: {
   sheetsClient: SheetsClient
   lead: Lead
   status: RecordedLeadStatusValue
   reason: string | undefined
+  decidedOn: string
 }): Promise<void> => {
   const statusCell = await locateLeadStatusCell({ sheetsClient, lead })
   await sheetsClient.updateCells({
-    writes: buildDecisionWrites({ statusCell, status, reason }),
+    writes: buildDecisionWrites({ statusCell, status, reason, decidedOn }),
     valueInputOption: 'RAW',
   })
 }

@@ -10,6 +10,8 @@ import {
   memberRow,
 } from '../../testing/sheetsClientFactory'
 
+const DECIDED_ON = '2026-11-23'
+
 const dana = (overrides: Partial<Lead> = {}): Lead => ({
   rowNumber: 3,
   timestamp: '3/8/2025 14:25:20',
@@ -41,7 +43,8 @@ describe('markLeadMaybe', () => {
   it('should write the full phrase into the Status cell of that application own row', async () => {
     const sheet = sheetWith()
 
-    await markLeadMaybe({ sheetsClient: sheet.client, decision: { lead: dana(), reason: undefined } })
+    await markLeadMaybe({
+      decidedOn: DECIDED_ON, sheetsClient: sheet.client, decision: { lead: dana(), reason: undefined } })
 
     expect(sheet.writes).toEqual([
       {
@@ -63,6 +66,7 @@ describe('markLeadMaybe', () => {
     })
 
     await markLeadMaybe({
+      decidedOn: DECIDED_ON,
       sheetsClient: sheet.client,
       decision: { lead: dana(), reason: 'Strong, no room in this cohort' },
     })
@@ -88,6 +92,7 @@ describe('markLeadMaybe', () => {
 
     await expect(
       markLeadMaybe({
+      decidedOn: DECIDED_ON,
         sheetsClient: sheet.client,
         decision: { lead: dana(), reason: 'Strong, no room in this cohort' },
       }),
@@ -98,7 +103,8 @@ describe('markLeadMaybe', () => {
   it('should add nobody to the Members tab', async () => {
     const sheet = sheetWith()
 
-    await markLeadMaybe({ sheetsClient: sheet.client, decision: { lead: dana(), reason: undefined } })
+    await markLeadMaybe({
+      decidedOn: DECIDED_ON, sheetsClient: sheet.client, decision: { lead: dana(), reason: undefined } })
 
     expect(sheet.rowsOf('Members')).toEqual([MEMBERS_HEADER_ROW])
   })
@@ -111,7 +117,8 @@ describe('markLeadMaybe', () => {
     })
     const sheet = sheetWith({ members: [MEMBERS_HEADER_ROW, existingRow] })
 
-    await markLeadMaybe({ sheetsClient: sheet.client, decision: { lead: dana(), reason: undefined } })
+    await markLeadMaybe({
+      decidedOn: DECIDED_ON, sheetsClient: sheet.client, decision: { lead: dana(), reason: undefined } })
 
     expect(sheet.rowsOf('Members')).toEqual([MEMBERS_HEADER_ROW, existingRow])
   })
@@ -122,8 +129,35 @@ describe('markLeadMaybe', () => {
     })
 
     await expect(
-      markLeadMaybe({ sheetsClient: sheet.client, decision: { lead: dana(), reason: undefined } }),
+      markLeadMaybe({
+      decidedOn: DECIDED_ON, sheetsClient: sheet.client, decision: { lead: dana(), reason: undefined } }),
     ).rejects.toThrow()
     expect(sheet.writes).toEqual([])
+  })
+})
+
+describe('markLeadMaybe, on a Leads tab with a Decided on column', () => {
+  it('should write the day it was decided beside the status', async () => {
+    const sheet = createFakeSheet({
+      tabs: {
+        Leads: [
+          [...LEADS_HEADER_ROW, 'Decided on'],
+          leadRow({ name: 'Noa Feldman', email: 'noa@example.com' }),
+          leadRow({ name: 'Dana Maman', email: 'dana@example.com' }),
+        ],
+        Members: [MEMBERS_HEADER_ROW],
+      },
+    })
+
+    await markLeadMaybe({
+      decidedOn: DECIDED_ON,
+      sheetsClient: sheet.client,
+      decision: { lead: dana(), reason: undefined },
+    })
+
+    expect(sheet.writes.map(({ range, values }) => ({ range, values }))).toEqual([
+      { range: 'Leads!K3', values: ['Maybe in the future'] },
+      { range: 'Leads!L3', values: [DECIDED_ON] },
+    ])
   })
 })

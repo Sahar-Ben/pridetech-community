@@ -8,13 +8,16 @@ import type { SheetsClient } from '../../sheets/sheetsClient'
 export const markLeadMaybe = async ({
   sheetsClient,
   decision,
+  decidedOn,
 }: {
   sheetsClient: SheetsClient
+  decidedOn: string
   decision: MaybeDecision
 }): Promise<void> =>
   await writeLeadStatus({
     sheetsClient,
     lead: decision.lead,
     reason: decision.reason,
+    decidedOn,
     status: RECORDED_LEAD_STATUS.maybe,
   })

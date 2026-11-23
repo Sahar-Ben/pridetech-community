@@ -89,7 +89,7 @@ describe('approveLead', () => {
       kind: 'update',
       range: 'Leads!K3',
       values: ['Approved'],
-      valueInputOption: 'USER_ENTERED',
+      valueInputOption: 'RAW',
     })
   })
 
@@ -306,6 +306,7 @@ describe('approveLead, for somebody who was a member before', () => {
       { range: 'Members!J3', values: ['https://linkedin.com/in/dana'] },
       { range: 'Members!K3', values: ['Platform'] },
       { range: 'Members!Q3', values: ['Moved abroad'] },
+      { range: 'Leads!K3', values: ['Approved'] },
     ])
   })
 
@@ -322,7 +323,6 @@ describe('approveLead, for somebody who was a member before', () => {
       { range: 'Members!N3', values: ['Active'] },
       { range: 'Members!O3', values: [''] },
       { range: 'Members!R3', values: [APPROVED_AT] },
-      { range: 'Leads!K3', values: ['Approved'] },
     ])
   })
 
@@ -817,5 +817,46 @@ describe('approveLead, when the Members tab has not grown the history columns ye
 
     expect(sheet.rowsOf('Members')).toHaveLength(2)
     expect(sheet.rowsOf('Leads')[2]?.[10]).toBe('Approved')
+  })
+})
+
+describe('approveLead, on a Leads tab with a Decided on column', () => {
+  const withDecidedOn = () =>
+    sheetWith({
+      leads: [
+        [...LEADS_HEADER_ROW, 'Decided on'],
+        leadRow({ name: 'Noa Feldman', email: 'noa@example.com' }),
+        leadRow({ name: 'Dana Maman', email: 'dana@example.com' }),
+      ],
+    })
+
+  it('should write Approved and the day it was decided in one request, after the member', async () => {
+    const sheet = withDecidedOn()
+
+    await approve({ sheet })
+
+    expect(sheet.writes.map(({ kind, range, values }) => ({ kind, range, values }))).toEqual([
+      expect.objectContaining({ kind: 'append' }),
+      { kind: 'update', range: 'Leads!K3', values: ['Approved'] },
+      { kind: 'update', range: 'Leads!L3', values: [APPROVED_AT] },
+    ])
+    expect(sheet.client.updateCells).toHaveBeenCalledTimes(1)
+  })
+
+  it('should date the application of somebody already an Active member too', async () => {
+    const sheet = createFakeSheet({
+      tabs: {
+        Leads: [
+          [...LEADS_HEADER_ROW, 'Decided on'],
+          leadRow({ name: 'Noa Feldman', email: 'noa@example.com' }),
+          leadRow({ name: 'Dana Maman', email: 'dana@example.com' }),
+        ],
+        Members: [MEMBERS_HEADER_ROW, memberRow({ name: 'Dana Maman', mail: 'dana@example.com' })],
+      },
+    })
+
+    await approve({ sheet })
+
+    expect(sheet.rowsOf('Leads')[2]?.slice(10, 12)).toEqual(['Approved', APPROVED_AT])
   })
 })

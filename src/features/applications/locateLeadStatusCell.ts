@@ -15,10 +15,15 @@ import type { SheetsClient } from '../../sheets/sheetsClient'
    they cannot record. What that costs them is the caller's to decide, because
    only the caller knows whether a reason was given; refusing here would refuse
    every approval too, and approving has never had a reason to write. */
+/* `decidedOnRange` is absent when the tab has no Decided on column. Unlike a
+   missing Reason column, that never stops a decision: the date is a
+   convenience for the weekly email, and an application decided without one
+   is still decided. */
 export type LeadStatusCell = {
   range: string
   recordedStatus: string | undefined
   reasonRange: string | undefined
+  decidedOnRange: string | undefined
 }
 
 const describeApplicant = (lead: Lead): string =>
@@ -91,6 +96,7 @@ export const locateLeadStatusCell = async ({
   }
 
   const reasonColumn = findColumn({ headerMap, aliases: COLUMN_ALIASES.decisionReason })
+  const decidedOnColumn = findColumn({ headerMap, aliases: COLUMN_ALIASES.decidedOn })
 
   const currentRow = leadRows[0] ?? []
   const currentEmail = readCell({ row: currentRow, column: emailColumn })
@@ -119,6 +125,14 @@ export const locateLeadStatusCell = async ({
         : buildCellRange({
             tabName: LEADS_TAB_NAME,
             columnIndex: reasonColumn,
+            rowNumber: lead.rowNumber,
+          }),
+    decidedOnRange:
+      decidedOnColumn === undefined
+        ? undefined
+        : buildCellRange({
+            tabName: LEADS_TAB_NAME,
+            columnIndex: decidedOnColumn,
             rowNumber: lead.rowNumber,
           }),
   }

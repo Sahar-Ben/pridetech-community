@@ -9,13 +9,16 @@ import type { SheetsClient } from '../../sheets/sheetsClient'
 export const declineLead = async ({
   sheetsClient,
   decision,
+  decidedOn,
 }: {
   sheetsClient: SheetsClient
+  decidedOn: string
   decision: DeclineDecision
 }): Promise<void> =>
   await writeLeadStatus({
     sheetsClient,
     lead: decision.lead,
     reason: decision.reason,
+    decidedOn,
     status: RECORDED_LEAD_STATUS.declined,
   })

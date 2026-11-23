@@ -13,6 +13,7 @@ import {
   type MemberMatch,
 } from './memberEmailIndex'
 import { locateLeadStatusCell, type LeadStatusCell } from './locateLeadStatusCell'
+import { buildDecidedOnWrites } from './writeLeadStatus'
 import { buildMemberCellWrites } from './memberSheetColumns'
 import { readVerifiedMemberRow } from './readVerifiedMemberRow'
 import { buildReactivationWrites } from './reactivationWrites'
@@ -85,6 +86,28 @@ const reactivateMember = async ({
   })
 }
 
+/* `Approved` and the day it was decided, in one request so the date never goes
+   missing from a decision. RAW, like the Decided on date of a decline: the
+   app writes every date it makes as plain text, and `Approved` is the same
+   word either way. */
+const writeApprovedStatus = async ({
+  sheetsClient,
+  statusCell,
+  decidedOn,
+}: {
+  sheetsClient: SheetsClient
+  statusCell: LeadStatusCell
+  decidedOn: string
+}): Promise<void> => {
+  await sheetsClient.updateCells({
+    writes: [
+      { range: statusCell.range, value: RECORDED_LEAD_STATUS.approved },
+      ...buildDecidedOnWrites({ statusCell, decidedOn }),
+    ],
+    valueInputOption: 'RAW',
+  })
+}
+
 /* The member row exists and is Active, so the one thing an approval still has
    to do is say so on the application. That is the state a failed status write
    leaves behind, and until now the retry insisted nothing had been written and
@@ -96,11 +119,13 @@ const finishApprovalOfActiveMember = async ({
   decision,
   member,
   statusCell,
+  approvedAt,
 }: {
   sheetsClient: SheetsClient
   decision: ApprovalDecision
   member: MemberMatch
   statusCell: LeadStatusCell
+  approvedAt: string
 }): Promise<void> => {
   if (statusCell.recordedStatus !== undefined) {
     throw new Error(
@@ -113,11 +138,7 @@ const finishApprovalOfActiveMember = async ({
     )
   }
 
-  await sheetsClient.updateCell({
-    range: statusCell.range,
-    value: RECORDED_LEAD_STATUS.approved,
-    valueInputOption: 'USER_ENTERED',
-  })
+  await writeApprovedStatus({ sheetsClient, statusCell, decidedOn: approvedAt })
 }
 
 /* The Members tab is written first and the lead's Status second, and the order
@@ -157,6 +178,7 @@ export const approveLead = async ({
       decision,
       member: existingMember,
       statusCell,
+      approvedAt,
     })
     return
   }
@@ -173,9 +195,5 @@ export const approveLead = async ({
     await reactivateMember({ sheetsClient, decision, approvedAt, existingMember })
   }
 
-  await sheetsClient.updateCell({
-    range: statusCell.range,
-    value: RECORDED_LEAD_STATUS.approved,
-    valueInputOption: 'USER_ENTERED',
-  })
+  await writeApprovedStatus({ sheetsClient, statusCell, decidedOn: approvedAt })
 }

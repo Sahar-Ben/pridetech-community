@@ -10,6 +10,8 @@ import {
   memberRow,
 } from '../../testing/sheetsClientFactory'
 
+const DECIDED_ON = '2026-11-23'
+
 const dana = (overrides: Partial<Lead> = {}): Lead => ({
   rowNumber: 3,
   timestamp: '3/8/2025 14:25:20',
@@ -41,7 +43,8 @@ describe('declineLead', () => {
   it('should write Declined into the Status cell of that application own row', async () => {
     const sheet = sheetWith()
 
-    await declineLead({ sheetsClient: sheet.client, decision: { lead: dana(), reason: undefined } })
+    await declineLead({
+      decidedOn: DECIDED_ON, sheetsClient: sheet.client, decision: { lead: dana(), reason: undefined } })
 
     expect(sheet.writes).toEqual([
       { kind: 'update', range: 'Leads!K3', values: ['Declined'], valueInputOption: 'RAW' },
@@ -58,6 +61,7 @@ describe('declineLead', () => {
     })
 
     await declineLead({
+      decidedOn: DECIDED_ON,
       sheetsClient: sheet.client,
       decision: { lead: dana(), reason: 'Not in Tech' },
     })
@@ -85,6 +89,7 @@ describe('declineLead', () => {
     })
 
     await declineLead({
+      decidedOn: DECIDED_ON,
       sheetsClient: sheet.client,
       decision: { lead: dana(), reason: undefined },
     })
@@ -102,6 +107,7 @@ describe('declineLead', () => {
     })
 
     await declineLead({
+      decidedOn: DECIDED_ON,
       sheetsClient: sheet.client,
       decision: { lead: dana(), reason: '=SUM(A:A)' },
     })
@@ -118,7 +124,8 @@ describe('declineLead', () => {
     const sheet = sheetWith()
 
     await expect(
-      declineLead({ sheetsClient: sheet.client, decision: { lead: dana(), reason: 'Not in Tech' } }),
+      declineLead({
+      decidedOn: DECIDED_ON, sheetsClient: sheet.client, decision: { lead: dana(), reason: 'Not in Tech' } }),
     ).rejects.toThrow(/Reason column/i)
     expect(sheet.writes).toEqual([])
   })
@@ -127,6 +134,7 @@ describe('declineLead', () => {
     const sheet = sheetWith()
 
     await declineLead({
+      decidedOn: DECIDED_ON,
       sheetsClient: sheet.client,
       decision: { lead: dana(), reason: undefined },
     })
@@ -137,7 +145,8 @@ describe('declineLead', () => {
   it('should add nobody to the Members tab', async () => {
     const sheet = sheetWith()
 
-    await declineLead({ sheetsClient: sheet.client, decision: { lead: dana(), reason: undefined } })
+    await declineLead({
+      decidedOn: DECIDED_ON, sheetsClient: sheet.client, decision: { lead: dana(), reason: undefined } })
 
     expect(sheet.rowsOf('Members')).toEqual([MEMBERS_HEADER_ROW])
   })
@@ -150,7 +159,8 @@ describe('declineLead', () => {
       ],
     })
 
-    await declineLead({ sheetsClient: sheet.client, decision: { lead: dana(), reason: undefined } })
+    await declineLead({
+      decidedOn: DECIDED_ON, sheetsClient: sheet.client, decision: { lead: dana(), reason: undefined } })
 
     expect(sheet.writes.map((write) => write.range)).toEqual(['Leads!K3'])
   })
@@ -164,7 +174,8 @@ describe('declineLead', () => {
     })
     const sheet = sheetWith({ members: [MEMBERS_HEADER_ROW, existing] })
 
-    await declineLead({ sheetsClient: sheet.client, decision: { lead: dana(), reason: undefined } })
+    await declineLead({
+      decidedOn: DECIDED_ON, sheetsClient: sheet.client, decision: { lead: dana(), reason: undefined } })
 
     expect(sheet.rowsOf('Members')[1]).toEqual(existing)
   })
@@ -178,7 +189,8 @@ describe('declineLead', () => {
       ],
     })
 
-    await declineLead({ sheetsClient: sheet.client, decision: { lead: dana(), reason: undefined } })
+    await declineLead({
+      decidedOn: DECIDED_ON, sheetsClient: sheet.client, decision: { lead: dana(), reason: undefined } })
 
     expect(sheet.writes.map((write) => write.range)).toEqual(['Leads!A3'])
   })
@@ -194,7 +206,8 @@ describe('declineLead', () => {
     })
 
     await expect(
-      declineLead({ sheetsClient: sheet.client, decision: { lead: dana(), reason: undefined } }),
+      declineLead({
+      decidedOn: DECIDED_ON, sheetsClient: sheet.client, decision: { lead: dana(), reason: undefined } }),
     ).rejects.toThrow(/changed/i)
     expect(sheet.writes).toEqual([])
   })
@@ -213,8 +226,49 @@ describe('declineLead', () => {
       onRead: (range) => readRanges.push(range),
     })
 
-    await declineLead({ sheetsClient: sheet.client, decision: { lead: dana(), reason: undefined } })
+    await declineLead({
+      decidedOn: DECIDED_ON, sheetsClient: sheet.client, decision: { lead: dana(), reason: undefined } })
 
     expect(readRanges.filter((range) => range.startsWith('Members'))).toEqual([])
+  })
+})
+
+describe('declineLead, on a Leads tab with a Decided on column', () => {
+  const withDecidedOn = () =>
+    sheetWith({
+      leads: [
+        [...LEADS_HEADER_ROW_WITH_REASON, 'Decided on'],
+        leadRow({ name: 'Noa Feldman', email: 'noa@example.com' }),
+        leadRow({ name: 'Dana Maman', email: 'dana@example.com' }),
+      ],
+    })
+
+  it('should write the day it was decided, in the one request the status and reason go in', async () => {
+    const sheet = withDecidedOn()
+
+    await declineLead({
+      decidedOn: DECIDED_ON,
+      sheetsClient: sheet.client,
+      decision: { lead: dana(), reason: 'Not in Tech' },
+    })
+
+    expect(sheet.writes).toEqual([
+      { kind: 'update', range: 'Leads!K3', values: ['Declined'], valueInputOption: 'RAW' },
+      { kind: 'update', range: 'Leads!L3', values: ['Not in Tech'], valueInputOption: 'RAW' },
+      { kind: 'update', range: 'Leads!M3', values: [DECIDED_ON], valueInputOption: 'RAW' },
+    ])
+    expect(sheet.client.updateCells).toHaveBeenCalledTimes(1)
+  })
+
+  it('should still write the day when no reason was given', async () => {
+    const sheet = withDecidedOn()
+
+    await declineLead({
+      decidedOn: DECIDED_ON,
+      sheetsClient: sheet.client,
+      decision: { lead: dana(), reason: undefined },
+    })
+
+    expect(sheet.rowsOf('Leads')[2]?.slice(10, 13)).toEqual(['Declined', '', DECIDED_ON])
   })
 })

@@ -4,7 +4,7 @@ Scripts that run inside Google, attached to the community spreadsheet (the
 `PrideTech Dashboard`, which holds `Leads`, `Members` and `Events`). They are
 kept here so they are versioned; they are not part of the web app build.
 
-Both scripts can live in the same Apps Script project: in the editor, add each
+All of these scripts can live in the same Apps Script project: in the editor, add each
 as its own file (**+ → Script**).
 
 ## `createEventForms.gs`
@@ -131,3 +131,42 @@ second submission should get the "already applied" email within a minute.
 - It looks for the email column under the same headers the CRM reads (`Email`,
   `Your email`, `E-mail`, `Mail`, or `Email Address`). If the form's email
   question is worded differently, add that heading to `EMAIL_HEADERS`.
+
+## `weeklyDecisionsEmail.gs`
+
+Every Saturday at about 8:00 (Israel time), emails **pridetechtlv@gmail.com** the
+applications decided on the `Leads` tab during the week that just ended
+(Saturday to Friday), in three groups: **Approved**, **Declined** and
+**Maybe**. Each group has its email addresses on one line, comma-separated,
+ready to paste into the To or Bcc field of a welcome email, followed by the
+names.
+
+A week is picked by the **Decided on** column, which the CRM fills in with the
+day of every decision it records.
+
+### Setup (once)
+
+1. In the `Leads` tab, add a column headed **`Decided on`** after `Reason`.
+   From then on, every approve, decline and Maybe in the app writes the day
+   into it. Decisions taken before the column existed have no date, so they
+   are not in any weekly email.
+2. Open the Dashboard spreadsheet → **Extensions → Apps Script**.
+3. Add a file named `weeklyDecisionsEmail` (**+ → Script**), paste in
+   `weeklyDecisionsEmail.gs` and save.
+4. Pick `installWeeklyDecisionsTrigger` in the function dropdown and click
+   **Run**. Google asks for permission to read the spreadsheet and send email
+   as you. Allow it.
+5. To see the email straight away, pick `sendWeeklyDecisionsEmail` and click
+   **Run**. It sends last week's decisions now.
+
+### Good to know
+
+- The email comes **from the Google account that ran
+  `installWeeklyDecisionsTrigger`**.
+- Google runs weekly triggers within about fifteen minutes of the hour, so it
+  arrives around 8:00, not to the second.
+- A status changed by hand in the sheet is only included if you also type the
+  day into its Decided on cell.
+- The recipient, the hour and the time zone are at the top of the script.
+- To turn it off: in the Apps Script editor go to **Triggers** (clock icon) and
+  delete the `sendWeeklyDecisionsEmail` trigger.
